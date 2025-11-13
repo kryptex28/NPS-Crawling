@@ -12,7 +12,3 @@ ITEM_PIPELINES = {
 }
 
 DOWNLOAD_DELAY = 1.0  # Limit so SEC doesn't explode and API bans
-
-FEEDS = {
-    'filings.jsonl': {'format': 'jsonlines'},
-}
