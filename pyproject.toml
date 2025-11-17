@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=77", "setuptools-scm[toml]>=8","wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "NPS-Crawling"
+description = "Project for NPS Web Crawling"
+readme = "README.md"
+license = "	MIT"
+license-files = ["LICENSE"]
+authors = [
+  {name = "Ellena Spiess", email = "e.spiess52@gmail.com"},
+  {name = "David Schätz", email = "schada05@thu.de"},
+  {name = "Lukas Bossert", email = "Lukas-bossert@gmx.de"},
+  {name = "Ellena Spiess", email = "leonvogt2001@gmail.com"},
+  {name = "Ellena Spiess", email = "swinter@mail.hs-ulm.de"},
+]
+maintainers = [
+  {name = "Ellena Spiess", email = "e.spiess52@gmail.com"},
+  {name = "David Schätz", email = "schada05@thu.de"},
+  {name = "Lukas Bossert", email = "Lukas-bossert@gmx.de"},
+  {name = "Ellena Spiess", email = "leonvogt2001@gmail.com"},
+  {name = "Ellena Spiess", email = "swinter@mail.hs-ulm.de"},
+]
+requires-python = ">=3.9"
+
+# Dynamic versioning with setuptools_scm
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = [requirements.txt]}
+
+[project.urls]
+Homepage = "https://github.com/kryptex28/NPS-Crawling"
+Documentation = "https://github.com/kryptex28/NPS-Crawling/README.md"
+Repository = "https://github.com/kryptex28/NPS-Crawling"
+Issues = "https://github.com/kryptex28/NPS-Crawling/issues"
+Changelog = "https://github.com/kryptex28/NPS-Crawling/CHANGELOG.md"
+
+[project.scripts]
+nps-crawling = "nps_crawling.__main__:main"
+
+# Optional dependencies (extras)
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx-autoapi",
+    "sphinx-rtd-theme",
+    "myst-parser",
+]
+test = [
+    "pytest",
+    "coverage[toml]",
+    "pytest-cov",
+]
+
+[tool.setuptools_scm]
+version_file = "src/nps_crawling/_version.py"
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+preview = true
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint]
+select = ["COM", "C901", "D", "E", "F", "I", "S", "W", "PLE", "PLC"]
+extend-ignore = ["PLC0415", "S113", "S404", "S603"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pylint]
+max-args = 10
+max-branches = 20
+max-statements = 75
+allow-magic-value-types = ["int", "str", "float", "bytes"]
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+source = ["nps_crawling"]
+relative_files = true
