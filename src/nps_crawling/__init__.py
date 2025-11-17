@@ -1,4 +1,4 @@
-"""NPS Crawler"""
+"""NPS Crawler."""
 
 from ._version import version
 
