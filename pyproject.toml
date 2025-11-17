@@ -28,7 +28,7 @@ requires-python = ">=3.9"
 dynamic = ["version", "dependencies"]
 
 [tool.setuptools.dynamic]
-dependencies = {file = [requirements.txt]}
+dependencies = {file = ["requirements.txt"]}
 
 [project.urls]
 Homepage = "https://github.com/kryptex28/NPS-Crawling"
