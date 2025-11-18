@@ -59,8 +59,9 @@ jobs:
     - name: Run tests
       run: |
         tox -e test-py -- --xunitxml=report-ubuntu${{ matrix.python-version }}.xml
-      uses: actions/upload-artifact@v4
+    - name: Upload test results
       if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
       with:
         name: test-report-ubuntu-${{ matrix.python-version }}
         path: report-ubuntu${{ matrix.python-version }}.xml
@@ -86,8 +87,9 @@ jobs:
     - name: Run tests
       run: |
         tox -e test-py -- --xunitxml=report-windows${{ matrix.python-version }}.xml
-      uses: actions/upload-artifact@v4
+    - name: Upload test results
       if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
       with:
         name: test-report-windows-${{ matrix.python-version }}
         path: report-windows${{ matrix.python-version }}.xml
