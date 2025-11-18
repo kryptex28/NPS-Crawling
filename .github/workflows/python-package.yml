@@ -93,3 +93,14 @@ jobs:
       with:
         name: test-report-windows-${{ matrix.python-version }}
         path: report-windows${{ matrix.python-version }}.xml
+
+  report-results:
+    needs: [test-ubuntu, test-windows]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: dorny/test-reporter@v2
+      with:
+        artifact: test-results            # artifact name
+        name: JEST Tests                  # Name of the check run which will be created
+        path: '*.xml'                     # Path to test results (inside artifact .zip)
+        reporter: python-xunit              # Format of test results
