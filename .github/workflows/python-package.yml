@@ -30,7 +30,7 @@ jobs:
         tox -e codestyle-ci
     - name: docstyle
       run: |
-        tox -e docstyle-ci -s
+        tox -e docstyle-ci
     - name: errors
       run: |
         tox -e errors-ci
