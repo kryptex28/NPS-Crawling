@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434" # <- change left port if its already allocated
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Uncomment for GPU support (NVIDIA only)
+    # Arch: sudo pacman -S nvidia-container-toolkit
+    # sudo nvidia-ctk runtime configure --runtime=docker
+    # sudo systemctl restart docker
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  mistral-server:
+    build: .
+    ports:
+      - "8001:8000"
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
