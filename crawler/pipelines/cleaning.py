@@ -5,6 +5,16 @@ import re
 
 class CleanTextPipeline:
 
+    def cleaning_workflow(self, dict_batch):
+        
+        cleaned_batch = []
+
+        for item in dict_batch:
+            cleaned_item = self.process_item(item, spider=None)
+            cleaned_batch.append(cleaned_item)
+            
+        return cleaned_batch
+
     def process_item(self, item: dict, spider) -> dict:
         """
         Clean the 'html_text' field of an item by removing HTML tags,

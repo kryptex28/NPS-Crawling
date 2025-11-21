@@ -2,6 +2,10 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from crawler.spiders.sec_filings_spider import SECNpsSpider
 
+from crawler.pipelines import PreProcessingPipeline
+
+import click
+
 import os
 os.environ['SCRAPY_SETTINGS_MODULE'] = 'crawler.settings'
 
@@ -102,4 +106,24 @@ process.crawl(
 )
 """
 
-process.start()
+def run_process_data():
+
+    pre_processing = PreProcessingPipeline()
+    pre_processing.pre_processing_workflow()
+
+    return None
+
+@click.command()
+@click.option('--crawler', is_flag=True, help='Crawler')
+@click.option('--process_data', is_flag=True, help='Process Data')
+def main(crawler, process_data):
+
+    if crawler:
+        process.start()
+
+    if process_data:
+        run_process_data()
+        pass
+
+if __name__ == "__main__":
+    main()
