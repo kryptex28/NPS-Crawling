@@ -3,6 +3,7 @@ from scrapy.utils.project import get_project_settings
 from crawler.spiders.sec_filings_spider import SECNpsSpider
 
 from crawler.pipelines import PreProcessingPipeline
+from classification.utils import ClassificationPipeline
 
 import click
 
@@ -113,16 +114,25 @@ def run_process_data():
 
     return None
 
+def run_classification():
+    classification = ClassificationPipeline()
+    classification.classification_workflow()
+
+
 @click.command()
 @click.option('--crawler', is_flag=True, help='Crawler')
 @click.option('--process_data', is_flag=True, help='Process Data')
-def main(crawler, process_data):
+@click.option('--classification', is_flag=True, help='Classification of Data')
+def main(crawler, process_data, classification):
 
     if crawler:
         process.start()
 
     if process_data:
         run_process_data()
+    
+    if classification:
+        run_classification()
 
 if __name__ == "__main__":
     main()
