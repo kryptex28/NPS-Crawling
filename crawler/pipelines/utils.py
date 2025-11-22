@@ -5,6 +5,9 @@ from .cleaning import CleanTextPipeline
 from .filtering import NpsMentionFilterPipeline
 from .storage import SaveToJSONPipeline
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PreProcessingPipeline(Config):
 
     def __init__(self):
@@ -25,9 +28,7 @@ class PreProcessingPipeline(Config):
         process the filings (stored in JSON) in batch sizes as defined 
         in Config var FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE
         """
-
-
-
+        logger.info("Starting pre-processing raw data")
 
         #TODO: JSON needs to be in correct format. this should be removed here
         # it's just a quick fix. this code should be used instead:
@@ -47,6 +48,9 @@ class PreProcessingPipeline(Config):
 
 
         total = len(filings)
+        logger.info(f"Processing {total} filings in batch size of: {self.files_at_once}")
+
+        files_before = self.storage.count_parquet_files()
 
         for start in range(0, total, self.files_at_once):
             end = start + self.files_at_once
@@ -55,7 +59,12 @@ class PreProcessingPipeline(Config):
             cleaned_dict_batch = self.cleaner.cleaning_workflow(dict_batch)
             context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
             self.storage.storage_workflow(context_windows_dict_batch)
-        
+
+        files_after = self.storage.count_parquet_files()
+
+        logger.info(f"New parquet files created: {files_after - files_before}")
+        logger.info(f"Finished pre-processing data")
+
         return None
 
     

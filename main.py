@@ -7,6 +7,13 @@ from classification.utils import ClassificationPipeline
 
 import click
 
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 def run_crawler():
     import os
     os.environ['SCRAPY_SETTINGS_MODULE'] = 'crawler.settings'

@@ -3,6 +3,7 @@ from config.config import Config
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import os
 
 class SaveToJSONPipeline(Config):
 
@@ -21,3 +22,11 @@ class SaveToJSONPipeline(Config):
 
         return None
     
+    def count_parquet_files(self):
+        """
+        for logging only
+        """
+        count = 0
+        for root, dirs, files in os.walk(self.parquet_root):
+            count += sum(1 for f in files if f.endswith(".parquet"))
+        return count
