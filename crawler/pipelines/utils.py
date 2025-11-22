@@ -14,8 +14,8 @@ class PreProcessingPipeline(Config):
         self.raw_json_file_crawler = Config.RAW_JSON_PATH_CRAWLER / self.raw_json_file_crawler_name
 
         self.cleaner = CleanTextPipeline()
-        self.nps_filter = NpsMentionFilterPipeline()
-        self.saver = SaveToJSONPipeline()
+        self.filter = NpsMentionFilterPipeline()
+        self.storage = SaveToJSONPipeline()
 
     #TODO: logic here needs to be adapted later on. we don't want to run over all stored 
     # filings everytime, just the ones that are new
@@ -52,8 +52,9 @@ class PreProcessingPipeline(Config):
             end = start + self.files_at_once
             dict_batch = filings[start:end]
 
-            batch = self.cleaner.cleaning_workflow(dict_batch) 
-
+            cleaned_dict_batch = self.cleaner.cleaning_workflow(dict_batch)
+            context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
+        
         return None
 
     
