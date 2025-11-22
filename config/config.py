@@ -7,9 +7,11 @@ class Config:
     DATA_PATH = ROOT_DIR / "Data"
 
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
+    NPS_CONTEXT_PARQUET_PATH = DATA_PATH / "nps_context_dataset"
 
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
+    NPS_CONTEXT_PARQUET_PATH.mkdir(parents=True, exist_ok=True)
 
     """ FILES """
     RAW_JSON_FILE_FROM_CRAWLER = "nps_filings.json"

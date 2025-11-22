@@ -54,6 +54,7 @@ class PreProcessingPipeline(Config):
 
             cleaned_dict_batch = self.cleaner.cleaning_workflow(dict_batch)
             context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
+            self.storage.storage_workflow(context_windows_dict_batch)
         
         return None
 

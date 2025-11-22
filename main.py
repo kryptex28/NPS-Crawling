@@ -123,7 +123,6 @@ def main(crawler, process_data):
 
     if process_data:
         run_process_data()
-        pass
 
 if __name__ == "__main__":
     main()
