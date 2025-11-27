@@ -18,7 +18,7 @@ class Config:
 
     """ PRE PROCESSING CONFIG """
     # define the batch size of how many filing should run through data processing pipeline at once
-    FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE: int = 2
+    FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE: int = 2 # 2 just to simulate batch processing, will be way higher
 
     # define what phrases to filter in text here
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
