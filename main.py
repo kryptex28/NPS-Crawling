@@ -2,8 +2,9 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from crawler.spiders.sec_filings_spider import SECNpsSpider
 
-from crawler.pipelines import PreProcessingPipeline
-from classification.utils import ClassificationPipeline
+from src.preprocessing import PreProcessingPipeline
+from src.classification import ClassificationPipeline
+from src.results import ResultsPipeline
 
 import click
 
@@ -11,6 +12,7 @@ import logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S"
 )
 logger = logging.getLogger(__name__)
 
@@ -117,32 +119,29 @@ def run_crawler():
 
     process.start()
 
-def run_process_data():
-
-    pre_processing = PreProcessingPipeline()
-    pre_processing.pre_processing_workflow()
-
     return None
-
-def run_classification():
-    classification = ClassificationPipeline()
-    classification.classification_workflow()
-
 
 @click.command()
 @click.option('--crawler', is_flag=True, help='Crawler')
 @click.option('--process_data', is_flag=True, help='Process Data')
 @click.option('--classification', is_flag=True, help='Classification of Data')
-def main(crawler, process_data, classification):
+@click.option('--results', is_flag=True, help='Displaying of Results')
+def main(crawler, process_data, classification, results):
 
     if crawler:
         run_crawler()
 
     if process_data:
-        run_process_data()
+        pre_processing = PreProcessingPipeline()
+        pre_processing.pre_processing_workflow()
     
     if classification:
-        run_classification()
+        classification = ClassificationPipeline()
+        classification.classification_workflow()
+
+    if results:
+        results = ResultsPipeline()
+        results.results_workflow()
 
 if __name__ == "__main__":
     main()

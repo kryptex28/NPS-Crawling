@@ -1,32 +1,20 @@
-from config.config import Config
+import json
+from pathlib import Path
+from preprocessing.json_to_parquet import json_input_to_parquet
 
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-import os
+class SaveToJSONPipeline:
+    def open_spider(self, spider):
+        self.file = open('nps_filings.json', 'w')
+        self.file.write('[')
 
-class SaveToJSONPipeline(Config):
+    def close_spider(self, spider):
+        self.file.write(']')
+        self.file.close()
 
-    def __init__(self):
+        # Convert JSON to Parquet
+        json_input_to_parquet(self.json_path, self.parquet_path)
 
-        self.parquet_root = Config.NPS_CONTEXT_PARQUET_PATH
-
-    def storage_workflow(self, context_windows_dict_batch):
-
-        df = pd.DataFrame(context_windows_dict_batch)
-
-        table = pa.Table.from_pandas(df, preserve_index=False)
-
-        # partition by company (allows effective queueing by company)
-        pq.write_to_dataset(table, root_path=self.parquet_root, partition_cols=["company"])
-
-        return None
-    
-    def count_parquet_files(self):
-        """
-        for logging only
-        """
-        count = 0
-        for root, dirs, files in os.walk(self.parquet_root):
-            count += sum(1 for f in files if f.endswith(".parquet"))
-        return count
+    def process_item(self, item, spider):
+        line = json.dumps(dict(item)) + ",\n"
+        self.file.write(line)
+        return item

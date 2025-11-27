@@ -1,5 +1,4 @@
-from config.config import Config
-import pandas as pd
+from src.config import Config
 import pyarrow.dataset as ds
 
 class ClassificationDataProcessing(Config):

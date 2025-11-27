@@ -1,4 +1,4 @@
-from config.config import Config
+from src.config import Config
 
 from .data_processing.preprocess_data import ClassificationDataProcessing
 from .model.classification_model import ClassificationModelPipeline
@@ -23,12 +23,12 @@ class ClassificationPipeline(Config):
 
         companies_list = self.get_data.get_list_of_all_companies()
 
-        logger.info(f"Number of companies to classify: {len(companies_list)}")
+        logger.info(f"Number of companies to be classified: {len(companies_list)}")
 
         for company in companies_list:
 
             single_company_df = self.get_data.get_data_for_classification(company)
-            self.model_pipeline.classification_workflow(single_company_df)
+            self.model_pipeline.model_workflow(single_company_df)
 
         logger.info("Finished classification")
 

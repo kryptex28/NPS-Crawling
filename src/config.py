@@ -28,5 +28,3 @@ class Config:
     # define the size of the context window here. how many sentences before and after should be included
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2
     AMOUNT_SENTENCES_INCLUDED_AFTER: int = 2
-    
-    pass

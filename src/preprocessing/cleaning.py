@@ -1,13 +1,21 @@
-from scrapy.exceptions import DropItem
 from bs4 import BeautifulSoup
 import re
 
+from ..config import Config
 
-class CleanTextPipeline:
+class CleanTextPipeline(Config):
 
-    #TODO: is currently also done in pre-processing pipeline.
-    # might not need it here, depends on where we want to have it
-    def process_item(self, item: dict, spider) -> dict:
+    def cleaning_workflow(self, dict_batch):
+        
+        cleaned_batch = []
+
+        for item in dict_batch:
+            cleaned_item = self.process_item(item)
+            cleaned_batch.append(cleaned_item)
+            
+        return cleaned_batch
+
+    def process_item(self, item: dict) -> dict:
         """
         Clean the 'html_text' field of an item by removing HTML tags,
         normalizing whitespace, and stripping signature markers.

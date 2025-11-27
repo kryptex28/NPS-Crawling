@@ -1,4 +1,5 @@
-from config.config import Config
+from src.config import Config
+
 import json
 
 from .cleaning import CleanTextPipeline
@@ -22,6 +23,8 @@ class PreProcessingPipeline(Config):
 
     #TODO: logic here needs to be adapted later on. we don't want to run over all stored 
     # filings everytime, just the ones that are new
+    # --> edit 27.11.25: only pre-process the parquet files, that are not marked in database
+    # as pre-processed yet (need to implement that logic first though)
     def pre_processing_workflow(self):
         """
         workflow method to pre process data. cleaning --> filtering --> storaging.
@@ -34,6 +37,8 @@ class PreProcessingPipeline(Config):
         # it's just a quick fix. this code should be used instead:
         # with self.raw_json_file_crawler.open("r", encoding="utf-8") as f:
         #     filings = json.load(f)
+        # --> edit 27.11.25: these will be parquet files in the future, no more json
+        # (so raw parquet files will be loaded here)
         with self.raw_json_file_crawler.open("r", encoding="utf-8") as f:
             raw = f.read()
         if raw.endswith("]"):

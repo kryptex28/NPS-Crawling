@@ -1,4 +1,4 @@
-from config.config import Config
+from src.config import Config
 
 class ClassificationModelPipeline(Config):
   
@@ -6,7 +6,7 @@ class ClassificationModelPipeline(Config):
 
         pass
 
-    def classification_workflow(self, single_company_df):
+    def model_workflow(self, single_company_df):
         """
         input: dataframe of single company including all context windows (1 per row)
         """
