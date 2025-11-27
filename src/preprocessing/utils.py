@@ -14,7 +14,7 @@ class PreProcessingPipeline(Config):
     def __init__(self):
 
         self.files_at_once = Config.FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE
-        self.raw_json_file_crawler_name = Config.RAW_JSON_FILE_FROM_CRAWLER
+        self.raw_json_file_crawler_name = Config.RAW_JSON_FILE_CRAWLER
         self.raw_json_file_crawler = Config.RAW_JSON_PATH_CRAWLER / self.raw_json_file_crawler_name
 
         self.cleaner = CleanTextPipeline()
@@ -33,24 +33,15 @@ class PreProcessingPipeline(Config):
         """
         logger.info("Starting pre-processing raw data")
 
-        #TODO: JSON needs to be in correct format. this should be removed here
-        # it's just a quick fix. this code should be used instead:
-        # with self.raw_json_file_crawler.open("r", encoding="utf-8") as f:
-        #     filings = json.load(f)
-        # --> edit 27.11.25: these will be parquet files in the future, no more json
+        # TODO: --> edit 27.11.25: these will be parquet files in the future, no more json
         # (so raw parquet files will be loaded here)
+        filings = []
         with self.raw_json_file_crawler.open("r", encoding="utf-8") as f:
-            raw = f.read()
-        if raw.endswith("]"):
-            before, _, closing = raw.rpartition("]")
-            before = before.rstrip()
-            if before.endswith(","):
-                before = before[:-1] 
-            raw = before + "]"
-        filings = json.loads(raw)
-
-
-
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                filings.append(json.loads(line))
 
         total = len(filings)
         logger.info(f"Processing {total} filings in batch size of: {self.files_at_once}")
@@ -71,5 +62,4 @@ class PreProcessingPipeline(Config):
         logger.info(f"Finished pre-processing data")
 
         return None
-
     

@@ -4,9 +4,9 @@ class Config:
 
     """ PATHS """
     ROOT_DIR = Path.cwd()
-    DATA_PATH = ROOT_DIR / "Data"
+    DATA_PATH = ROOT_DIR / "data"
 
-    RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
+    RAW_JSON_PATH_CRAWLER = DATA_PATH / "jsonl_raw"
     NPS_CONTEXT_PARQUET_PATH = DATA_PATH / "nps_context_dataset"
 
     DATA_PATH.mkdir(parents=True, exist_ok=True)
@@ -14,7 +14,7 @@ class Config:
     NPS_CONTEXT_PARQUET_PATH.mkdir(parents=True, exist_ok=True)
 
     """ FILES """
-    RAW_JSON_FILE_FROM_CRAWLER = "nps_filings.json"
+    RAW_JSON_FILE_CRAWLER = "nps_filings.jsonl"
 
     """ PRE PROCESSING CONFIG """
     # define the batch size of how many filing should run through data processing pipeline at once
