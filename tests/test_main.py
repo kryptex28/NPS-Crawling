@@ -1,7 +1,5 @@
 """Tests for the nps_crawling main module."""
 
-import logging
-import os
 import sys
 from runpy import run_module
 
@@ -34,7 +32,7 @@ def test_main_prints_version(capsys):
     assert capsys.readouterr().out == f"{__version__}\n"
 
 
-#def test_main_verbose(caplog):
+# def test_main_verbose(caplog):
 #    """Test that the main module runs with increased verbosity."""
 #    from nps_crawling.__main__ import main
 #
