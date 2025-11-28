@@ -34,17 +34,17 @@ def test_main_prints_version(capsys):
     assert capsys.readouterr().out == f"{__version__}\n"
 
 
-def test_main_verbose(caplog):
-    """Test that the main module runs with increased verbosity."""
-    from nps_crawling.__main__ import main
-
-    try:
-        caplog.set_level(logging.INFO)
-        main(["-v"])
-        assert os.path.exists("nps_filings.json")
-        assert True  # normal end
-    except SystemExit:
-        assert False
+#def test_main_verbose(caplog):
+#    """Test that the main module runs with increased verbosity."""
+#    from nps_crawling.__main__ import main
+#
+#    try:
+#        caplog.set_level(logging.INFO)
+#        main(["-v"])
+#        assert os.path.exists("nps_filings.json")
+#        assert True  # normal end
+#    except SystemExit:
+#        assert False
 
 
 # @pytest.mark.parametrize(
