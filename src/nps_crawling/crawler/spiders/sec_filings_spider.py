@@ -244,7 +244,10 @@ class SECNpsSpider(scrapy.Spider):
 
             self.nps_found_count += 1
             if self.nps_found_count == self.max_nps_found_count:
-                self.crawler.engine.close_spider(self, 'max_nps_findings_reached')
+                if self.crawler.engine:
+                    self.crawler.engine.close_spider(self, 'max_nps_findings_reached')
+                else:
+                    self.logger.error("Crawler engine not available to close spider.")
 
             yield FilingItem(
                 company=response.meta.get('company_name', 'Unknown'),

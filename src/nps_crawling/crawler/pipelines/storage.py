@@ -6,6 +6,11 @@ from nps_crawling.preprocessing.json_to_parquet import json_input_to_parquet
 
 
 class SaveToJSONPipeline:
+
+    def __init__(self):
+        self.json_path = ''
+        self.parquet_path = ''
+
     """Pipeline to save items to a JSON file and convert to Parquet."""
     def open_spider(self, spider):
         """Initialize file handles and paths."""
