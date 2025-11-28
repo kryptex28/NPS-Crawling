@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 from scrapy import Request
 
-from crawler.items import FilingItem
+from ..items import FilingItem
 
 class SECNpsSpider(scrapy.Spider):
     name = "sec_nps"

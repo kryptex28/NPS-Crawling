@@ -1,0 +1,14 @@
+BOT_NAME = "crawler"
+SPIDER_MODULES = ["src.crawler.spiders"]
+NEWSPIDER_MODULE = "src.crawler.spiders"
+
+USER_AGENT = "DataResearchBot (contact: your.email@example.com)" # TODO
+ROBOTSTXT_OBEY = True
+
+ITEM_PIPELINES = {
+    'src.crawler.pipelines.cleaning.CleanTextPipeline': 300,
+    'src.crawler.pipelines.filtering.NpsMentionFilterPipeline': 400,
+    'src.crawler.pipelines.storage.SaveToJSONPipeline': 500,
+}
+
+DOWNLOAD_DELAY = 1.0  # Limit so SEC doesn't explode and API bans
