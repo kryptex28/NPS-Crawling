@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 
-from . import __version__
+from . import __version__, nps_main
 
 log = logging.getLogger(__package__)
 
@@ -27,6 +27,7 @@ def main(argv=None):
 
     try:
         log.info("Hello!")
+        nps_main.run()
 
     except Exception as error:
         if verbosity < default_log_level or default_log_level <= logging.DEBUG:
