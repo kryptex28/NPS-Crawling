@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from nps_crawling.preprocessing.json_to_parquet import json_input_to_parquet
+from nps_crawling.preprocessing_ellena.json_to_parquet import json_input_to_parquet
 
 
 def main() -> None:
