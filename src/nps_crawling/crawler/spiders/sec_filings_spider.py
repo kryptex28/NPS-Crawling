@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 import scrapy
 from scrapy import Request
 
-from ...crawler.items import FilingItem
+from nps_crawling.crawler.items import FilingItem
 
 
 class SECNpsSpider(scrapy.Spider):

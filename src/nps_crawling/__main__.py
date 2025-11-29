@@ -4,14 +4,20 @@ import argparse
 import logging
 import sys
 
-from . import __version__, nps_main
+from nps_crawling.classification import ClassificationPipeline
+from nps_crawling.crawler import CrawlerPipeline
+from nps_crawling.preprocessing import PreProcessingPipeline
+from nps_crawling.results import ResultsPipeline
+
+from . import __version__
 
 log = logging.getLogger(__package__)
 
 
 def main(argv=None):
     """Parse arguments and execute commands."""
-    args = create_parser().parse_args(argv)
+    parser = create_parser()
+    args = parser.parse_args(argv)
 
     # Setup logger
     logging.basicConfig(
@@ -26,8 +32,18 @@ def main(argv=None):
     log.setLevel(log_level)
 
     try:
-        log.info("Hello!")
-        nps_main.run()
+        if args.command == "crawl":
+            crawler = CrawlerPipeline()
+            crawler.crawler_workflow()
+        elif args.command == "process":
+            pre_processing = PreProcessingPipeline()
+            pre_processing.pre_processing_workflow()
+        elif args.command == "classify":
+            classification = ClassificationPipeline()
+            classification.classification_workflow()
+        elif args.command == "display":
+            results = ResultsPipeline()
+            results.results_workflow()
 
     except Exception as error:
         if verbosity < default_log_level or default_log_level <= logging.DEBUG:
@@ -51,7 +67,9 @@ def create_parser() -> argparse.ArgumentParser:
         action="version",
         version=__version__,
     )
-    parser.add_argument(
+    # Common arguments
+    parent = argparse.ArgumentParser(add_help=False)
+    parent.add_argument(
         "-v",
         "--verbose",
         dest="verbose",
@@ -59,7 +77,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="count",
         default=0,
     )
-    parser.add_argument(
+    parent.add_argument(
         "-q",
         "--quiet",
         dest="quiet",
@@ -67,6 +85,32 @@ def create_parser() -> argparse.ArgumentParser:
         action="count",
         default=0,
     )
+
+    subparsers = parser.add_subparsers(
+        dest="command",
+    )
+
+    subparsers.add_parser(
+        "crawl",
+        parents=[parent],
+        description="Run crawler.",
+    )
+    subparsers.add_parser(
+        "process",
+        parents=[parent],
+        description="Process data.",
+    )
+    subparsers.add_parser(
+        "classify",
+        parents=[parent],
+        description="Classification of data.",
+    )
+    subparsers.add_parser(
+        "display",
+        parents=[parent],
+        description="Displaying of Results.",
+    )
+
     return parser
 
 

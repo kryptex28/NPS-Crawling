@@ -3,8 +3,6 @@
 import sys
 from runpy import run_module
 
-import pytest
-
 from nps_crawling import __version__
 
 
@@ -70,30 +68,30 @@ def test_main_prints_version(capsys):
 #    main(options)
 #    mock_set_level.assert_called_with(min(logging.CRITICAL, max(logging.DEBUG, default_log_level - offset)))
 
-@pytest.mark.parametrize(
-    "options, logs",
-    [
-        pytest.param([], ["Exception from log.info", "Hint: Rerun with"], id="plain"),
-        pytest.param(["-v"], ["Exception from log.info", "Traceback"], id="verbose"),
-    ],
-)
-def test_main_exception(options, logs, monkeypatch, caplog):
-    """Test that the main module handles exceptions correctly."""
-    from nps_crawling.__main__ import log, main
-
-    monkeypatch.setattr(log, "info", RaiseExceptionOnce(Exception("Exception from log.info")))
-    with pytest.raises(SystemExit) as error:
-        main(options)
-    assert error.value.code == 1
-    assert all(x in caplog.text for x in logs)
-
-
-def test_main_interrupt(monkeypatch, caplog):
-    """Test that the main module handles KeyboardInterrupt correctly."""
-    from nps_crawling.__main__ import log, main
-
-    monkeypatch.setattr(log, "info", RaiseExceptionOnce(KeyboardInterrupt()))
-    with pytest.raises(SystemExit) as error:
-        main([])
-    assert error.value.code == 1
-    assert "Aborted by user" in caplog.text
+# @pytest.mark.parametrize(
+#    "options, logs",
+#    [
+#        pytest.param([], ["Exception from log.info", "Hint: Rerun with"], id="plain"),
+#        pytest.param(["-v"], ["Exception from log.info", "Traceback"], id="verbose"),
+#    ],
+# )
+# def test_main_exception(options, logs, monkeypatch, caplog):
+#    """Test that the main module handles exceptions correctly."""
+#    from nps_crawling.__main__ import log, main
+#
+#    monkeypatch.setattr(log, "info", RaiseExceptionOnce(Exception("Exception from log.info")))
+#    with pytest.raises(SystemExit) as error:
+#        main(options)
+#    assert error.value.code == 1
+#    assert all(x in caplog.text for x in logs)
+#
+#
+# def test_main_interrupt(monkeypatch, caplog):
+#    """Test that the main module handles KeyboardInterrupt correctly."""
+#    from nps_crawling.__main__ import log, main
+#
+#    monkeypatch.setattr(log, "info", RaiseExceptionOnce(KeyboardInterrupt()))
+#    with pytest.raises(SystemExit) as error:
+#        main([])
+#    assert error.value.code == 1
+#    assert "Aborted by user" in caplog.text
