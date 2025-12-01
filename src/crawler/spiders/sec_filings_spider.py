@@ -1,6 +1,9 @@
+import os.path
+import pickle
 from os import mkdir
 from typing import Any, Generator
 
+from datetime import datetime
 import scrapy
 import json
 import re
@@ -51,15 +54,65 @@ class SECNpsSpider(scrapy.Spider):
         from pathlib import Path
         Path(self.output_path).mkdir(parents=True, exist_ok=True)
 
+        self.state_file = None
+
+        self.state_record = {
+            'companies_processed': [],
+            'current_company_cik': None,
+            'current_company_ticker': None,
+
+            'total_filings': 0,
+            'total_errors': 0,
+
+            'urls_processed': [],
+
+            'crawl_start': datetime.now().isoformat(),
+            'last_save': None,
+            'resume_count': 0
+        }
+
     def closed(self, reason):
+        self.save_state()
+
         stats = self.crawler.stats.get_stats()
         self.logger.info(f"Crawler stats: {stats}")
+
+    def load_state(self):
+        if self.state_file and os.path.exists(self.state_file):
+            try:
+                with open(self.state_file, 'rb') as f:
+                    loaded = pickle.load(f)
+                    self.state_record.update(loaded)
+                    self.state_record['resume_count'] += 1
+                self.logger.warning(f"State loaded: {self.state_record['resume_count']}")
+                self.logger.warning(f"Previously processed: {len(self.state_record['companies_processed'])} companies")
+            except FileNotFoundError:
+                self.logger.error(f"State file not found: {self.state_file}")
+
+    def save_state(self):
+        """Save state to pickle file"""
+        if self.state_file:
+            try:
+                from pathlib import Path
+                # Create the PARENT directory, not the file itself as a directory
+                Path(self.state_file).parent.mkdir(parents=True, exist_ok=True)
+
+                self.state_record['last_save'] = datetime.now().isoformat()
+                with open(self.state_file, 'wb') as f:
+                    pickle.dump(self.state_record, f)
+            except Exception as e:
+                self.logger.error(f"Failed to save state: {e}")
 
     def start_requests(self):
         """
         Generate start requests based on configuration
         """
         headers = {"User-Agent": "YourCompany your.email@example.com"} #TODO: Idk what to put here lol (will be replaced in future if noone complaints)
+
+        jobdir = self.settings.get('JOBDIR')
+        if jobdir:
+            self.state_file = os.path.join(jobdir, self.crawler_name, 'state_record.pkl')
+            self.load_state()
 
         # Crawl every possible company (Very long runtime)
         if self.use_all_companies:
@@ -161,10 +214,19 @@ class SECNpsSpider(scrapy.Spider):
         company_name = data.get('name', 'Unknown')
         ticker = response.meta.get('ticker', 'N/A')
 
+        self.state_record['current_company_cik'] = cik
+        self.state_record['current_company_ticker'] = ticker
+
+        if cik in self.state_record['companies_processed']:
+            self.logger.info(f"Company {cik} already processed")
+            return
+
         self.logger.info(f"Processing {company_name} ({ticker})")
 
         for i, form_type in enumerate(filings.get("form", [])):
             if form_type in self.form_types:
+                self.state_record['total_filings'] += 1
+
                 accession = filings["accessionNumber"][i].replace("-", "")
                 filing_url = urljoin(self.base_url, f"edgar/data/{cik}/{accession}/index.json")
 
@@ -180,6 +242,11 @@ class SECNpsSpider(scrapy.Spider):
                         'ticker': ticker
                     }
                 )
+        self.state_record['companies_processed'].append(cik)
+
+        if len(self.state_record['companies_processed']) % 10 == 0:
+            self.save_state()
+            self.logger.info(f"Checkpoint")
 
     def parse_filing_index(self, response):
         """
@@ -212,6 +279,9 @@ class SECNpsSpider(scrapy.Spider):
                 )
 
     def parse_filing_doc(self, response):
+
+        self.state_record['urls_processed'].append(response.url)
+
         text = response.text
         text_lower = text.lower()
 

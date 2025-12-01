@@ -19,3 +19,5 @@ LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
 LOG_ENABLED = True
 
 STATS_DUMP = True
+
+JOBDIR = 'crawls/sec_filings_spider'
