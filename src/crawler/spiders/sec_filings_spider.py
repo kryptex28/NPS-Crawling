@@ -51,6 +51,10 @@ class SECNpsSpider(scrapy.Spider):
         from pathlib import Path
         Path(self.output_path).mkdir(parents=True, exist_ok=True)
 
+    def closed(self, reason):
+        stats = self.crawler.stats.get_stats()
+        self.logger.info(f"Crawler stats: {stats}")
+
     def start_requests(self):
         """
         Generate start requests based on configuration
