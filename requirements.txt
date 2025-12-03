@@ -1,3 +1,4 @@
+ollama
 Scrapy~=2.13.3
 beautifulsoup4~=4.14.2
 click
