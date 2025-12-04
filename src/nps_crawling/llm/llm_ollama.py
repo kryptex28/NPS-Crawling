@@ -1,7 +1,8 @@
-from ollama import ChatResponse
-from ollama import Client
+"""Ollama LLM class."""
+from ollama import ChatResponse, Client
 
 from src.nps_crawling.llm.llm_base import LLMBase
+
 
 class LLMOllama(LLMBase):
     """Ollama LLM class."""
@@ -16,8 +17,9 @@ class LLMOllama(LLMBase):
                  model='mistral',
                  host='localhost',
                  port=14000,
-                 **kwargs
+                 **kwargs,
                  ):
+        """Initialize Ollama LLM class."""
         super().__init__(persona=persona,
                          temperature=temperature,
                          top_k=top_k,

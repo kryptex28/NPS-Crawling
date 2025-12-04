@@ -4,7 +4,6 @@ import json
 import os.path
 import pickle
 from datetime import datetime
-
 from typing import Any, Generator
 from urllib.parse import urljoin
 
@@ -70,16 +69,18 @@ class SECNpsSpider(scrapy.Spider):
 
             'crawl_start': datetime.now().isoformat(),
             'last_save': None,
-            'resume_count': 0
+            'resume_count': 0,
         }
 
     def closed(self, reason):
+        """Saves state and prints statistics of crawler on Close."""
         self.save_state()
 
         stats = self.crawler.stats.get_stats()
         self.logger.info(f"Crawler stats: {stats}")
 
     def load_state(self):
+        """Loads crawler state from pickle file."""
         if self.state_file and os.path.exists(self.state_file):
             try:
                 with open(self.state_file, 'rb') as f:
@@ -92,7 +93,7 @@ class SECNpsSpider(scrapy.Spider):
                 self.logger.error(f"State file not found: {self.state_file}")
 
     def save_state(self):
-        """Save state to pickle file"""
+        """Save state to pickle file."""
         if self.state_file:
             try:
                 from pathlib import Path
@@ -104,7 +105,6 @@ class SECNpsSpider(scrapy.Spider):
                     pickle.dump(self.state_record, f)
             except Exception as e:
                 self.logger.error(f"Failed to save state: {e}")
-
 
     def start_requests(self):
         """Generate start requests based on configuration."""
@@ -247,7 +247,7 @@ class SECNpsSpider(scrapy.Spider):
 
         if len(self.state_record['companies_processed']) % 10 == 0:
             self.save_state()
-            self.logger.info(f"Checkpoint")
+            self.logger.info("Checkpoint")
 
     def parse_filing_index(self, response):
         """Parse filing.

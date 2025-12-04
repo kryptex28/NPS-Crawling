@@ -1,4 +1,6 @@
+"""LLMBase abstract class."""
 from abc import ABC, abstractmethod
+
 
 class LLMBase(ABC):
     """LLM Base abstract class."""
@@ -12,6 +14,7 @@ class LLMBase(ABC):
                  seed=42,
                  repeat_penalty=1.0,
                  **kwargs):
+        """Abstract init function."""
         self.persona = persona
         self.options = {
             'temperature': temperature,
@@ -25,4 +28,5 @@ class LLMBase(ABC):
 
     @abstractmethod
     def classify(self, text):
+        """Base abstract classify function."""
         pass
