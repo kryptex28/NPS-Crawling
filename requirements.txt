@@ -2,3 +2,4 @@ Scrapy~=2.13.3
 beautifulsoup4~=4.14.2
 pyarrow~=22.0.0
 pandas~=2.3.3
+bs4~=0.0.2
