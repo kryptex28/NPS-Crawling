@@ -112,7 +112,7 @@ class SECNpsSpider(scrapy.Spider):
         headers = {"User-Agent": "YourCompany your.email@example.com"}
         # TODO: Idk what to put here lol (will be replaced in future if noone complaints)
 
-        jobdir = self.settings.get('JOBDIR')
+        jobdir = self.settings.get('JOB_DIR')
         if jobdir:
             self.state_file = os.path.join(jobdir, self.crawler_name, 'state_record.pkl')
             self.load_state()

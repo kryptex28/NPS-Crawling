@@ -21,4 +21,4 @@ DOWNLOAD_DELAY = 1.0  # Limit so SEC doesn't explode and API bans
 # LOG_ENABLED = True
 
 STATS_DUMP = True
-JOBDIR = 'crawls/sec_filings_spider'
+JOB_DIR = 'crawls/sec_filings_spider'
