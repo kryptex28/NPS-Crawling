@@ -58,7 +58,7 @@ class SECNpsSpider(scrapy.Spider):
 
         self.state_file = None
 
-        self.state_record : dict = {
+        self.state_record: dict = {
             'companies_processed': [],
             'current_company_cik': None,
             'current_company_ticker': None,
