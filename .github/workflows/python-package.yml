@@ -25,18 +25,9 @@ jobs:
         python -m pip install pip --upgrade 
         python -m pip install uv --upgrade
         uv pip install --system tox
-    - name: codestyle
+    - name: lint
       run: |
-        tox -e codestyle-ci
-    - name: docstyle
-      run: |
-        tox -e docstyle-ci
-    - name: errors
-      run: |
-        tox -e errors-ci
-    - name: typecheck
-      run: |
-        tox -e types-ci
+        tox -e lint
 
   test:
     strategy:

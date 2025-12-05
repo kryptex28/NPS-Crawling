@@ -24,6 +24,8 @@ class CrawlerPipeline(Config):
 
         settings = get_project_settings()
 
+        settings.update({'LOG_LEVEL': logger.getEffectiveLevel()})
+
         print("=== Active Scrapy Settings ===")
         for name, value in settings.items():
             print(f"{name}: {value}")

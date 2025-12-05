@@ -4,11 +4,6 @@ import argparse
 import logging
 import sys
 
-from nps_crawling.classification import ClassificationPipeline
-from nps_crawling.crawler import CrawlerPipeline
-from nps_crawling.preprocessing import PreProcessingPipeline
-from nps_crawling.results import ResultsPipeline
-
 from . import __version__
 
 log = logging.getLogger(__package__)
@@ -19,17 +14,15 @@ def main(argv=None):
     parser = create_parser()
     args = parser.parse_args(argv)
 
-    # Setup logger
-    logging.basicConfig(
-        format="{asctime} [{levelname:^8}] ({filename}:{lineno}) {message}",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        style="{",
-    )
-
     default_log_level = logging.WARNING
     verbosity = default_log_level - ((args.verbose - args.quiet) * 10)
     log_level = min(logging.CRITICAL, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
+
+    from nps_crawling.classification import ClassificationPipeline
+    from nps_crawling.crawler import CrawlerPipeline
+    from nps_crawling.preprocessing import PreProcessingPipeline
+    from nps_crawling.results import ResultsPipeline
 
     try:
         if args.command == "crawl":
