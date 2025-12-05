@@ -1,7 +1,7 @@
 """Ollama LLM class."""
 from ollama import ChatResponse, Client
 
-from src.nps_crawling.llm.llm_base import LLMBase
+from nps_crawling.llm.llm_base import LLMBase
 
 
 class LLMOllama(LLMBase):

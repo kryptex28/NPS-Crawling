@@ -58,7 +58,7 @@ class SECNpsSpider(scrapy.Spider):
 
         self.state_file = None
 
-        self.state_record = {
+        self.state_record : dict = {
             'companies_processed': [],
             'current_company_cik': None,
             'current_company_ticker': None,
@@ -76,8 +76,9 @@ class SECNpsSpider(scrapy.Spider):
         """Saves state and prints statistics of crawler on Close."""
         self.save_state()
 
-        stats = self.crawler.stats.get_stats()
-        self.logger.info(f"Crawler stats: {stats}")
+        if self.crawler.stats:
+            stats = self.crawler.stats.get_stats()
+            self.logger.info(f"Crawler stats: {stats}")
 
     def load_state(self):
         """Loads crawler state from pickle file."""
