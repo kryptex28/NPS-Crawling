@@ -1,16 +1,25 @@
-"""Scrapy settings for crawler project."""
+"""Scrapy settings for crawler project.
+
+This module contains Scrapy configuration used by the crawler spider in the
+NPS-Crawling project.
+"""
+
+import os
 
 BOT_NAME = "crawler"
 SPIDER_MODULES = ["nps_crawling.crawler.spiders"]
 NEWSPIDER_MODULE = "nps_crawling.crawler.spiders"
 
-USER_AGENT = "DataResearchBot (contact: your.email@example.com)"  # TODO
-ROBOTSTXT_OBEY = True
+USER_AGENT = os.getenv("NPS_CRAWLER_USER_AGENT", "NPSCrawler/1.0 (contact: please-set-contact@example.com)")
+DEFAULT_REQUEST_HEADERS = {
+    "User-Agent": USER_AGENT,
+}
+ROBOTSTXT_OBEY = False
 
 ITEM_PIPELINES = {
     'nps_crawling.crawler.pipelines.cleaning.CleanTextPipeline': 300,
     'nps_crawling.crawler.pipelines.filtering.NpsMentionFilterPipeline': 400,
-    'nps_crawling.crawler.pipelines.storage.SaveToJSONPipeline': 500,
+    'nps_crawling.crawler.pipelines.storage.SaveToParquetPipeline': 500,
 }
 
 DOWNLOAD_DELAY = 1.0  # Limit so SEC doesn't explode and API bans

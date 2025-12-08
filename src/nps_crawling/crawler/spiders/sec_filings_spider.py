@@ -109,8 +109,8 @@ class SECNpsSpider(scrapy.Spider):
 
     def start_requests(self):
         """Generate start requests based on configuration."""
-        headers = {"User-Agent": "YourCompany your.email@example.com"}
-        # TODO: Idk what to put here lol (will be replaced in future if noone complaints)
+        # use configured default headers (include User-Agent with contact email)
+        headers = self.settings.get('DEFAULT_REQUEST_HEADERS', {})
 
         jobdir = self.settings.get('JOB_DIR')
         if jobdir:
@@ -152,7 +152,7 @@ class SECNpsSpider(scrapy.Spider):
         :param response: ticker.txt
         :return:
         """
-        headers = {"User-Agent": "YourCompany your.email@example.com"}
+        headers = self.settings.get('DEFAULT_REQUEST_HEADERS', {})
         lines = response.text.strip().split('\n')
 
         for line in lines:
@@ -176,7 +176,7 @@ class SECNpsSpider(scrapy.Spider):
         :param response: ticker.txt
         :return:
         """
-        headers = {"User-Agent": "YourCompany your.email@example.com"}
+        headers = self.settings.get('DEFAULT_REQUEST_HEADERS', {})
         lines = response.text.strip().split('\n')
         ticker_list = [t.lower() for t in response.meta['ticker_list']]
 
@@ -306,16 +306,14 @@ class SECNpsSpider(scrapy.Spider):
 
         if has_keyword:
 
-            from pathlib import Path
-
-            cik = response.meta.get('cik', 'unknown')
-            accession = response.url.split('/')[-2]
-            filename = f"{cik}_{accession}_{response.url.split('/')[-1]}"
-            filepath = Path(self.output_path) / filename
-
-            # Save the file
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(response.text)
+            # If you need raw HTML for debugging, re-enable the block below.
+            # from pathlib import Path
+            # cik = response.meta.get('cik', 'unknown')
+            # accession = response.url.split('/')[-2]
+            # filename = f"{cik}_{accession}_{response.url.split('/')[-1]}"
+            # filepath = Path(self.output_path) / filename
+            # with open(filepath, 'w', encoding='utf-8') as f:
+            #     f.write(response.text)
 
             self.nps_found_count += 1
             if self.nps_found_count == self.max_nps_found_count:
