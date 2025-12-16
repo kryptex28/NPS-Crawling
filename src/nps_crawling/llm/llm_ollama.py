@@ -27,7 +27,7 @@ class LLMOllama(LLMBase):
                          num_predict=num_predict,
                          seed=seed,
                          repeat_penalty=repeat_penalty,
-                         kwargs=kwargs)
+                         **kwargs)
         self.model = model
         self.host = host
         self.port = port
