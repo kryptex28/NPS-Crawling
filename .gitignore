@@ -220,3 +220,5 @@ _version.py
 
 .DS_Store
 data/
+
+crawls/
