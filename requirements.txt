@@ -4,3 +4,4 @@ pyarrow~=22.0.0
 pandas~=2.3.3
 bs4~=0.0.2
 ollama
+psycopg2

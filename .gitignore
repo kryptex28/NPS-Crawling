@@ -220,3 +220,6 @@ _version.py
 
 .DS_Store
 data/
+
+*.pkl
+crawls/
