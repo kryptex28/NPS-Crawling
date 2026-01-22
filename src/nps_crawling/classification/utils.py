@@ -20,7 +20,8 @@ class ClassificationPipeline(Config):
         """Classification workflow method.
 
         Get all company names --> loop through all companies 1 by 1 --> create dataframe with all
-        context windows for 1 company --> ...
+        context windows for 1 company --> save in data/nps_classified_xlsx as excel file
+        (1 for each company)
         """
         logger.info("Starting classification")
 
