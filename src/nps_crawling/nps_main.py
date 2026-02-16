@@ -4,6 +4,7 @@ import os
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
+from nps_crawling.crawler.spiders.better_spider import BetterSpider
 from nps_crawling.crawler.spiders.sec_filings_spider import SECNpsSpider
 
 os.environ['SCRAPY_SETTINGS_MODULE'] = 'nps_crawling.crawler.settings'
@@ -50,39 +51,43 @@ def run():
     # OPTION 2: Crawl specific tickers
     # ============================================
     # This is more practical - specify companies you're interested in
+    # process.crawl(
+    #     SECNpsSpider,
+    #     crawler_name='sec_nps_specific',
+    #     form_types=["S-1", "S-1/A", "DEF 14A", "424B4", "10-K"],
+    #     keywords=[
+    #         "net promoter score",
+    #         "nps score",
+    #         "nps of",
+    #         "customer satisfaction score",
+    #         "customer loyalty metric",
+    #         "likelihood to recommend",
+    #     ],
+    #     context_window=500,
+    #     ticker_list=[
+    #         "crm",      # Salesforce
+    #         "snow",     # Snowflake
+    #         "hubs",     # HubSpot
+    #         "zm",       # Zoom
+    #         "now",      # ServiceNow
+    #         "team",     # Atlassian
+    #         "twlo",     # Twilio
+    #         "ddog",     # Datadog
+    #         "okta",     # Okta
+    #         "zs",       # Zscaler
+    #         "docu",     # DocuSign
+    #         "wday",     # Workday
+    #         "crwd",     # CrowdStrike
+    #         "net",      # Cloudflare
+    #         "s",        # SentinelOne
+    #     ],
+    #     allowed_domains=["sec.gov"],
+    #     output_format='json',
+    #     output_path='./data',
+    # )
+
     process.crawl(
-        SECNpsSpider,
-        crawler_name='sec_nps_specific',
-        form_types=["S-1", "S-1/A", "DEF 14A", "424B4", "10-K"],
-        keywords=[
-            "net promoter score",
-            "nps score",
-            "nps of",
-            "customer satisfaction score",
-            "customer loyalty metric",
-            "likelihood to recommend",
-        ],
-        context_window=500,
-        ticker_list=[
-            "crm",      # Salesforce
-            "snow",     # Snowflake
-            "hubs",     # HubSpot
-            "zm",       # Zoom
-            "now",      # ServiceNow
-            "team",     # Atlassian
-            "twlo",     # Twilio
-            "ddog",     # Datadog
-            "okta",     # Okta
-            "zs",       # Zscaler
-            "docu",     # DocuSign
-            "wday",     # Workday
-            "crwd",     # CrowdStrike
-            "net",      # Cloudflare
-            "s",        # SentinelOne
-        ],
-        allowed_domains=["sec.gov"],
-        output_format='json',
-        output_path='./data',
+        BetterSpider
     )
 
     # ============================================

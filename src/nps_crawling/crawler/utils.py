@@ -7,6 +7,7 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 from nps_crawling.config import Config
+from nps_crawling.crawler.spiders.better_spider import BetterSpider
 from nps_crawling.crawler.spiders.sec_filings_spider import SECNpsSpider
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ class CrawlerPipeline(Config):
         # OPTION 2: Crawl specific tickers
         # ============================================
         # This is more practical - specify companies you're interested in
+        """
         process.crawl(
             SECNpsSpider,
             crawler_name='sec_nps_specific',
@@ -97,7 +99,7 @@ class CrawlerPipeline(Config):
             output_format='json',
             output_path='./data',
         )
-
+        """
         # ============================================
         # OPTION 3: Crawl specific CIKs (if you already know them)
         # ============================================
@@ -119,6 +121,7 @@ class CrawlerPipeline(Config):
         )
         """
 
+        process.crawl(BetterSpider)
         process.start()
 
         return None

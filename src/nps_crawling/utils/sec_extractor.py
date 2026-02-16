@@ -10,7 +10,7 @@ def query_over_keyword(keyword) -> dict:
         'User-Agent': 'YourName your.email@example.com',
     }
 
-    query_url = f'query_base_url{keyword}'
+    query_url = f'{query_base_url}{keyword}'
 
     response = requests.get(query_url, headers=headers)
 
@@ -29,7 +29,7 @@ def create_filing(data: dict) -> Filing:
     _id = data['_id']
     _index = data['_index']
 
-    ciks = _source['cik']
+    ciks = _source['ciks']
     period_ending = _source['period_ending']
     file_num = _source['file_num']
     display_names = _source['display_names']
@@ -41,13 +41,13 @@ def create_filing(data: dict) -> Filing:
     sics = _source['sics']
     form = _source['form']
     adsh = _source['adsh']
-    firm_number = _source['firm_num']
-    biz_location = _source['biz_location']
+    firm_number = _source['film_num']
+    biz_location = _source['biz_locations']
     file_type = _source['file_type']
-    fire_descrption = _source['fire_descrption']
+    fire_descrption = _source['file_description']
     inc_states = _source['inc_states']
 
-    filename = _id.split(':', 1)[0]
+    filename = _id.split(':', 1)[1]
 
     filing = Filing(
         filename,
@@ -76,8 +76,10 @@ def create_filing(data: dict) -> Filing:
 def create_filings(data) -> list[Filing]:
     filings: list[Filing] = []
 
-    for entry in data:
-        filings.append(create_filing(entry))
+    for d in data:
+        for entry in d['hits']['hits']:
+            print(entry['_source'])
+            filings.append(create_filing(entry))
 
     return filings
 
@@ -91,5 +93,8 @@ def get_sec_data(keywords: list[str],
                  location = None,
                  ) -> list[Filing]:
     # TODO: Add enums for closed search + encoding of parameters and keywords
-    return []
+    queries: list[dict] = query_over_keywords(keywords=keywords)
+    filings: list[Filing] = create_filings(queries)
+
+    return filings
 

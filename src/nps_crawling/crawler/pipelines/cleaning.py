@@ -8,13 +8,14 @@ from bs4 import BeautifulSoup
 class CleanTextPipeline:
     """Pipeline to clean HTML text from items."""
 
-    def process_item(self, item: dict, spider) -> dict:
+    def process_item(self, item, spider):
         """Process an item.
 
         Clean the 'html_text' field of an item by removing HTML tags,
         normalizing whitespace, and stripping signature markers.
         """
-        if "html_text" in item and isinstance(item["html_text"], str):
+        #if "html_text" in item and isinstance(item["html_text"], str):
+        if item["html_text"] is not None:
             # Parse HTML content into plain text
             soup = BeautifulSoup(item["html_text"], "html.parser")
 

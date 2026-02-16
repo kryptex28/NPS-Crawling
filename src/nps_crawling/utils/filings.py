@@ -22,7 +22,7 @@ class Filing:
                  inc_states
     ):
         self.filename = filename
-        self.index = index
+        self.id = index
         self.ciks = ciks
         self.period_ending = period_ending
         self.file_num = file_num
@@ -41,5 +41,9 @@ class Filing:
         self.fire_descrption = fire_descrption
         self.inc_state = inc_states
 
-    def get_url(self):
-        return f'https://sec.gov/Archives/edgar/data/{self.ciks}/{self.adsh}/{self.filename}'
+    def get_url(self) -> list():
+        urls = list()
+        for cik in self.ciks:
+            urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace('-', '')}/{self.filename}')
+
+        return urls
