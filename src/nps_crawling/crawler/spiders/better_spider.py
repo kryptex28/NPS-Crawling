@@ -6,6 +6,8 @@ import scrapy
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.utils.sec_extractor import get_sec_data
 from nps_crawling.utils.filings import Filing
+from nps_crawling.utils.filings import FilingsCategoryCollectionCoarse
+from nps_crawling.utils.filings import FilingCategoryCollection
 
 class BetterSpider(scrapy.Spider):
 
@@ -17,7 +19,11 @@ class BetterSpider(scrapy.Spider):
 
     async def start(self) -> AsyncIterator[Any]:
         # Receive list of Filings
-        filings: list[Filing] = get_sec_data(keywords=['NPS'])
+        filings: list[Filing] = get_sec_data(keywords=['NPS'],
+                                             from_date='2026-01-18',
+                                             to_date='2026-02-17',
+                                             filing_category=FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS,
+                                             filing_categories=FilingCategoryCollection.filing_categories[FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS])
 
         for filing in filings:
 
