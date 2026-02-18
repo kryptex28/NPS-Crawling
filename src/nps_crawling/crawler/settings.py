@@ -22,7 +22,7 @@ ITEM_PIPELINES = {
     'nps_crawling.crawler.pipelines.storage.SaveToParquetPipeline': 500,
 }
 
-DOWNLOAD_DELAY = 1.0  # Limit so SEC doesn't explode and API bans
+DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
 
 # LOG_LEVEL = 'INFO'
 # LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
