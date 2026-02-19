@@ -1,13 +1,10 @@
 from typing import Iterable, Any, AsyncIterator
 
-import requests
 import scrapy
 
 from nps_crawling.crawler.items import FilingItem
-from nps_crawling.utils.sec_extractor import SecQuery
-from nps_crawling.utils.filings import Filing, FilingDateRange
-from nps_crawling.utils.filings import FilingsCategoryCollectionCoarse
-from nps_crawling.utils.filings import FilingCategoryCollection
+from nps_crawling.utils.sec_query import SecQuery
+from nps_crawling.utils.filings import Filing, FilingDateRange, CompanyTicker
 from nps_crawling.utils.sec_query import SecParams
 
 
@@ -21,17 +18,22 @@ class BetterSpider(scrapy.Spider):
 
     async def start(self) -> AsyncIterator[Any]:
         # Receive list of Filings
-        sec_params = SecParams(keywords=['NPS'],
-                               from_date='2016-02-18',
-                               to_date='2026-02-18',
-                               date_range=FilingDateRange.LAST_10_YEARS,
-                               filing_category=FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS,
-                               filing_categories=FilingCategoryCollection.filing_categories[FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS])
-        sec_query = SecQuery(sec_params)
+        individual: CompanyTicker = CompanyTicker(ticker=['TAP', 'TAP-A'], cik='0000024545', title='MOLSON COORS BEVERAGE CO')
+        sec_params = SecParams(query_base='https://efts.sec.gov/LATEST/search-index?',
+                               keyword='net promoter score',
+                               from_date='2001-01-01',
+                               to_date='2026-02-19',
+                               individual_search=individual,
+                               date_range=FilingDateRange.ALL,
+                               #filing_category=FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS,
+                               #filing_categories=FilingCategoryCollection.filing_categories[FilingsCategoryCollectionCoarse.]
+                               )
+        sec_query = SecQuery(sec_params=sec_params, limit=500)
         sec_query.fetch_filings()
-        filings = []
-        for filing in filings:
 
+        for filing in sec_query.keyword_filings:
+
+            print(filing.file_data_type)
             yield scrapy.Request(
                 url=filing.get_url()[0],
                 callback=self.parse,
