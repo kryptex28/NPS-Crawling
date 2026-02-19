@@ -21,7 +21,7 @@ class Filing:
                  firm_number,
                  biz_location,
                  file_type,
-                 fire_descrption,
+                 file_description,
                  inc_states
     ):
         self.filename = filename
@@ -41,11 +41,12 @@ class Filing:
         self.firm_number = firm_number
         self.biz_location = biz_location
         self.file_type = file_type
-        self.fire_descrption = fire_descrption
+        self.file_description = file_description
         self.inc_state = inc_states
+        self.file_data_type = self.filename.split('.')[1]
 
-    def get_url(self) -> list():
-        urls = list()
+    def get_url(self) -> []:
+        urls: list = []
         for cik in self.ciks:
             urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace('-', '')}/{self.filename}')
 
@@ -152,3 +153,15 @@ class FilingCategoryCollection:
             '305B2', 'T-3 ',
         ]
     }
+
+class CompanyTicker:
+    def __init__(self,
+                 cik: str,
+                 ticker: list[str],
+                 title: str):
+        self.cik = cik
+        self.ticker = ticker
+        self.title = title
+
+    def create_entity_name(self) -> str:
+        return f'{self.title} ({', '.join(self.ticker)}) (CIK {self.cik})'
