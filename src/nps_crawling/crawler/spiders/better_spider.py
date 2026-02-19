@@ -10,26 +10,6 @@ from nps_crawling.utils.filings import CompanyTicker, Filing, FilingDateRange
 from nps_crawling.utils.sec_query import SecParams, SecQuery
 
 
-def extract_pdf_content(response: scrapy.http.Response) -> str:
-    """Extracts content from PDF file."""
-    pdf_bytes: bytes = response.body
-    reader: pypdf.PdfReader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
-
-    text_parts: list[str] = []
-
-    for page in reader.pages:
-        page_text: str = page.extract_text() or ''
-        text_parts.append(page_text)
-
-    core_text: str = '\n'.join(text_parts)
-    return core_text
-
-
-def extract_xml_content(response: scrapy.http.Response) -> str:
-    """Extracts content from HTML/XML file."""
-    return response.text
-
-
 class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
     name = 'better_spider'
@@ -37,16 +17,19 @@ class BetterSpider(scrapy.Spider):
     def __init__(self):
         """Initializes spider."""
         super(BetterSpider, self).__init__()
+        self.logger.info(f"Initializes spider.")
         # 'Hotkey' map for specific file types
         self.function_map: dict = {
-            'pdf': extract_pdf_content,
-            'xml': extract_xml_content,
-            'html': extract_xml_content,
-            'htm': extract_xml_content,
+            'pdf': self.extract_pdf_content,
+            'xml': self.extract_xml_content,
+            'html': self.extract_xml_content,
+            'htm': self.extract_xml_content,
+            'txt': self.extract_txt_content,
         }
 
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
+        self.logger.info(f"Starting scrapy spider.")
         # Specifies company/ticker
         individual: CompanyTicker = CompanyTicker(ticker=['TAP', 'TAP-A'],
                                                   cik='0000024545',
@@ -56,7 +39,7 @@ class BetterSpider(scrapy.Spider):
                                keyword='net promoter score',
                                from_date='2001-01-01',
                                to_date='2026-02-19',
-                               individual_search=individual,
+                               # individual_search=individual,
                                date_range=FilingDateRange.ALL,
                                )
         # Creates query to fetch all related documents
@@ -65,7 +48,8 @@ class BetterSpider(scrapy.Spider):
         sec_query.fetch_filings()
 
         # Iterate through all filings
-        for filing in sec_query.keyword_filings:
+        for i, filing in enumerate(sec_query.keyword_filings):
+            self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
             url: str = filing.get_url()[0]
             yield scrapy.Request(
                 url=url,
@@ -77,6 +61,7 @@ class BetterSpider(scrapy.Spider):
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""
+        self.logger.info(f"Parsing {response.url}")
         filing: Filing = response.meta['filing']
         keyword: str = response.meta['keyword']
 
@@ -90,3 +75,28 @@ class BetterSpider(scrapy.Spider):
 
         # Dispatch into pipeline
         yield item
+
+    def extract_txt_content(self, response: scrapy.http.Response) -> str:
+        """Extracts content from TXT file."""
+        self.logger.info(f"Extracting content from {response.url} as TXT.")
+        return response.text
+
+    def extract_pdf_content(self, response: scrapy.http.Response) -> str:
+        """Extracts content from PDF file."""
+        self.logger.info(f"Extracting content from {response.url} as PDF.")
+        pdf_bytes: bytes = response.body
+        reader: pypdf.PdfReader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+
+        text_parts: list[str] = []
+
+        for page in reader.pages:
+            page_text: str = page.extract_text() or ''
+            text_parts.append(page_text)
+
+        core_text: str = '\n'.join(text_parts)
+        return core_text
+
+    def extract_xml_content(self, response: scrapy.http.Response) -> str:
+        """Extracts content from HTML/XML file."""
+        self.logger.info(f"Extracting content from {response.url} as XML/HTML.")
+        return response.text

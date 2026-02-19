@@ -16,7 +16,7 @@ def main(argv=None):
 
     default_log_level = logging.WARNING
     verbosity = default_log_level - ((args.verbose - args.quiet) * 10)
-    log_level = min(logging.CRITICAL, max(logging.DEBUG, verbosity))
+    log_level = min(logging.INFO, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
 
     from nps_crawling.classification import ClassificationPipeline
