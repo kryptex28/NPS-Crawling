@@ -33,7 +33,6 @@ class BetterSpider(scrapy.Spider):
 
         for filing in sec_query.keyword_filings:
 
-            print(filing.file_data_type)
             yield scrapy.Request(
                 url=filing.get_url()[0],
                 callback=self.parse,

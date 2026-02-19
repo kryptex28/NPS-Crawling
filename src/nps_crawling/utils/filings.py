@@ -4,46 +4,50 @@ from twisted.words.im.locals import Enum
 class Filing:
 
     def __init__(self,
-                 filename,
-                 index,
-                 ciks,
-                 period_ending,
-                 file_num,
-                 display_names,
-                 xsl,
-                 sequence,
-                 root_forms,
-                 file_date,
-                 biz_states,
-                 sics,
-                 form,
-                 adsh,
-                 firm_number,
-                 biz_location,
-                 file_type,
-                 file_description,
-                 inc_states
+                 _id: str,
+                 _index: str,
+                 ciks: list[str],
+                 period_ending: str,
+                 file_num: list[str],
+                 display_names: list[str],
+                 xsl: str,
+                 sequence: str,
+                 root_forms: list[str],
+                 file_date: str,
+                 biz_states: list[str],
+                 sics: list[str],
+                 form: str,
+                 adsh: str,
+                 film_num: list[str],
+                 biz_locations: list[str],
+                 file_type: str,
+                 file_description: str,
+                 inc_states: list[str],
+                 file_path_name: str,
     ):
-        self.filename = filename
-        self.id = index
-        self.ciks = ciks
-        self.period_ending = period_ending
-        self.file_num = file_num
-        self.display_names = display_names
-        self.xsl = xsl
-        self.sequence = sequence
-        self.root_forms = root_forms
-        self.file_date = file_date
-        self.biz_states = biz_states
-        self.sics = sics
-        self.form = form
-        self.adsh = adsh
-        self.firm_number = firm_number
-        self.biz_location = biz_location
-        self.file_type = file_type
-        self.file_description = file_description
-        self.inc_state = inc_states
-        self.file_data_type = self.filename.split('.')[1]
+        self._id: str = _id
+        self._index: str = _index
+
+        self.ciks: list[str] = ciks
+        self.period_ending: str = period_ending
+        self.file_num: list[str] = file_num
+        self.display_names: list[str] = display_names
+        self.xsl: str = xsl
+        self.sequence: str = sequence
+        self.root_forms: list[str] = root_forms
+        self.file_date: str = file_date
+        self.biz_states: list[str] = biz_states
+        self.sics: list[str] = sics
+        self.form: str = form
+        self.adsh: str = adsh
+        self.film_num: list[str] = film_num
+        self.biz_locations: list[str] = biz_locations
+        self.file_type: str = file_type
+        self.file_description: str = file_description
+        self.inc_states: list[str] = inc_states
+        self.file_path_name: str = file_path_name
+
+        self.file_container_type: str = self.file_path_name.split('.')[1]
 
     def get_url(self) -> []:
         urls: list = []
