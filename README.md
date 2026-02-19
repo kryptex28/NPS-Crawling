@@ -16,3 +16,7 @@ pip install -e .
 ```shell
 tox -e lint
 ```
+and
+```shell
+tox -e lint -- --fix
+```
