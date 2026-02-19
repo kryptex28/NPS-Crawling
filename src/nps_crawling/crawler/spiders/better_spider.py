@@ -1,12 +1,29 @@
+import io
 from typing import Iterable, Any, AsyncIterator
 
 import scrapy
+import pypdf
 
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.utils.sec_query import SecQuery
 from nps_crawling.utils.filings import Filing, FilingDateRange, CompanyTicker
 from nps_crawling.utils.sec_query import SecParams
 
+def extract_pdf_content(response: scrapy.http.Response) -> str:
+    pdf_bytes: bytes = response.body
+    reader: pypdf.PdfReader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+
+    text_parts: list[str] = []
+
+    for page in reader.pages:
+        page_text: str = page.extract_text() or ''
+        text_parts.append(page_text)
+
+    core_text: str = '\n'.join(text_parts)
+    return core_text
+
+def extract_xml_content(response: scrapy.http.Response) -> str:
+    return response.text
 
 class BetterSpider(scrapy.Spider):
 
@@ -15,6 +32,12 @@ class BetterSpider(scrapy.Spider):
     def __init__(self):
 
         super(BetterSpider, self).__init__()
+        self.function_map: dict = {
+            'pdf': extract_pdf_content,
+            'xml': extract_xml_content,
+            'html': extract_xml_content,
+            'htm': extract_xml_content,
+        }
 
     async def start(self) -> AsyncIterator[Any]:
         # Receive list of Filings
@@ -40,11 +63,12 @@ class BetterSpider(scrapy.Spider):
             )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
-        print("Test")
         filing: Filing = response.meta['filing']
+
+        text: str = self.function_map[filing.file_container_type](response)
 
         item: FilingItem = FilingItem()
         item['filing'] = filing
-        item['core_text'] = response.body
+        item['core_text'] = text
 
         yield item

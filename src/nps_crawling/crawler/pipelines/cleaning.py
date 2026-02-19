@@ -15,7 +15,7 @@ class CleanTextPipeline:
         normalizing whitespace, and stripping signature markers.
         """
         #if "html_text" in item and isinstance(item["html_text"], str):
-        if item["core_text"] is not None:
+        if item["core_text"] is not None and item['filing'].file_container_type in ['html', 'xml', 'htm']:
             # Parse HTML content into plain text
             soup = BeautifulSoup(item["core_text"], "html.parser")
 
