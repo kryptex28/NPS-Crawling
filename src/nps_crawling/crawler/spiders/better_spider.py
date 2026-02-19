@@ -32,23 +32,19 @@ class BetterSpider(scrapy.Spider):
         sec_query.fetch_filings()
 
         for filing in sec_query.keyword_filings:
-
+            url: str = filing.get_url()[0]
             yield scrapy.Request(
-                url=filing.get_url()[0],
+                url=url,
                 callback=self.parse,
                 meta={'filing': filing}
             )
 
-    def parse(self, response):
-        filing = response.meta['filing']
-    
-        item = FilingItem()
-        item['company'] = filing.adsh
-        item['ticker'] = filing.id
-        item['cik'] = filing.ciks[0]
-        item['keywords_found'] = []
-        item['html_text'] = response.body
+    def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
+        print("Test")
+        filing: Filing = response.meta['filing']
 
-        print(type(item))
+        item: FilingItem = FilingItem()
+        item['filing'] = filing
+        item['core_text'] = response.body
 
         yield item

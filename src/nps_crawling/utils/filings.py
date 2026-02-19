@@ -49,10 +49,10 @@ class Filing:
 
         self.file_container_type: str = self.file_path_name.split('.')[1]
 
-    def get_url(self) -> []:
+    def get_url(self) -> list:
         urls: list = []
         for cik in self.ciks:
-            urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace('-', '')}/{self.filename}')
+            urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace('-', '')}/{self.file_path_name}')
 
         return urls
 

@@ -15,9 +15,9 @@ class CleanTextPipeline:
         normalizing whitespace, and stripping signature markers.
         """
         #if "html_text" in item and isinstance(item["html_text"], str):
-        if item["html_text"] is not None:
+        if item["core_text"] is not None:
             # Parse HTML content into plain text
-            soup = BeautifulSoup(item["html_text"], "html.parser")
+            soup = BeautifulSoup(item["core_text"], "html.parser")
 
             # Extract visible text while keeping spaces between elements
             text = soup.get_text(separator=" ", strip=True)
@@ -30,6 +30,6 @@ class CleanTextPipeline:
             text = re.sub(r'/s/\s*[A-Za-z .-]+', '', text)  # /s/ Name Name2
 
             # Store cleaned text back into the item
-            item["html_text"] = text
+            item["core_text"] = text
 
         return item
