@@ -1,4 +1,6 @@
+"""Filings and type abstraction module with utility functions."""
 from enum import Enum
+
 
 class Filing:
     """Class abstraction for Filing elements."""
@@ -54,9 +56,10 @@ class Filing:
         """Returns a query list of the filing with all CIKS."""
         urls: list = []
         for cik in self.ciks:
-            urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace('-', '')}/{self.file_path_name}')
+            urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace("-", "")}/{self.file_path_name}')
 
         return urls
+
 
 class FilingDateRange(Enum):
     """Enum class to abstract the filing date range."""
@@ -66,6 +69,7 @@ class FilingDateRange(Enum):
     LAST_5_YEARS = '5y'
     LAST_1_YEARS = '1y'
     LAST_30_DAYS = '30d'
+
 
 class FilingsCategoryCollectionCoarse(Enum):
     """Enum class to abstract filing category collection."""
@@ -81,6 +85,7 @@ class FilingsCategoryCollectionCoarse(Enum):
     TENDER_OFFERS_AND_GOING_PRIVATE_TRANSACTIONS = 'form-cat9'
     TRUST_INDENTURE_FILINGS = 'form-cat10'
 
+
 class FilingCategoryCollection:
     """Collection of parameter values for categories."""
     filing_categories: dict = {
@@ -94,23 +99,23 @@ class FilingCategoryCollection:
             'IRANNOTICE', 'N-30B-2', 'N-30D', 'N-CEN', 'N-CSR', 'N-CSRS',
             'N-MFP', 'N-MFP1', 'N-MFP2', 'N-PX', 'N-Q', 'NPORT-EX',
             'NSAR-A', 'NSAR-B', 'NSAR-U', 'NT 10-D', 'NT 10-K', 'NT 10-Q',
-            'NT 11-K', 'NT 20-F', 'QRTLYRPT', 'SD', 'SP 15D2'
+            'NT 11-K', 'NT 20-F', 'QRTLYRPT', 'SD', 'SP 15D2',
         ],
 
         FilingsCategoryCollectionCoarse.INSIDER_EQUITY_AWARDS_TRANSACTIONS_AND_OWNERSHIP:
         [
-            '3', '4', '5'
+            '3', '4', '5',
         ],
 
         FilingsCategoryCollectionCoarse.BENEFICIAL_OWNERSHIP_REPORTS:
         [
-            'SC 13D', 'SC 13G', 'SCHEDULE 13D', 'SCHEDULE 13G'
+            'SC 13D', 'SC 13G', 'SCHEDULE 13D', 'SCHEDULE 13G',
         ],
 
         FilingsCategoryCollectionCoarse.EXEMPT_OFFERINGS:
         [
             '1-A', '1-A POS', '1-A-W', '253G1', '253G2', '253G3',
-            '253G4', 'C', 'D', 'DOS'
+            '253G4', 'C', 'D', 'DOS',
         ],
 
         FilingsCategoryCollectionCoarse.REGISTRATION_STATEMENTS_AND_PROSPECTUSES:
@@ -160,8 +165,9 @@ class FilingCategoryCollection:
         FilingsCategoryCollectionCoarse.TRUST_INDENTURE_FILINGS:
         [
             '305B2', 'T-3 ',
-        ]
+        ],
     }
+
 
 class CompanyTicker:
     """Class abstraction for ticker/cik mapping."""
@@ -169,10 +175,11 @@ class CompanyTicker:
                  cik: str,
                  ticker: list[str],
                  title: str):
+        """Initializes CompanyTicker class."""
         self.cik = cik
         self.ticker = ticker
         self.title = title
 
     def create_entity_name(self) -> str:
         """Creates query string for request."""
-        return f'{self.title} ({', '.join(self.ticker)}) (CIK {self.cik})'
+        return f'{self.title} ({", ".join(self.ticker)}) (CIK {self.cik})'

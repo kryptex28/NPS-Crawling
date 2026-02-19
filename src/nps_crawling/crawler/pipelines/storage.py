@@ -82,7 +82,7 @@ class SaveToParquetPipeline(Config):
         """
         self.parquet_root = Config.RAW_PARQUET_PATH_CRAWLER
         self.records = []
-        self.flush_every = 10
+        self.flush_every = 1
 
     def open_spider(self, spider):
         """Called when the spider is opened.

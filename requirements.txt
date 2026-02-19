@@ -6,3 +6,4 @@ bs4~=0.0.2
 ollama
 psycopg2
 pypdf
+requests

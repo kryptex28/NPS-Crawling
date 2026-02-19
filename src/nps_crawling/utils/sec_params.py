@@ -1,5 +1,6 @@
-from nps_crawling.utils.filings import FilingCategoryCollection
-from nps_crawling.utils.filings import CompanyTicker
+"""SEC Parameter search abstraction module with utility functions."""
+from nps_crawling.utils.filings import CompanyTicker, FilingCategoryCollection
+
 
 class SecParams:
     """Class abstraction of sec.gov parameter based search."""
@@ -49,11 +50,9 @@ class SecParams:
         if self.date_range:
             query_url = f'{query_url}&dateRange={self.date_range}'
 
-        #if self.individual_search:
-
         if self.filing_category and self.filing_categories:
             query_url = f'{query_url}&category={self.filing_category}'
-            query_url = f'{query_url}&forms={','.join(self.filing_categories)}'
+            query_url = f'{query_url}&forms={",".join(self.filing_categories)}'
 
         if self.individual_search:
             query_url = f'{query_url}&entityName={self.individual_search.create_entity_name()}'

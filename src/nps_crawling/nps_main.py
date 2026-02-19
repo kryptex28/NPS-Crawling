@@ -5,7 +5,6 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 from nps_crawling.crawler.spiders.better_spider import BetterSpider
-from nps_crawling.crawler.spiders.sec_filings_spider import SECNpsSpider
 
 os.environ['SCRAPY_SETTINGS_MODULE'] = 'nps_crawling.crawler.settings'
 
@@ -87,7 +86,7 @@ def run():
     # )
 
     process.crawl(
-        BetterSpider
+        BetterSpider,
     )
 
     # ============================================

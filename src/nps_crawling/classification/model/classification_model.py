@@ -13,6 +13,7 @@ class ClassificationModelPipeline(Config):
         host: str = "localhost",
         port: int = 14000,
     ):
+        """Initializes ClassificationModelPipeline."""
         super().__init__()
 
         self.llm = LLMOllama(
@@ -34,7 +35,6 @@ class ClassificationModelPipeline(Config):
         input: dataframe of single company including all context windows (1 per row)
         output: csv with classifications and orignal input data
         """
-
         result_df = single_company_df.copy()
 
         llm_outputs = []
@@ -47,7 +47,7 @@ class ClassificationModelPipeline(Config):
         result_df["nps_classification"] = llm_outputs
 
         ticker = str(result_df["ticker"].iloc[0]).strip().upper()
-        
+
         output_path = self.NPS_CLASSIFIED_CSV / f"{ticker}_nps_classified.csv"
 
         result_df.to_csv(output_path, index=False)

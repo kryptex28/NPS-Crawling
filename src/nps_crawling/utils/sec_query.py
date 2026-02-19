@@ -1,14 +1,18 @@
+"""SEC Query abstraction module with utility functions."""
 import requests
 
-from nps_crawling.utils.sec_params import SecParams
 from nps_crawling.utils.filings import Filing
+from nps_crawling.utils.sec_params import SecParams
 
 
 def create_filing(data: dict) -> Filing:
     """Helper function to create Filing object based on JSON payload."""
-    _source = data['_source'] # Main data payload containing filing details
-    _id = data['_id'] # Unique filing identifier from source
-    _index = data['_index'] # Elasticsearch index name, same for all entries
+    # Main data payload containing filing details
+    _source = data['_source']
+    # Unique filing identifier from source
+    _id = data['_id']
+    # Elasticsearch index name, same for all entries
+    _index = data['_index']
 
     # Unique ID given by website
     _id: str = data['_id']
@@ -71,10 +75,11 @@ def create_filing(data: dict) -> Filing:
                     file_type=file_type,
                     file_description=file_description,
                     inc_states=inc_states,
-                    file_path_name=file_name_path
+                    file_path_name=file_name_path,
     )
 
     return filing
+
 
 def create_filings(data: list) -> list[Filing]:
     """Create list of filings based on JSON payload."""
@@ -86,17 +91,21 @@ def create_filings(data: list) -> list[Filing]:
 
     return filings
 
+
 def get_total_filings_count(data: dict) -> int:
     """Get total number of queried filings."""
     return int(data['hits']['total']['value'])
+
 
 def get_fetched_filings_count(data: dict) -> int:
     """Get total number of queried filings of the requested page."""
     return int(data['query']['size'])
 
+
 class SecQuery:
     """Class to create SecQuery object."""
     def __init__(self, sec_params: SecParams, limit: int = -1):
+        """Initializes SecQuery object."""
         self.sec_params = sec_params
         self.results = -1
         self.keyword_filings = []

@@ -1,13 +1,14 @@
+"""Improved Spider to crawl SEC filings for NPS mentions based on parameters and SEC search function."""
 import io
-from typing import Iterable, Any, AsyncIterator
+from typing import Any, AsyncIterator, Iterable
 
-import scrapy
 import pypdf
+import scrapy
 
 from nps_crawling.crawler.items import FilingItem
-from nps_crawling.utils.sec_query import SecQuery
-from nps_crawling.utils.filings import Filing, FilingDateRange, CompanyTicker
-from nps_crawling.utils.sec_query import SecParams
+from nps_crawling.utils.filings import CompanyTicker, Filing, FilingDateRange
+from nps_crawling.utils.sec_query import SecParams, SecQuery
+
 
 def extract_pdf_content(response: scrapy.http.Response) -> str:
     """Extracts content from PDF file."""
@@ -23,9 +24,11 @@ def extract_pdf_content(response: scrapy.http.Response) -> str:
     core_text: str = '\n'.join(text_parts)
     return core_text
 
+
 def extract_xml_content(response: scrapy.http.Response) -> str:
     """Extracts content from HTML/XML file."""
     return response.text
+
 
 class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
@@ -44,9 +47,10 @@ class BetterSpider(scrapy.Spider):
 
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
-
         # Specifies company/ticker
-        individual: CompanyTicker = CompanyTicker(ticker=['TAP', 'TAP-A'], cik='0000024545', title='MOLSON COORS BEVERAGE CO')
+        individual: CompanyTicker = CompanyTicker(ticker=['TAP', 'TAP-A'],
+                                                  cik='0000024545',
+                                                  title='MOLSON COORS BEVERAGE CO')
         # Creates parameters based on sec.gov search parameters
         sec_params = SecParams(query_base='https://efts.sec.gov/LATEST/search-index?',
                                keyword='net promoter score',
@@ -54,8 +58,6 @@ class BetterSpider(scrapy.Spider):
                                to_date='2026-02-19',
                                individual_search=individual,
                                date_range=FilingDateRange.ALL,
-                               #filing_category=FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS,
-                               #filing_categories=FilingCategoryCollection.filing_categories[FilingsCategoryCollectionCoarse.]
                                )
         # Creates query to fetch all related documents
         sec_query = SecQuery(sec_params=sec_params, limit=500)
@@ -68,7 +70,7 @@ class BetterSpider(scrapy.Spider):
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
-                meta={'filing': filing}
+                meta={'filing': filing},
             )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:

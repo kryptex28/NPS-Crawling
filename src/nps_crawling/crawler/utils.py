@@ -8,7 +8,6 @@ from scrapy.utils.project import get_project_settings
 
 from nps_crawling.config import Config
 from nps_crawling.crawler.spiders.better_spider import BetterSpider
-from nps_crawling.crawler.spiders.sec_filings_spider import SECNpsSpider
 
 logger = logging.getLogger(__name__)
 
