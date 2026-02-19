@@ -1,7 +1,7 @@
-from twisted.words.im.locals import Enum
-
+from enum import Enum
 
 class Filing:
+    """Class abstraction for Filing elements."""
 
     def __init__(self,
                  _id: str,
@@ -23,8 +23,8 @@ class Filing:
                  file_type: str,
                  file_description: str,
                  inc_states: list[str],
-                 file_path_name: str,
-    ):
+                 file_path_name: str):
+        """Initialize the filing."""
         self._id: str = _id
         self._index: str = _index
 
@@ -47,9 +47,11 @@ class Filing:
         self.inc_states: list[str] = inc_states
         self.file_path_name: str = file_path_name
 
+        # Store file type of the document (htm, pdf, ...)
         self.file_container_type: str = self.file_path_name.split('.')[1]
 
     def get_url(self) -> list:
+        """Returns a query list of the filing with all CIKS."""
         urls: list = []
         for cik in self.ciks:
             urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace('-', '')}/{self.file_path_name}')
@@ -57,27 +59,30 @@ class Filing:
         return urls
 
 class FilingDateRange(Enum):
-    CUSTOM: str = 'custom'
-    ALL: str = 'all'
-    LAST_10_YEARS: str = '10y'
-    LAST_5_YEARS: str = '5y'
-    LAST_1_YEARS: str = '1y'
-    LAST_30_DAYS: str = '30d'
+    """Enum class to abstract the filing date range."""
+    CUSTOM = 'custom'
+    ALL = 'all'
+    LAST_10_YEARS = '10y'
+    LAST_5_YEARS = '5y'
+    LAST_1_YEARS = '1y'
+    LAST_30_DAYS = '30d'
 
 class FilingsCategoryCollectionCoarse(Enum):
-    CUSTOM: str = 'custom'
-    ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS: str = 'form-cat1'
-    INSIDER_EQUITY_AWARDS_TRANSACTIONS_AND_OWNERSHIP: str = 'form-cat2'
-    BENEFICIAL_OWNERSHIP_REPORTS: str = 'form-cat3'
-    EXEMPT_OFFERINGS: str = 'form-cat4'
-    REGISTRATION_STATEMENTS_AND_PROSPECTUSES: str = 'form-cat5'
-    FILING_REVIEW_CORRESPONDENCE: str = 'form-cat6'
-    SEC_ORDERS_AND_NOTICES: str = 'form-cat7'
-    PROXY_MATERIALS: str = 'form-cat8'
-    TENDER_OFFERS_AND_GOING_PRIVATE_TRANSACTIONS: str = 'form-cat9'
-    TRUST_INDENTURE_FILINGS: str = 'form-cat10'
+    """Enum class to abstract filing category collection."""
+    CUSTOM = 'custom'
+    ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS = 'form-cat1'
+    INSIDER_EQUITY_AWARDS_TRANSACTIONS_AND_OWNERSHIP = 'form-cat2'
+    BENEFICIAL_OWNERSHIP_REPORTS = 'form-cat3'
+    EXEMPT_OFFERINGS = 'form-cat4'
+    REGISTRATION_STATEMENTS_AND_PROSPECTUSES = 'form-cat5'
+    FILING_REVIEW_CORRESPONDENCE = 'form-cat6'
+    SEC_ORDERS_AND_NOTICES = 'form-cat7'
+    PROXY_MATERIALS = 'form-cat8'
+    TENDER_OFFERS_AND_GOING_PRIVATE_TRANSACTIONS = 'form-cat9'
+    TRUST_INDENTURE_FILINGS = 'form-cat10'
 
 class FilingCategoryCollection:
+    """Collection of parameter values for categories."""
     filing_categories: dict = {
         FilingsCategoryCollectionCoarse.ALL_ANUAL_QUARTERLY_AND_CURRENT_REPORTS:
         [
@@ -159,6 +164,7 @@ class FilingCategoryCollection:
     }
 
 class CompanyTicker:
+    """Class abstraction for ticker/cik mapping."""
     def __init__(self,
                  cik: str,
                  ticker: list[str],
@@ -168,4 +174,5 @@ class CompanyTicker:
         self.title = title
 
     def create_entity_name(self) -> str:
+        """Creates query string for request."""
         return f'{self.title} ({', '.join(self.ticker)}) (CIK {self.cik})'

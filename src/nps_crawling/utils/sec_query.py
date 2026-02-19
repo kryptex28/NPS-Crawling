@@ -5,31 +5,51 @@ from nps_crawling.utils.filings import Filing
 
 
 def create_filing(data: dict) -> Filing:
-    _source = data['_source']
-    _id = data['_id']
-    _index = data['_index']
+    """Helper function to create Filing object based on JSON payload."""
+    _source = data['_source'] # Main data payload containing filing details
+    _id = data['_id'] # Unique filing identifier from source
+    _index = data['_index'] # Elasticsearch index name, same for all entries
 
+    # Unique ID given by website
     _id: str = data['_id']
+    # Idk what this does, the same for each entry
     _index: str = data['_index']
 
+    # CIKS, each entry can have multiple
     ciks: list[str] = _source['ciks']
+    # Reporting period end date
     period_ending: str = _source['period_ending']
+    # File numbers associated with filing
     file_num: list[str] = _source['file_num']
+    # File display names
     display_names: list[str] = _source['display_names']
+    # XSL stylesheet reference for rendering (?)
     xsl: str = _source['xsl']
+    # Filing sequence number
     sequence: str = _source['sequence']
+    # Root form types
     root_forms: list[str] = _source['root_forms']
+    # When the filing was submitted
     file_date: str = _source['file_date']
+    # Business operating states
     biz_states: list[str] = _source['biz_states']
+    # Standard Industrial Classification codes
     sics: list[str] = _source['sics']
+    # Form type (10-K, 10-Q, 8-K, etc)
     form: str = _source['form']
+    # Accession number (unique filing ID)
     adsh: str = _source['adsh']
+    # Film numbers (legacy microfilm references)
     film_num: list[str] = _source['film_num']
+    # Business location addresses
     biz_locations: list[str] = _source['biz_locations']
+    # Type of file (complete submission, amendment, etc)
     file_type: str = _source['file_type']
     file_description: str = _source['file_description']
+    # Incorporation states
     inc_states: list[str] = _source['inc_states']
 
+    # Get file name from path
     file_name_path = _id.split(':', 1)[1]
 
     filing = Filing(_id=_id,
@@ -57,6 +77,7 @@ def create_filing(data: dict) -> Filing:
     return filing
 
 def create_filings(data: list) -> list[Filing]:
+    """Create list of filings based on JSON payload."""
     filings: list = []
 
     for page in data:
@@ -66,22 +87,23 @@ def create_filings(data: list) -> list[Filing]:
     return filings
 
 def get_total_filings_count(data: dict) -> int:
+    """Get total number of queried filings."""
     return int(data['hits']['total']['value'])
 
 def get_fetched_filings_count(data: dict) -> int:
+    """Get total number of queried filings of the requested page."""
     return int(data['query']['size'])
 
 class SecQuery:
-
+    """Class to create SecQuery object."""
     def __init__(self, sec_params: SecParams, limit: int = -1):
         self.sec_params = sec_params
         self.results = -1
         self.keyword_filings = []
-        self.query_base_url = 'https://efts.sec.gov/LATEST/search-index?'
         self.limit = limit
 
-    def query_over_keyword(self, page: int) -> dict:
-
+    def query_request(self, page: int) -> dict:
+        """Queries the requested filings page."""
         headers = {
             'User-Agent': 'YourName your.email@example.com',
         }
@@ -92,18 +114,21 @@ class SecQuery:
         return response.json()
 
     def fetch_filings(self) -> None:
-        queries: list = self.query_over_keywords()
+        """Starts the fetching process."""
+        queries: list = self.query_multi_request()
         self.keyword_filings = create_filings(queries)
 
-    def query_over_keywords(self) -> list:
+    def query_multi_request(self) -> list:
+        """Queries the requested filings across all pages."""
         total: int = -1
         limit: int = self.limit
         page: int = 1
         queries: list = []
 
         while True:
-            response: dict = self.query_over_keyword(page=page)
+            response: dict = self.query_request(page=page)
             queries.append(response)
+            # Set total results of the query on first query
             if self.results == -1:
                 self.results = get_total_filings_count(response)
                 total = self.results

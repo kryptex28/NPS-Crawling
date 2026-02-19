@@ -2,6 +2,7 @@ from nps_crawling.utils.filings import FilingCategoryCollection
 from nps_crawling.utils.filings import CompanyTicker
 
 class SecParams:
+    """Class abstraction of sec.gov parameter based search."""
     keywords: str = ''
     from_date: str = ''
     to_date: str = ''
@@ -20,7 +21,8 @@ class SecParams:
                  date_range: str = None,
                  individual_search: CompanyTicker = None,
                  filing_category: FilingCategoryCollection = None,
-                 filing_categories: list[str] = None) :
+                 filing_categories: list[str] = None):
+        """Initialize SecParams class."""
         self.query_base = query_base
         self.keyword = keyword
         self.from_date = from_date
@@ -32,6 +34,7 @@ class SecParams:
         self.last_query = ''
 
     def create_query(self, page: int) -> str:
+        """Create the query url with parameters."""
         query_url = f'{self.query_base}q={self.keyword}'
 
         if page > 1:
