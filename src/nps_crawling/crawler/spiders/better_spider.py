@@ -70,12 +70,15 @@ class BetterSpider(scrapy.Spider):
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
-                meta={'filing': filing},
+                meta={'filing': filing,
+                      'keyword': sec_params.keyword,
+                      },
             )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""
         filing: Filing = response.meta['filing']
+        keyword: str = response.meta['keyword']
 
         # Extract text from response content
         text: str = self.function_map[filing.file_container_type](response)
@@ -83,6 +86,7 @@ class BetterSpider(scrapy.Spider):
         item: FilingItem = FilingItem()
         item['filing'] = filing
         item['core_text'] = text
+        item['keyword'] = keyword
 
         # Dispatch into pipeline
         yield item
