@@ -1,19 +1,70 @@
 """SEC Parameter search abstraction module with utility functions."""
-from nps_crawling.utils.filings import CompanyTicker, FilingCategoryCollection
+import json
+
+from nps_crawling.utils.filings import CompanyTicker, FilingsCategoryCollectionCoarse, FilingCategoryCollection
+
+def create_params_from_config(path: str) -> list[SecParams]:
+    """Create params from config file."""
+    params: list[SecParams] = []
+
+    with open(path, 'r') as f:
+        config: dict = json.load(f)
+
+    queries = config['queries']
+
+    for query_id, query_data in queries.items():
+        query_base: str = query_data.get('query_base', '')
+        keyword = query_data.get('keyword', '')
+        from_date: str = query_data.get('from_date', '')
+        to_date: str = query_data.get('to_date', '')
+        date_range = query_data.get('date_range', 'N/A')
+
+        individual_search_ticker: list[str] = query_data.get('individual_search_ticker', [])
+        individual_search_cik: str = query_data.get('individual_search_cik', '')
+        individual_search_title: str = query_data.get('individual_search_title', '')
+
+        individual_search: CompanyTicker = None
+        if individual_search_title and individual_search_cik and individual_search_ticker:
+            individual_search: CompanyTicker = CompanyTicker(ticker=query_data.get('individual_search', ''),
+                                                             cik=query_data.get('individual_search_cik', ''),
+                                                             title=query_data.get('individual_search_title', ''))
+
+        filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(query_data.get('filing_category', ''))
+        if filing_category == FilingsCategoryCollectionCoarse.CUSTOM:
+            filing_categories: list[str] = query_data.get('filing_categories', [])
+        else:
+            filing_categories: list[str] = FilingCategoryCollection.filing_categories[filing_category]
+
+
+        p = SecParams(query_base=query_base,
+                      individual_search=individual_search,
+                      keyword=keyword,
+                      from_date=from_date,
+                      to_date=to_date,
+                      date_range=date_range,
+                      filing_category=filing_category,
+                      filing_categories=filing_categories,
+                      )
+
+        params.append(p)
+    return params
+
+def create_config_from_params(params: list[SecParams]) -> dict:
+    """Create config data from parameter list."""
+    data: dict = {
+        "queries": {}
+    }
+
+    queries: dict = data['queries']
+    for i, param in enumerate(params):
+        key: int = i + 1
+        queries[str(key)] = param.create_dict()
+
+    return data
 
 
 class SecParams:
     """Class abstraction of sec.gov parameter based search."""
-    keywords: str = ''
-    from_date: str = ''
-    to_date: str = ''
-    date_range: str = ''
-    individual_search: CompanyTicker = None
-    filing_category: FilingCategoryCollection = FilingCategoryCollection()
-    filing_categories: list[str] = []
-    involve_type: str = ''
-    location: str = ''
-
     def __init__(self,
                  query_base: str,
                  keyword: str = None,
@@ -21,7 +72,7 @@ class SecParams:
                  to_date: str = None,
                  date_range: str = None,
                  individual_search: CompanyTicker = None,
-                 filing_category: FilingCategoryCollection = None,
+                 filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.ALL,
                  filing_categories: list[str] = None):
         """Initialize SecParams class."""
         self.query_base = query_base
@@ -58,9 +109,31 @@ class SecParams:
             query_url = f'{query_url}&entityName={self.individual_search.create_entity_name()}'
             query_url = f'{query_url}&ciks={self.individual_search.cik}'
             text = self.individual_search.create_entity_name()
-            if 'MOLSON COORS BEVERAGE CO (TAP, TAP-A) (CIK 0000024545)' == text:
-                pass
 
         self.last_query = query_url
 
         return query_url
+
+    def create_dict(self) -> dict:
+        """Create dictionary representation of query parameters."""
+        individual_search_ticker: list[str] = []
+        individual_search_cik: str = ''
+        individual_search_title: str = ''
+
+        if self.individual_search:
+            individual_search_ticker = self.individual_search.ticker
+            individual_search_cik = self.individual_search.cik
+            individual_search_title = self.individual_search.title
+
+        return {
+            'query_base': self.query_base,
+            'keyword': self.keyword,
+            'from_date': self.from_date,
+            'to_date': self.to_date,
+            'date_range': self.date_range,
+            'individual_search_ticker': individual_search_ticker,
+            'individual_search_cik': individual_search_cik,
+            'individual_search_title': individual_search_title,
+            'filing_category': self.filing_category.to_string(),
+            'filing_categories': self.filing_categories,
+        }

@@ -1,5 +1,6 @@
 """Filings and type abstraction module with utility functions."""
 from enum import Enum
+from typing import Literal, Optional
 
 
 class Filing:
@@ -84,7 +85,19 @@ class FilingsCategoryCollectionCoarse(Enum):
     PROXY_MATERIALS = 'form-cat8'
     TENDER_OFFERS_AND_GOING_PRIVATE_TRANSACTIONS = 'form-cat9'
     TRUST_INDENTURE_FILINGS = 'form-cat10'
+    ALL = ''
 
+    @classmethod
+    def from_string(cls, type_str: str) -> Optional["FilingsCategoryCollectionCoarse"]:
+        """Convert a string to an enum."""
+        try:
+            return cls[type_str]
+        except KeyError:
+            return cls.ALL
+
+    def to_string(self) -> str:
+        """Convert an enum to a string."""
+        return self.name
 
 class FilingCategoryCollection:
     """Collection of parameter values for categories."""
@@ -165,6 +178,11 @@ class FilingCategoryCollection:
         FilingsCategoryCollectionCoarse.TRUST_INDENTURE_FILINGS:
         [
             '305B2', 'T-3 ',
+        ],
+
+        FilingsCategoryCollectionCoarse.ALL:
+        [
+
         ],
     }
 

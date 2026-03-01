@@ -4,10 +4,12 @@ from typing import Any, AsyncIterator, Iterable
 
 import pypdf
 import scrapy
+from scrapy.utils.project import get_project_settings
 
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.utils.filings import CompanyTicker, Filing, FilingDateRange
 from nps_crawling.utils.sec_query import SecParams, SecQuery
+from nps_crawling.utils.sec_params import create_params_from_config, create_config_from_params
 
 
 class BetterSpider(scrapy.Spider):
@@ -30,34 +32,36 @@ class BetterSpider(scrapy.Spider):
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
         self.logger.info(f"Starting scrapy spider.")
-        # Specifies company/ticker
-        individual: CompanyTicker = CompanyTicker(ticker=['TAP', 'TAP-A'],
-                                                  cik='0000024545',
-                                                  title='MOLSON COORS BEVERAGE CO')
-        # Creates parameters based on sec.gov search parameters
-        sec_params = SecParams(query_base='https://efts.sec.gov/LATEST/search-index?',
-                               keyword='net promoter score',
-                               from_date='2001-01-01',
-                               to_date='2026-02-19',
-                               # individual_search=individual,
-                               date_range=FilingDateRange.ALL,
-                               )
-        # Creates query to fetch all related documents
-        sec_query = SecQuery(sec_params=sec_params, limit=500)
-        # Start query for filings
-        sec_query.fetch_filings()
+
+        settings = get_project_settings()
+        sec_query_limit_count: int = settings.get('SEC_QUERY_LIMIT_COUNT')
+        query_file_path = settings.get('SEC_QUERY_FILE_PATH')
+
+        # Create a list of parameters for all defined keywords in the config file
+        sec_params: list[SecParams] = create_params_from_config(query_file_path)
+
+        # Create a list of query to fetch all related documents
+        sec_queries: list[SecQuery] = []
+        for sec_param in sec_params:
+            query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
+            sec_queries.append(query)
+
+        # Fetch now all documents per query
+        for sec_query in sec_queries:
+            sec_query.fetch_filings()
 
         # Iterate through all filings
-        for i, filing in enumerate(sec_query.keyword_filings):
-            self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
-            url: str = filing.get_url()[0]
-            yield scrapy.Request(
-                url=url,
-                callback=self.parse,
-                meta={'filing': filing,
-                      'keyword': sec_params.keyword,
-                      },
-            )
+        for sec_query in sec_queries:
+            for i, filing in enumerate(sec_query.keyword_filings):
+                self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
+                url: str = filing.get_url()[0]
+                yield scrapy.Request(
+                    url=url,
+                    callback=self.parse,
+                    meta={'filing': filing,
+                          'keyword': sec_query.sec_params.keyword,
+                          },
+                )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""

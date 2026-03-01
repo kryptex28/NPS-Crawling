@@ -24,10 +24,10 @@ ITEM_PIPELINES = {
 
 DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
 
-# LOG_LEVEL = 'INFO'
-# LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
-# LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
-# LOG_ENABLED = True
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SEC_QUERY_FILE_PATH = os.path.join(PROJECT_ROOT, 'queries', 'query.json')
+
+SEC_QUERY_LIMIT_COUNT = 1000
 
 STATS_DUMP = True
 JOB_DIR = 'crawls/sec_filings_spider'
