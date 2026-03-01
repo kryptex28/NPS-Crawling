@@ -1,6 +1,6 @@
 import os
 from sqlalchemy import create_engine, text
-from nps_filings import NpsFilingsDB
+from nps_filings_db import NpsFilingsDB
 
 def main():
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
