@@ -1,0 +1,28 @@
+{
+  "queries": {
+    "1": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "net promoter score",
+      "from_date": "2021-03-01",
+      "to_date": "2026-03-01",
+      "date_range": "5y",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "INSIDER_EQUITY_AWARDS_TRANSACTIONS_AND_OWNERSHIP",
+      "filing_categories": []
+    },
+    "2": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "nps",
+      "from_date": "2021-03-01",
+      "to_date": "2026-03-01",
+      "date_range": "5y",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "",
+      "filing_categories": []
+    }
+  }
+}
