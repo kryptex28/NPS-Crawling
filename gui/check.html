@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Check for New Files</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <h1 class="title">Check for New Files</h1>
+        <img class="logo" src="thu_logo.png" alt="THU logo" />
+      </header>
+
+      <section class="panel">
+        <div class="status-block">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="status-text">The search has started. This may take some time. Please keep this window open until the process completes.</p>
+        </div>
+        <div class="status-complete" id="status-complete" hidden>
+          <p>Process completed. Duration: 00:10. Newly crawled files: 12.</p>
+          <div class="form-actions">
+            <a class="primary button-link" href="/results">Show results</a>
+            <a class="ghost button-link" href="/">Back to search</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="check.js"></script>
+  </body>
+</html>

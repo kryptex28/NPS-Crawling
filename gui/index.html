@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EDGAR Search – GUI Mock</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <h1 class="title">EDGAR Search</h1>
+        <img class="logo" src="thu_logo.png" alt="THU logo" />
+      </header>
+      <section class="panel">
+        <form id="edgar-form" class="form" action="/search" method="post" autocomplete="off">
+          <div class="form-row">
+            <label for="query">Document word or phrase?</label>
+            <input
+              id="query"
+              name="query"
+              type="text"
+              placeholder='Keywords to search for in filing documents. Use double quotes like "nps".'
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="entity">Company name, ticker, CIK number or individual's name</label>
+            <input
+              id="entity"
+              name="entity"
+              type="text"
+              placeholder="Company name, ticker, CIK number or individual's name"
+            />
+          </div>
+
+          <div class="form-row grid-2">
+            <div>
+              <label for="filing-category">Filing category</label>
+              <select id="filing-category" name="filing_category">
+                <option value="">View all</option>
+                <option value="company">Company filings</option>
+                <option value="insider">Insider filings</option>
+                <option value="fund">Funds</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Filing types</label>
+              <details class="multi-select">
+                <summary>Browse filing types</summary>
+                <div class="options">
+                  <label><input type="checkbox" name="filing_types" value="10-K" /> 10-K</label>
+                  <label><input type="checkbox" name="filing_types" value="10-Q" /> 10-Q</label>
+                  <label><input type="checkbox" name="filing_types" value="8-K" /> 8-K</label>
+                  <label><input type="checkbox" name="filing_types" value="S-1" /> S-1</label>
+                  <label><input type="checkbox" name="filing_types" value="DEF 14A" /> DEF 14A</label>
+                  <label><input type="checkbox" name="filing_types" value="13F" /> 13F</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 13D" /> SC 13D</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 13G" /> SC 13G</label>
+                  <label><input type="checkbox" name="filing_types" value="4" /> 4</label>
+                  <label><input type="checkbox" name="filing_types" value="144" /> 144</label>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <fieldset class="form-row">
+            <legend>Filed date range</legend>
+            <div class="segmented">
+              <label><input type="radio" name="date_range" value="all" checked /> All (since 2001)</label>
+              <label><input type="radio" name="date_range" value="10y" /> Last 10 years</label>
+              <label><input type="radio" name="date_range" value="5y" /> Last 5 years</label>
+              <label><input type="radio" name="date_range" value="1y" /> Last year</label>
+              <label><input type="radio" name="date_range" value="30d" /> Last 30 days</label>
+              <label><input type="radio" name="date_range" value="custom" /> Custom</label>
+            </div>
+          </fieldset>
+
+          <div class="form-row grid-2" id="custom-dates">
+            <div>
+              <label for="filed-from">Filed from</label>
+              <input id="filed-from" name="filed_from" type="date" />
+            </div>
+            <div>
+              <label for="filed-to">Filed to</label>
+              <input id="filed-to" name="filed_to" type="date" />
+            </div>
+          </div>
+
+          <div class="form-row grid-2">
+            <div>
+              <label for="exec-offices">Principal executive offices in</label>
+              <select id="exec-offices" name="principal_exec_office">
+                <option value="">View all</option>
+                <option>Alabama</option>
+                <option>Alaska</option>
+                <option>Arizona</option>
+                <option>Arkansas</option>
+                <option>California</option>
+                <option>Colorado</option>
+                <option>Connecticut</option>
+                <option>Delaware</option>
+                <option>District of Columbia</option>
+                <option>Florida</option>
+                <option>Georgia</option>
+                <option>Hawaii</option>
+                <option>Idaho</option>
+                <option>Illinois</option>
+                <option>Indiana</option>
+                <option>Iowa</option>
+                <option>Kansas</option>
+                <option>Kentucky</option>
+                <option>Louisiana</option>
+                <option>Maine</option>
+                <option>Maryland</option>
+                <option>Massachusetts</option>
+                <option>Michigan</option>
+                <option>Minnesota</option>
+                <option>Mississippi</option>
+                <option>Missouri</option>
+                <option>Montana</option>
+                <option>Nebraska</option>
+                <option>Nevada</option>
+                <option>New Hampshire</option>
+                <option>New Jersey</option>
+                <option>New Mexico</option>
+                <option>New York</option>
+                <option>North Carolina</option>
+                <option>North Dakota</option>
+                <option>Ohio</option>
+                <option>Oklahoma</option>
+                <option>Oregon</option>
+                <option>Pennsylvania</option>
+                <option>Rhode Island</option>
+                <option>South Carolina</option>
+                <option>South Dakota</option>
+                <option>Tennessee</option>
+                <option>Texas</option>
+                <option>Utah</option>
+                <option>Vermont</option>
+                <option>Virginia</option>
+                <option>Washington</option>
+                <option>West Virginia</option>
+                <option>Wisconsin</option>
+                <option>Wyoming</option>
+              </select>
+            </div>
+            <div>
+              <label for="incorporated">Incorporated in</label>
+              <select id="incorporated" name="incorporated">
+                <option value="">View all</option>
+                <option>Alabama</option>
+                <option>Alaska</option>
+                <option>Arizona</option>
+                <option>Arkansas</option>
+                <option>California</option>
+                <option>Colorado</option>
+                <option>Connecticut</option>
+                <option>Delaware</option>
+                <option>District of Columbia</option>
+                <option>Florida</option>
+                <option>Georgia</option>
+                <option>Hawaii</option>
+                <option>Idaho</option>
+                <option>Illinois</option>
+                <option>Indiana</option>
+                <option>Iowa</option>
+                <option>Kansas</option>
+                <option>Kentucky</option>
+                <option>Louisiana</option>
+                <option>Maine</option>
+                <option>Maryland</option>
+                <option>Massachusetts</option>
+                <option>Michigan</option>
+                <option>Minnesota</option>
+                <option>Mississippi</option>
+                <option>Missouri</option>
+                <option>Montana</option>
+                <option>Nebraska</option>
+                <option>Nevada</option>
+                <option>New Hampshire</option>
+                <option>New Jersey</option>
+                <option>New Mexico</option>
+                <option>New York</option>
+                <option>North Carolina</option>
+                <option>North Dakota</option>
+                <option>Ohio</option>
+                <option>Oklahoma</option>
+                <option>Oregon</option>
+                <option>Pennsylvania</option>
+                <option>Rhode Island</option>
+                <option>South Carolina</option>
+                <option>South Dakota</option>
+                <option>Tennessee</option>
+                <option>Texas</option>
+                <option>Utah</option>
+                <option>Vermont</option>
+                <option>Virginia</option>
+                <option>Washington</option>
+                <option>West Virginia</option>
+                <option>Wisconsin</option>
+                <option>Wyoming</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary">Search</button>
+            <button type="reset" class="ghost">Clear all</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel results" id="results-panel" hidden>
+        <div class="results-header">
+          <h2>Crawled Files</h2>
+          <div class="results-actions">
+            <a class="ghost button-link" href="/results">Show crawled results</a>
+            <a class="primary button-link" href="/check">Check for new files</a>
+          </div>
+        </div>
+
+        <div class="results-toolbar">
+          <label for="bulk-select">Selection</label>
+          <select id="bulk-select">
+            <option value="all">Select all</option>
+            <option value="none">Select none</option>
+          </select>
+        </div>
+
+        <div class="results-list" id="results-list"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
