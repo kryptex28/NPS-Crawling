@@ -8,6 +8,7 @@ from nps_crawling.config import Config
 
 from .cleaning import CleanTextPipeline
 from .filtering import NpsMentionFilterPipeline
+from .normalize import normalize_record
 from .storage import SaveToJSONPipeline
 
 logger = logging.getLogger(__name__)
@@ -57,8 +58,8 @@ class PreProcessingPipeline(Config):
             if df.empty:
                 continue
 
-            for filing in df.to_dict(orient="records"):
-                batch.append(filing)
+            for raw_record in df.to_dict(orient="records"):
+                batch.append(normalize_record(raw_record))
 
                 if len(batch) >= batch_size:
                     cleaned_dict_batch = self.cleaner.cleaning_workflow(batch)
