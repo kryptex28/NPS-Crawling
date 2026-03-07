@@ -65,88 +65,78 @@ from nps_crawling.config import Config
         self.file.close() """
 
 
-class SaveToParquetPipeline(Config):
-    """Collect scraped items during a crawl and persist them as Parquet chunks.
+def _value_to_str(val) -> str:
+    """Convert a value to a string for Parquet; lists become semicolon-joined."""
+    if val is None:
+        return ""
+    if isinstance(val, list):
+        return "; ".join(str(v) for v in val) if val else ""
+    return str(val)
 
-    This writes multiple files under RAW_PARQUET_PATH_CRAWLER so data is
-    persisted incrementally.
+
+def _flatten_filing(filing) -> dict:
+    """Turn a Filing object into a flat dict of strings by reflecting over its attributes.
+
+    Any attribute on the Filing instance is included; no need to update this when
+    the Filing model gains or loses fields. Private names (e.g. _id) become filing_id.
+    """
+    out = {}
+    for key, val in vars(filing).items():
+        name = key.lstrip("_")
+        out[f"filing_{name}"] = _value_to_str(val)
+    return out
+
+
+class SaveToParquetPipeline(Config):
+    """Save each crawled item as one raw Parquet file (BetterSpider: filing + core_text + keyword).
+
+    No fixed schema: all Filing fields are flattened to strings and written
+    with whatever the item contains. One Parquet file per crawled document.
     """
 
     def __init__(self):
-        """Initialize pipeline state.
-
-        Attributes:
-            parquet_root (Path): Directory where parquet chunks are written.
-            records (list): In-memory buffer of records to flush.
-            flush_every (int): Number of records to collect before flushing.
-        """
+        """Initialize pipeline state."""
         self.parquet_root = Config.RAW_PARQUET_PATH_CRAWLER
         self.records = []
         self.flush_every = 1
 
     def open_spider(self, spider):
-        """Called when the spider is opened.
-
-        Resets the in-memory buffer to start collecting records for a new
-        crawl run.
-        """
-        # reset buffer when a spider starts
+        """Reset buffer when the spider starts."""
         self.records = []
 
     def process_item(self, item, spider):
-        """Process and buffer a single scraped item.
-
-        Flattens list fields that would otherwise create nested types in
-        Parquet, appends the record to the buffer and flushes the buffer to
-        disk when it reaches the configured size.
-
-        Args:
-            item (scrapy.Item or dict): Scraped item to persist.
-            spider: The spider instance (unused).
-
-        Returns:
-            The original item (unchanged).
-        """
-        # flatten list fields to avoid nested parquet issues
-        record = dict(item)
-        keywords = record.get("keywords_found")
-        if isinstance(keywords, list):
-            record["keywords_found"] = "; ".join(keywords)
-
+        """Buffer one item and write one Parquet file per item (raw, schema inferred)."""
+        record = self._item_to_raw_record(item)
+        if record is None:
+            return item
         self.records.append(record)
-
         if len(self.records) >= self.flush_every:
             self._flush_buffer()
         return item
 
-    def close_spider(self, spider):
-        """Flush any remaining records when the spider closes.
+    def _item_to_raw_record(self, item) -> dict | None:
+        """Build a single raw record from BetterSpider item: flattened filing + core_text + keyword."""
+        item = dict(item)
+        if "filing" not in item:
+            return None
+        filing = item["filing"]
+        record = _flatten_filing(filing)
+        record["core_text"] = item.get("core_text") or ""
+        record["keyword"] = item.get("keyword") or ""
+        return record
 
-        If the buffer is empty this is a no-op.
-        """
+    def close_spider(self, spider):
+        """Flush any remaining records when the spider closes."""
         if not self.records:
             return
-
         self._flush_buffer()
 
     def _flush_buffer(self):
         if not self.records:
             return
-
-        schema = pa.schema([
-            ("company", pa.string()),
-            ("ticker", pa.string()),
-            ("cik", pa.string()),
-            ("filing_url", pa.string()),
-            ("keywords_found", pa.string()),
-            ("html_text", pa.string()),
-        ])
-
-        table = pa.Table.from_pylist(self.records, schema=schema)
-
+        # No fixed schema: let PyArrow infer from the record(s)
+        table = pa.Table.from_pylist(self.records)
         ts = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
         fname = f"chunk_{ts}_{uuid4().hex}.parquet"
         pq.write_table(table, self.parquet_root / fname, compression="snappy")
-
-        # clear buffer after flush
         self.records = []
