@@ -29,8 +29,9 @@ class ClassificationPipeline(Config):
         logger.info(f"Number of companies to be classified: {len(companies_list)}")
 
         for company in companies_list:
-
             single_company_df = self.get_data.get_data_for_classification(company)
+            if single_company_df is None or single_company_df.empty:
+                continue
             self.model_pipeline.model_workflow(single_company_df)
 
         logger.info("Finished classification")
