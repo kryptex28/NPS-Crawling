@@ -73,7 +73,8 @@ class SecParams:
                  date_range: str = None,
                  individual_search: CompanyTicker = None,
                  filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.ALL,
-                 filing_categories: list[str] = None):
+                 filing_categories: list[str] = None,
+                 principal_office_in: str = None,):
         """Initialize SecParams class."""
         self.query_base = query_base
         self.keyword = keyword
@@ -83,6 +84,7 @@ class SecParams:
         self.individual_search = individual_search
         self.filing_category = filing_category
         self.filing_categories = filing_categories
+        self.principal_office_in = principal_office_in
         self.last_query = ''
 
     def create_query(self, page: int) -> str:
@@ -109,6 +111,10 @@ class SecParams:
             query_url = f'{query_url}&entityName={self.individual_search.create_entity_name()}'
             query_url = f'{query_url}&ciks={self.individual_search.cik}'
             text = self.individual_search.create_entity_name()
+
+        if self.principal_office_in:
+            query_url = f'{query_url}&locationCode={self.principal_office_in}'
+            query_url = f'{query_url}&locationCodes={self.principal_office_in}'
 
         self.last_query = query_url
 
@@ -137,3 +143,23 @@ class SecParams:
             'filing_category': self.filing_category.to_string(),
             'filing_categories': self.filing_categories,
         }
+
+def create_sec_param_from_dict(data: dict) -> SecParams:
+    """Create SecParams object from dict data."""
+
+    query_base: str = 'https://efts.sec.gov/LATEST/search-index?'
+    keyword: str = data['query']
+    #from_date: str = data['filed_from']
+    #to_date: str = data['filed_to']
+    #date_range: str = data['date_range']
+    #filing_category: FilingsCategoryCollectionCoarse = data['filing_category']
+    #filing_categories: list[str] = data['filing_types']
+
+
+    sec_params: SecParams = SecParams(query_base=query_base,
+                                      keyword=keyword,
+                                      #from_date=from_date,
+                                      #to_date=to_date,
+                                      #date_range=date_range,
+                                      )
+    return sec_params

@@ -64,9 +64,21 @@ function setAllCheckboxes(checked) {
   });
 }
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  renderResults(dummyResults);
+
+  const formData = new FormData(form);
+
+  const response = await fetch("/search", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await response.json()
+
+  renderResults(data);
+
+
   resultsPanel.hidden = false;
 });
 

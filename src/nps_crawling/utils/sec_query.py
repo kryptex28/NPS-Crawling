@@ -108,7 +108,7 @@ class SecQuery:
         """Initializes SecQuery object."""
         self.sec_params = sec_params
         self.results = -1
-        self.keyword_filings = []
+        self.keyword_filings: list[Filing] = []
         self.limit = limit
 
     def query_request(self, page: int) -> dict:
