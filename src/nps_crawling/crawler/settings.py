@@ -17,7 +17,7 @@ DEFAULT_REQUEST_HEADERS = {
 ROBOTSTXT_OBEY = False
 
 ITEM_PIPELINES = {
-    'nps_crawling.crawler.pipelines.storage.SaveToParquetPipeline': 500
+    'nps_crawling.crawler.pipelines.storage.SaveToJSONPipeline': 500,
 }
 
 DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
