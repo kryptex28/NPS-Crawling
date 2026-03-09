@@ -1,34 +1,32 @@
-"""Storage pipeline to save context windows to Parquet files."""
+"""Storage pipeline to save processed context windows as JSON files."""
 
-import os
-
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
+import json
+from pathlib import Path
 
 from nps_crawling.config import Config
 
 
 class SaveToJSONPipeline(Config):
-    """Storage pipeline to save context windows to Parquet files."""
+    """Storage pipeline to save processed records as JSON files."""
     def __init__(self):
         """Initialize the storage pipeline."""
-        self.parquet_root = Config.NPS_CONTEXT_PARQUET_PATH
+        self.json_root = Config.NPS_CONTEXT_JSON_PATH
 
-    def storage_workflow(self, context_windows_dict_batch):
-        """Store a batch of context windows into Parquet files partitioned by company."""
-        df = pd.DataFrame(context_windows_dict_batch)
+    def storage_workflow(self, records, source_filename):
+        """Write a list of processed records to a JSON file.
 
-        table = pa.Table.from_pandas(df, preserve_index=False)
+        Args:
+            records: list of dicts, each containing "metadata", "core_text",
+                     and "context" (list of context windows).
+            source_filename: stem of the originating json_raw file, used as
+                             the output filename.
+        """
+        out_path = self.json_root / f"{source_filename}.json"
 
-        # partition by company (allows effective queueing by company)
-        pq.write_to_dataset(table, root_path=self.parquet_root, partition_cols=["company"])
+        #TODO: David - preprocessed json saving
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
 
-        return None
-
-    def count_parquet_files(self):
+    def count_json_files(self):
         """For logging only."""
-        count = 0
-        for root, dirs, files in os.walk(self.parquet_root):
-            count += sum(1 for f in files if f.endswith(".parquet"))
-        return count
+        return sum(1 for f in self.json_root.glob("*.json"))

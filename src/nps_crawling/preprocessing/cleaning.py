@@ -21,13 +21,13 @@ class CleanTextPipeline(Config):
         return cleaned_batch
 
     def process_item(self, item: dict) -> dict:
-        """Clean the 'html_text' field of an item by removing HTML tags.
+        """Clean the 'core_text' field of an item by removing HTML tags.
 
         Normalizing whitespace, and stripping signature markers.
         """
-        if "html_text" in item and isinstance(item["html_text"], str):
+        if "core_text" in item and isinstance(item["core_text"], str):
             # Parse HTML content into plain text
-            soup = BeautifulSoup(item["html_text"], "html.parser")
+            soup = BeautifulSoup(item["core_text"], "html.parser")
 
             # Extract visible text while keeping spaces between elements
             text = soup.get_text(separator=" ", strip=True)
@@ -40,6 +40,6 @@ class CleanTextPipeline(Config):
             text = re.sub(r'/s/\s*[A-Za-z .-]+', '', text)  # /s/ Name Name2
 
             # Store cleaned text back into the item
-            item["html_text"] = text
+            item["core_text"] = text
 
         return item

@@ -1,4 +1,6 @@
 """SEC Parameter search abstraction module with utility functions."""
+from __future__ import annotations
+
 import json
 
 from nps_crawling.utils.filings import CompanyTicker, FilingsCategoryCollectionCoarse, FilingCategoryCollection
