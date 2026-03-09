@@ -37,8 +37,8 @@
 from datetime import datetime
 from uuid import uuid4
 
+import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 
 from nps_crawling.config import Config
 
@@ -93,6 +93,37 @@ class SaveToParquetPipeline(Config):
         # reset buffer when a spider starts
         self.records = []
 
+    def _to_serializable(self, val):
+        """Convert a value to a PyArrow-serializable type."""
+        if isinstance(val, (str, int, float, bool, type(None))):
+            return val
+        if isinstance(val, list):
+            return "; ".join(str(x) for x in val) if val else ""
+        if hasattr(val, "__dict__"):
+            # Flatten custom objects (e.g. Filing) to dict of strings
+            out = {}
+            for k, v in vars(val).items():
+                if k.startswith("_"):
+                    continue
+                out[k] = self._to_serializable(v)
+            return out
+        return str(val)
+
+    def _record_to_serializable(self, record):
+        """Convert record so all values are PyArrow-serializable."""
+        result = {}
+        for k, v in record.items():
+            if hasattr(v, "__dict__") and not isinstance(v, (str, int, float, bool, type(None))):
+                # Flatten object into top-level keys
+                for attr, val in vars(v).items():
+                    if attr.startswith("_"):
+                        continue
+                    key = f"{k}_{attr}"
+                    result[key] = self._to_serializable(val)
+            else:
+                result[k] = self._to_serializable(v)
+        return result
+
     def process_item(self, item, spider):
         """Process and buffer a single scraped item.
 
@@ -107,13 +138,12 @@ class SaveToParquetPipeline(Config):
         Returns:
             The original item (unchanged).
         """
-        # flatten list fields to avoid nested parquet issues
         record = dict(item)
         keywords = record.get("keywords_found")
         if isinstance(keywords, list):
             record["keywords_found"] = "; ".join(keywords)
 
-        self.records.append(record)
+        self.records.append(self._record_to_serializable(record))
 
         if len(self.records) >= self.flush_every:
             self._flush_buffer()
@@ -133,20 +163,16 @@ class SaveToParquetPipeline(Config):
         if not self.records:
             return
 
-        schema = pa.schema([
-            ("company", pa.string()),
-            ("ticker", pa.string()),
-            ("cik", pa.string()),
-            ("filing_url", pa.string()),
-            ("keywords_found", pa.string()),
-            ("html_text", pa.string()),
-        ])
+        table = pa.Table.from_pylist(self.records)
 
-        table = pa.Table.from_pylist(self.records, schema=schema)
+        # view the table schema for debugging here if needed
+        df = table.to_pandas()  
 
         ts = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
         fname = f"chunk_{ts}_{uuid4().hex}.parquet"
-        pq.write_table(table, self.parquet_root / fname, compression="snappy")
+        
+        # gets saved with every meta information dynamically received from crawler
+        df.to_parquet(self.parquet_root / fname, compression="snappy", index=False)
 
         # clear buffer after flush
         self.records = []
