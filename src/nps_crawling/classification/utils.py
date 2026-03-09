@@ -19,19 +19,19 @@ class ClassificationPipeline(Config):
     def classification_workflow(self):
         """Classification workflow method.
 
-        Get all company names --> loop through all companies 1 by 1 --> create dataframe with all
-        context windows for 1 company --> ...
+        Iterates over all json_processed files one by one, classifies each
+        context window via the LLM, and writes one output JSON per input file
+        to json_classified/.
         """
         logger.info("Starting classification")
 
-        companies_list = self.get_data.get_list_of_all_companies()
+        json_files = self.get_data.get_all_json_files()
+        logger.info(f"Number of files to classify: {len(json_files)}")
 
-        logger.info(f"Number of companies to be classified: {len(companies_list)}")
-
-        for company in companies_list:
-
-            single_company_df = self.get_data.get_data_for_classification(company)
-            self.model_pipeline.model_workflow(single_company_df)
+        for json_file in json_files:
+            records = self.get_data.load_file(json_file)
+            self.model_pipeline.model_workflow(records, source_filename=json_file.stem)
+            logger.info(f"Classified {json_file.name}")
 
         logger.info("Finished classification")
 

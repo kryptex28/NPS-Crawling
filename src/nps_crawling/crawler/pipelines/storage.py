@@ -63,6 +63,8 @@ class SaveToJSONPipeline(Config):
 
         ts = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
         fname = f"chunk_{ts}_{uuid4().hex}.json"
+
+        #TODO: David - raw json saving
         with open(self.json_root / fname, "w", encoding="utf-8") as f:
             json.dump(self.records, f, ensure_ascii=False, indent=2)
 

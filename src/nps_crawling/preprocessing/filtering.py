@@ -90,9 +90,9 @@ class NpsMentionFilterPipeline(Config):
         return matches
 
     def _create_context_window(self, sentences, n, idx):
-
         start = max(0, idx - self.sentences_before)
         end = min(n, idx + self.sentences_after + 1)
         context = " ".join(sentences[start:end]).strip()
+        context = re.sub(r'\s+', ' ', context)
 
         return start, end, context

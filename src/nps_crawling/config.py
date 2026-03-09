@@ -10,14 +10,12 @@ class Config:
 
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
     NPS_CONTEXT_JSON_PATH = DATA_PATH / "json_processed"
-    NPS_CONTEXT_PARQUET_PATH = DATA_PATH / "nps_context_dataset"
-    NPS_CLASSIFIED_CSV = DATA_PATH / "nps_classified_csv"
+    NPS_CLASSIFIED_JSON = DATA_PATH / "json_classified"
 
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
     NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
-    NPS_CONTEXT_PARQUET_PATH.mkdir(parents=True, exist_ok=True)
-    NPS_CLASSIFIED_CSV.mkdir(parents=True, exist_ok=True)
+    NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
 
     """ FILES """
     RAW_PARQUET_FILE_CRAWLER = "nps_filings.parquet"
