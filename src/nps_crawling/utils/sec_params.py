@@ -1,7 +1,8 @@
 """SEC Parameter search abstraction module with utility functions."""
 import json
 
-from nps_crawling.utils.filings import CompanyTicker, FilingsCategoryCollectionCoarse, FilingCategoryCollection
+from nps_crawling.utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
+
 
 def create_params_from_config(path: str) -> list[SecParams]:
     """Create params from config file."""
@@ -35,7 +36,6 @@ def create_params_from_config(path: str) -> list[SecParams]:
         else:
             filing_categories: list[str] = FilingCategoryCollection.filing_categories[filing_category]
 
-
         p = SecParams(query_base=query_base,
                       individual_search=individual_search,
                       keyword=keyword,
@@ -49,10 +49,11 @@ def create_params_from_config(path: str) -> list[SecParams]:
         params.append(p)
     return params
 
+
 def create_config_from_params(params: list[SecParams]) -> dict:
     """Create config data from parameter list."""
     data: dict = {
-        "queries": {}
+        "queries": {},
     }
 
     queries: dict = data['queries']

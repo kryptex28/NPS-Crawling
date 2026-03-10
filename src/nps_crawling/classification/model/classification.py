@@ -1,5 +1,6 @@
 """Classification model pipeline."""
 
+from nps_crawling.classification.model.model import get_classification_model
 from nps_crawling.config import Config
 from nps_crawling.llm.llm_ollama import LLMOllama
 
@@ -9,25 +10,11 @@ class ClassificationModelPipeline(Config):
 
     def __init__(
         self,
-        model: str = "mistral",
-        host: str = "localhost",
-        port: int = 14000,
     ):
         """Initializes ClassificationModelPipeline."""
         super().__init__()
 
-        self.llm = LLMOllama(
-            persona=self.OLLAMA_PERSONA,
-            model=model,
-            host=host,
-            port=port,
-            temperature=0.0,
-            top_p=1.0,
-            top_k=1,
-            num_predict=128,
-            seed=42,
-            repeat_penalty=1.0,
-        )
+        self.llm = get_classification_model(self.MODEL)
 
     def model_workflow(self, single_company_df):
         """Model workflow method.

@@ -8,8 +8,8 @@ from scrapy.utils.project import get_project_settings
 
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.utils.filings import CompanyTicker, Filing, FilingDateRange
+from nps_crawling.utils.sec_params import create_config_from_params, create_params_from_config
 from nps_crawling.utils.sec_query import SecParams, SecQuery
-from nps_crawling.utils.sec_params import create_params_from_config, create_config_from_params
 
 
 class BetterSpider(scrapy.Spider):

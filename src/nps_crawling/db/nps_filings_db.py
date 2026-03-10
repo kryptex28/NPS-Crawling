@@ -3,6 +3,7 @@ from __future__ import annotations
 
 # Used to serialize Python dicts into JSON strings for JSONB parameters.
 import json
+
 # Types for metadata dicts and for restricting meta_mode to allowed strings.
 from typing import Any, Literal
 
