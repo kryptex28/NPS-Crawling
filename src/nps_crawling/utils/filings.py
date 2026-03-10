@@ -99,6 +99,7 @@ class FilingsCategoryCollectionCoarse(Enum):
         """Convert an enum to a string."""
         return self.name
 
+
 class FilingCategoryCollection:
     """Collection of parameter values for categories."""
     filing_categories: dict = {

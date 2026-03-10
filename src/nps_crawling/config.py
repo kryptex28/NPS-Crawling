@@ -45,3 +45,5 @@ class Config:
             "Output: Return 1–2 short lines: first line 'Category: <one of the four labels exactly as written above>'. "
             "Second line optional 'Reason: <brief why>'. Keep it concise."
         )
+
+    MODEL = "SVM"  # Options: "SVM", "Ollama"

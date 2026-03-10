@@ -1,6 +1,8 @@
 import os
-from sqlalchemy import create_engine, text
+
 from nps_filings_db import NpsFilingsDB
+from sqlalchemy import create_engine, text
+
 
 def main():
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
@@ -50,6 +52,7 @@ def main():
 
     # 6) cleanup (optional)
     # db.delete_filing(test_id)
+
 
 if __name__ == "__main__":
     main()
