@@ -20,45 +20,50 @@ class NpsMentionFilterPipeline(Config):
         self.sentences_before = Config.AMOUNT_SENTENCES_INCLUDED_BEFORE
         self.sentences_after = Config.AMOUNT_SENTENCES_INCLUDED_AFTER
 
-    def filtering_workflow(self, dict_batch):
+    def filtering_workflow(self, records):
         """Filtering workflow method.
 
-        input: expects a list of dicts with following keys:
-        "company", "ticker", "cik", "filing_url", "keywords_found", "html_text".
+        input: list of dicts, each with "metadata" and "core_text" keys.
 
-        output: list of dicts. 1 dict represents 1 hit of matching phrases. contains keys:
-        "company", "ticker", "cik", "filing_url", "keywords_found", "html_text",
-        "matched_phrase", "context", "hit_sentence_index", "context_start_index", "context_end_index"
+        output: same list with a "context" key added to each record.
+        "context" is a list of dicts, one per matched phrase hit:
+            {
+                "matched_phrase": str,
+                "context": str,
+                "hit_sentence_index": int,
+                "context_start_index": int,
+                "context_end_index": int,
+            }
+        Records with no hits get an empty "context" list.
         """
-        all_hits = []
+        for record in records:
+            record["context"] = self._extract_context_windows(record.get("core_text", ""))
+        return records
 
-        for single_dict in dict_batch:
-            hits = self._extract_context_from_single_dict(single_dict)
-            if hits:
-                all_hits.extend(hits)
-
-        return all_hits
-
-    def _extract_context_from_single_dict(self, single_dict):
-
-        text = single_dict.get("html_text")
+    def _extract_context_windows(self, text):
+        """Extract all context windows from a text string."""
+        if not text:
+            return []
 
         sentences = self._split_into_sentences(text)
-
         n = len(sentences)
-
         hits = []
 
-        for idx, single_sentence in enumerate(sentences):
-            matched_phrases = self._finding_matching_phrases(single_sentence)
+        for idx, sentence in enumerate(sentences):
+            matched_phrases = self._finding_matching_phrases(sentence)
             if not matched_phrases:
                 continue
 
             start, end, context = self._create_context_window(sentences, n, idx)
 
             for phrase in matched_phrases:
-                hit = self._build_hit_dict(single_dict, phrase, context, idx, start, end)
-                hits.append(hit)
+                hits.append({
+                    "matched_phrase": phrase,
+                    "context": context,
+                    "hit_sentence_index": idx,
+                    "context_start_index": start,
+                    "context_end_index": end,
+                })
 
         return hits
 
@@ -85,25 +90,9 @@ class NpsMentionFilterPipeline(Config):
         return matches
 
     def _create_context_window(self, sentences, n, idx):
-
         start = max(0, idx - self.sentences_before)
         end = min(n, idx + self.sentences_after + 1)
         context = " ".join(sentences[start:end]).strip()
+        context = re.sub(r'\s+', ' ', context)
 
         return start, end, context
-
-    def _build_hit_dict(self, single_dict, phrase, context, idx, start, end):
-
-        return {
-            "company": single_dict.get("company"),
-            "ticker": single_dict.get("ticker"),
-            "cik": single_dict.get("cik"),
-            "filing_url": single_dict.get("filing_url"),
-            "keywords_found": single_dict.get("keywords_found"),
-
-            "matched_phrase": phrase,
-            "context": context,
-            "hit_sentence_index": idx,
-            "context_start_index": start,
-            "context_end_index": end,
-        }

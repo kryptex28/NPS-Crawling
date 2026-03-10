@@ -1,8 +1,7 @@
 """Pre-processing pipeline to clean, filter, and store data."""
 
+import json
 import logging
-
-import pandas as pd
 
 from nps_crawling.config import Config
 
@@ -16,70 +15,51 @@ logger = logging.getLogger(__name__)
 class PreProcessingPipeline(Config):
     """Pre-processing pipeline class to clean, filter, and store data.
 
-    This pipeline coordinates text cleaning, NPS-mention filtering and
-    storage of processed results.
+    This pipeline reads JSON files from json_raw/, runs cleaning and NPS-mention
+    filtering, and writes one output JSON per input file to json_processed/.
+    Each output record contains all original data plus a "context" list.
     """
     def __init__(self):
         """Initialize the PreProcessingPipeline."""
-        self.files_at_once = Config.FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE
-        self.raw_parquet_dir_crawler = Config.RAW_PARQUET_PATH_CRAWLER
+        self.json_raw_dir = Config.RAW_JSON_PATH_CRAWLER
 
         self.cleaner = CleanTextPipeline()
         self.filter = NpsMentionFilterPipeline()
         self.storage = SaveToJSONPipeline()
 
-    # TODO: logic here needs to be adapted later on. we don't want to run over all stored
-    # filings everytime, just the ones that are new
-    # --> edit 27.11.25: only pre-process the parquet files, that are not marked in database
-    # as pre-processed yet (need to implement that logic first though)
     def pre_processing_workflow(self):
         """Workflow method to pre process data.
 
-        Cleaning --> filtering --> storaging. Processes the filings (stored in
-        Parquet) in batch sizes as defined in the Config variable
-        FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE.
+        For each JSON file in json_raw/:
+            1. Load the list of records.
+            2. Clean core_text (HTML → plain text).
+            3. Extract context windows from core_text.
+            4. Write the enriched records to json_processed/<same filename>.
         """
-        logger.info(f"Starting pre-processing raw data in batch sizes of {self.files_at_once}")
-
-        files_before = self.storage.count_parquet_files()
-
-        batch = []
-        batch_size = self.files_at_once
-        processed_count = 0
-
-        parquet_files = sorted(self.raw_parquet_dir_crawler.glob("*.parquet"))
-        if not parquet_files:
-            logger.info("No raw filings found to process")
+        json_files = sorted(self.json_raw_dir.glob("*.json"))
+        if not json_files:
+            logger.info("No raw JSON files found to process")
             return None
 
-        for parquet_file in parquet_files:
-            df = pd.read_parquet(parquet_file)
-            if df.empty:
+        files_before = self.storage.count_json_files()
+        processed_count = 0
+
+        for json_file in json_files:
+            with open(json_file, "r", encoding="utf-8") as f:
+                records = json.load(f)
+
+            if not records:
                 continue
 
-            for filing in df.to_dict(orient="records"):
-                batch.append(filing)
+            records = self.cleaner.cleaning_workflow(records)
+            records = self.filter.filtering_workflow(records)
+            self.storage.storage_workflow(records, source_filename=json_file.stem)
 
-                if len(batch) >= batch_size:
-                    cleaned_dict_batch = self.cleaner.cleaning_workflow(batch)
-                    context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
-                    self.storage.storage_workflow(context_windows_dict_batch)
+            processed_count += len(records)
+            logger.info(f"Processed {json_file.name} ({len(records)} records)")
 
-                    processed_count += len(batch)
-                    logger.info(f"Processed {processed_count} filings")
-                    batch = []
-
-        # last batch leftovers
-        if batch:
-            cleaned_dict_batch = self.cleaner.cleaning_workflow(batch)
-            context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
-            self.storage.storage_workflow(context_windows_dict_batch)
-
-            processed_count += len(batch)
-
-        files_after = self.storage.count_parquet_files()
-
-        logger.info(f"Finished pre-processing data. Total filings processed: {processed_count}")
-        logger.info(f"New parquet files created: {files_after - files_before}")
+        files_after = self.storage.count_json_files()
+        logger.info(f"Finished pre-processing. Total records processed: {processed_count}")
+        logger.info(f"New JSON files created: {files_after - files_before}")
 
         return None

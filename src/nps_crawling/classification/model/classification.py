@@ -1,8 +1,9 @@
 """Classification model pipeline."""
 
-from nps_crawling.classification.model.model import get_classification_model
+import json
+
 from nps_crawling.config import Config
-from nps_crawling.llm.llm_ollama import LLMOllama
+from nps_crawling.classification.model.model import get_classification_model
 
 
 class ClassificationModelPipeline(Config):
@@ -16,27 +17,22 @@ class ClassificationModelPipeline(Config):
 
         self.llm = get_classification_model(self.MODEL)
 
-    def model_workflow(self, single_company_df):
-        """Model workflow method.
+    def model_workflow(self, records, source_filename):
+        """Classify all context windows in the given records and save as JSON.
 
-        input: dataframe of single company including all context windows (1 per row)
-        output: csv with classifications and orignal input data
+        For each record, each context window in "context" is classified by the
+        LLM and a "nps_classification" field is added to the window dict.
+        The enriched records are written to json_classified/<source_filename>.json.
+
+        Args:
+            records: list of dicts loaded from a json_processed file.
+            source_filename: stem of the source file, used as output filename.
         """
-        result_df = single_company_df.copy()
+        for record in records:
+            for window in record.get("context", []):
+                raw = self.llm.classify(window["context"])
+                window["nps_classification"] = " | ".join(line.strip() for line in raw.splitlines() if line.strip())
 
-        llm_outputs = []
-
-        for _, row in result_df.iterrows():
-            context_text = row["context"]
-            llm_response = self.llm.classify(context_text)
-            llm_outputs.append(llm_response)
-
-        result_df["nps_classification"] = llm_outputs
-
-        ticker = str(result_df["ticker"].iloc[0]).strip().upper()
-
-        output_path = self.NPS_CLASSIFIED_CSV / f"{ticker}_nps_classified.csv"
-
-        result_df.to_csv(output_path, index=False)
-
-        return None
+        out_path = self.NPS_CLASSIFIED_JSON / f"{source_filename}.json"
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(records, f, ensure_ascii=False, indent=2)
