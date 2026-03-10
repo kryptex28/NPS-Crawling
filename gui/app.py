@@ -1,14 +1,20 @@
-from flask import Flask, jsonify, request, send_from_directory
+import json
+import threading
+import time
+
+from flask import Flask, jsonify, request, send_from_directory, Response, stream_with_context
+
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
 from nps_crawling.crawler.spiders.better_spider import BetterSpider
+from nps_crawling.utils import filings
 from nps_crawling.utils.sec_params import SecParams, create_sec_param_from_dict
 from nps_crawling.utils.sec_query import SecQuery
 from nps_crawling.utils.filings import Filing
 
 app = Flask(__name__, static_folder=".", static_url_path="")
-
+crawl_results = []
 
 @app.get("/")
 def index():
@@ -24,23 +30,54 @@ def results():
 def check():
     return send_from_directory(".", "check.html")
 
+import json
+
+@app.get("/crawl-stream")
+def crawl_stream():
+    print("SSE client connected")
+
+    def event_stream():
+        last_index = 0
+        while True:
+            while last_index < len(crawl_results):
+                result = crawl_results[last_index]
+                last_index += 1
+                print(f"Yielding result {last_index}")
+                yield f"data: {json.dumps(result)}\n\n"  # <-- serialize here
+            time.sleep(0.5)
+
+    return Response(event_stream(), mimetype='text/event-stream',
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+def filing_crawled(filing: Filing):
+    data = filing.to_json()
+    crawl_results.append(data)
 
 @app.post("/search")
 def search():
+    crawl_results.clear()
     data = request.form.to_dict(flat=True)
-    #data["filing_types"] = request.form.getlist("filing_types")
+
+    thread = threading.Thread(target=start_search, args=(data,))
     filings_found: list[Filing] = start_search(data)
-    r = [f.to_json() for f in filings_found]
-    return jsonify(r)
+    thread.daemon = True
+    thread.start()
+    #r = [f.to_json() for f in filings_found]
+    #return jsonify(r)
+    return jsonify({"status": "started"})
 
 def start_search(data: dict):
     param: SecParams = create_sec_param_from_dict(data)
 
-    params: list[SecParams] = [param]
-    #process = CrawlerProcess(get_project_settings())
-    #process.crawl(BetterSpider, params=params)
-
     query: SecQuery = SecQuery(sec_params=param)
+    process = CrawlerProcess(get_project_settings())
+
+    process.crawl(BetterSpider,
+                  callback=filing_crawled,
+                  queries=[query],
+                  )
+    process.start()
     query.fetch_filings()
     return query.keyword_filings
 

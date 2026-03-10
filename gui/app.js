@@ -5,6 +5,9 @@ const bulkSelect = document.getElementById("bulk-select");
 
 const dummyResults = [
   {
+    ciks: ['abc'],
+    display_names: 'abc',
+    form_type: '',
     cik: "0000320193",
     filingId: "0000320193-26-000001",
     url: "https://www.sec.gov/Archives/edgar/data/320193/000032019326000001/filing-index.html",
@@ -25,7 +28,7 @@ const dummyResults = [
 ];
 
 function renderResults(items) {
-  resultsList.innerHTML = "";
+  // resultsList.innerHTML = "";
 
   items.forEach((item, index) => {
     const row = document.createElement("div");
@@ -44,9 +47,13 @@ function renderResults(items) {
     link.href = item.url;
     link.target = "_blank";
     link.rel = "noreferrer";
-    link.textContent = item.filingId;
+    //link.textContent = item.filingId;
+    link.textContent = item.display_names
     const sub = document.createElement("span");
-    sub.textContent = `CIK ${item.cik}`;
+    sub.innerHTML = `
+    CIKs ${item.ciks} <br>
+    Form: ${item.form}
+    `;
     meta.append(link, sub);
 
     const status = document.createElement("span");
@@ -74,9 +81,9 @@ form.addEventListener("submit", async (event) => {
     body: formData
   });
 
-  const data = await response.json()
+  // const data = await response.json()
 
-  renderResults(data);
+  // renderResults(data);
 
 
   resultsPanel.hidden = false;
@@ -94,3 +101,28 @@ bulkSelect.addEventListener("change", () => {
     setAllCheckboxes(false);
   }
 });
+
+const source = new EventSource('/crawl-stream');
+
+source.onmessage = (e) => {
+
+  let result;
+  try {
+    result = JSON.parse(e.data);
+  } catch(err) {
+    console.error("JSON parse failed:", err);
+    return;
+  }
+
+  const items = Array.isArray(result) ? result : [result];
+
+  renderResults(items);
+};
+
+source.onopen = () => {
+    resultsPanel.hidden = false;
+};
+
+source.onerror = (e) => {
+  console.error("SSE error:", e);
+};

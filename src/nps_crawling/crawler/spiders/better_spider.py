@@ -1,10 +1,12 @@
 """Improved Spider to crawl SEC filings for NPS mentions based on parameters and SEC search function."""
 import io
-from typing import Any, AsyncIterator, Iterable
+from typing import Any, AsyncIterator, Iterable, Self
 
 import pypdf
 import scrapy
+from scrapy.crawler import Crawler
 from scrapy.utils.project import get_project_settings
+from scrapy import signals
 
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.utils.filings import CompanyTicker, Filing, FilingDateRange
@@ -16,7 +18,11 @@ class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
     name = 'better_spider'
 
-    def __init__(self):
+    def __init__(self,
+                 callback=None,
+                 queries: list[SecQuery] = None,
+                 *args,
+                 **kwargs):
         """Initializes spider."""
         super(BetterSpider, self).__init__()
         self.logger.info(f"Initializes spider.")
@@ -28,6 +34,8 @@ class BetterSpider(scrapy.Spider):
             'htm': self.extract_xml_content,
             'txt': self.extract_txt_content,
         }
+        self.queries = queries
+        self.callback = callback
 
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
@@ -38,20 +46,23 @@ class BetterSpider(scrapy.Spider):
         query_file_path = settings.get('SEC_QUERY_FILE_PATH')
 
         # Create a list of parameters for all defined keywords in the config file
-        sec_params: list[SecParams] = create_params_from_config(query_file_path)
+        #if params is None:
+        #    sec_params: list[SecParams] = create_params_from_config(query_file_path)
+        #else:
+        #    sec_params = params
 
         # Create a list of query to fetch all related documents
-        sec_queries: list[SecQuery] = []
-        for sec_param in sec_params:
-            query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
-            sec_queries.append(query)
+        #sec_queries: list[SecQuery] = []
+        #for sec_param in sec_params:
+        #    query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
+        #    sec_queries.append(query)
 
         # Fetch now all documents per query
-        for sec_query in sec_queries:
+        for sec_query in self.queries:
             sec_query.fetch_filings()
 
         # Iterate through all filings
-        for sec_query in sec_queries:
+        for sec_query in self.queries:
             for i, filing in enumerate(sec_query.keyword_filings):
                 self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
                 url: str = filing.get_url()[0]
@@ -104,3 +115,18 @@ class BetterSpider(scrapy.Spider):
         """Extracts content from HTML/XML file."""
         self.logger.info(f"Extracting content from {response.url} as XML/HTML.")
         return response.text
+
+    def item_scraped(self, item: FilingItem, spider=None) -> None:
+        """Called by Scrapy signal when an item is scraped."""
+        if self.callback:
+            # Extract the Filing object from the item
+            filing = item.get('filing')
+            if filing:
+                self.callback(filing)
+
+    @classmethod
+    def from_crawler(cls, crawler: Crawler, *args, **kwargs):
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        # Connect the spider.item_scraped method to the item_scraped signal
+        crawler.signals.connect(spider.item_scraped, signal=signals.item_scraped)
+        return spider
