@@ -11,28 +11,28 @@ logger = logging.getLogger(__name__)
 
 class ClassificationPipeline(Config):
     """Classification pipeline class."""
+
     def __init__(self):
         """Initialize the ClassificationPipeline."""
         self.get_data = ClassificationDataProcessing()
         self.model_pipeline = ClassificationModelPipeline()
 
     def classification_workflow(self):
-        """Classification workflow method.
-
-        Iterates over all json_processed files one by one, classifies each
-        context window via the LLM, and writes one output JSON per input file
-        to json_classified/.
-        """
+        """Classification workflow method."""
         logger.info("Starting classification")
 
         json_files = self.get_data.get_all_json_files()
-        logger.info(f"Number of files to classify: {len(json_files)}")
+        total_files = len(json_files)
+        logger.info(f"Number of files to classify: {total_files}")
 
-        for json_file in json_files:
+        for i, json_file in enumerate(json_files, start=1):
+            logger.info(f"[{i}/{total_files}] Processing {json_file.name}")
             records = self.get_data.load_file(json_file)
-            self.model_pipeline.model_workflow(records, source_filename=json_file.stem)
-            logger.info(f"Classified {json_file.name}")
+            self.model_pipeline.model_workflow(
+                records,
+                source_filename=json_file.stem,
+            )
+            logger.info(f"[{i}/{total_files}] Finished {json_file.name}")
 
         logger.info("Finished classification")
-
         return None
