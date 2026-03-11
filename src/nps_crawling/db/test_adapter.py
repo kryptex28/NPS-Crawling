@@ -13,6 +13,7 @@ if 'POSTGRES_ENGINE' not in os.environ:
 
 from nps_crawling.db.db_adapter import DbAdapter
 
+
 def test_adapter():
     print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
     try:
@@ -23,12 +24,12 @@ def test_adapter():
 
     test_id = "test"
     print(f"\n--- Testing DbAdapter with ID: '{test_id}' ---")
-    
+
     # 1. Add filing (simulate scrapy pipeline)
     print("\n1. Testing add_filing (Upsert)...")
     adapter.add_filing(filing_id=test_id, form="10-K", nps_relevant=True, display_names=["Test Company Inc."])
     print(f"Filing '{test_id}' added/upserted.")
-    
+
     # 2. Check if filing exists
     print("\n2. Testing filing_exists...")
     exists = adapter.filing_exists(filing_id=test_id)
@@ -36,12 +37,12 @@ def test_adapter():
 
     # 3. Test Path Updates (Simulating the different pipeline stages storing JSONs)
     print("\n3. Testing path update methods...")
-    
+
     # Raw path (Scrapy storage)
     updated_raw = adapter.update_path_to_raw(filing_id=test_id, path="/fake/path/to/raw.json")
     print(f"update_path_to_raw successful: {updated_raw}")
-    
-    # Preprocessed path 
+
+    # Preprocessed path
     updated_prep = adapter.update_path_to_preprocessed(filing_id=test_id, path="/fake/path/to/preprocessed.json")
     print(f"update_path_to_preprocessed successful: {updated_prep}")
 
@@ -52,10 +53,10 @@ def test_adapter():
     # 4. Test Single / Multi Field Dynamic Update
     print("\n4. Testing generic update_filing method...")
     updated_fields = adapter.update_filing(
-        filing_id=test_id, 
-        nps_goal_reached=True, 
-        nps_value_fix=10.5, 
-        nps_trend_sentiment="Super Positive"
+        filing_id=test_id,
+        nps_goal_reached=True,
+        nps_value_fix=10.5,
+        nps_trend_sentiment="Super Positive",
     )
     print(f"update_filing successful: {updated_fields}")
 
@@ -63,7 +64,7 @@ def test_adapter():
     print("\n5. Testing add_keyword...")
     keyword_added_1 = adapter.add_keyword(filing_id=test_id, keyword="NPS")
     print(f"Keyword 'NPS' added: {keyword_added_1}")
-    
+
     keyword_added_2 = adapter.add_keyword(filing_id=test_id, keyword="Net Promoter Score")
     print(f"Keyword 'Net Promoter Score' added: {keyword_added_2}")
 
@@ -82,6 +83,7 @@ def test_adapter():
                 print(f"  {key}: {value}")
     else:
         print("Failed to retrieve filing.")
+
 
 if __name__ == "__main__":
     test_adapter()

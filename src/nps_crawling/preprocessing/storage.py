@@ -12,7 +12,7 @@ class SaveToJSONPipeline(Config):
     def __init__(self):
         """Initialize the storage pipeline."""
         self.json_root = Config.NPS_CONTEXT_JSON_PATH
-        
+
         try:
             self.db = DbAdapter()
         except Exception:
@@ -41,13 +41,13 @@ class SaveToJSONPipeline(Config):
                 # For preprocessing, if "filing" sub-dict is missing, we try to fall back:
                 metadata = record.get("metadata", {})
                 filing_id = None
-                
+
                 # Check root metadata
                 if "id" in metadata:
                     filing_id = metadata["id"]
                 elif "filing" in metadata and isinstance(metadata["filing"], dict):
                     filing_id = metadata["filing"].get("id")
-                
+
                 # Update DB using explicit method
                 if filing_id:
                     try:

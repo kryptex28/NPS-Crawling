@@ -75,7 +75,7 @@ class SVMClassificationModel(ClassificationModel):
         if not SVM_CACHE_DIR.exists():
             raise FileNotFoundError(
                 f"SVM model cache file not found at {SVM_CACHE_DIR}. "
-                "Please ensure the model is trained and saved correctly."
+                "Please ensure the model is trained and saved correctly.",
             )
 
         self.svm_model = joblib.load(SVM_CACHE_DIR)
@@ -84,7 +84,7 @@ class SVMClassificationModel(ClassificationModel):
         if not LABEL_ENCODER_CACHE_DIR.exists():
             raise FileNotFoundError(
                 f"Label encoder cache file not found at {LABEL_ENCODER_CACHE_DIR}. "
-                "Please ensure the label encoder is saved correctly."
+                "Please ensure the label encoder is saved correctly.",
             )
 
         self.label_encoder = joblib.load(LABEL_ENCODER_CACHE_DIR)
@@ -107,6 +107,6 @@ def get_classification_model(model_name: str) -> ClassificationModel:
     if not model_class:
         raise ValueError(
             f"Model '{model_name}' not recognized. "
-            f"Available models: {list(_MODEL_MAP.keys())}"
+            f"Available models: {list(_MODEL_MAP.keys())}",
         )
     return model_class()
