@@ -58,8 +58,7 @@ class Config:
             "5) MGMT_COMPENSATION_GOVERNANCE: The text links the Net Promoter Score to management compensation, incentives, or governance.\n"
             "6) QUALITATIVE_ONLY: The text mentions the Net Promoter Score only in a qualitative or descriptive way without numbers.\n"
             "7) TARGET_OUTLOOK: The text discusses targets, goals, or future expectations for the Net Promoter Score.\n"
-            "Output: Return 1–2 short lines: first line 'Category: <one of the four labels exactly as written above>'. "
-            "Second line optional 'Reason: <brief why>'. Keep it concise."
+            "Output: The chosen category label and nothing else."
         )
 
     MODEL = "SVM"  # Options: "SVM", "Ollama"
