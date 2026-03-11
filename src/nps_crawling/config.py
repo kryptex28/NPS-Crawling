@@ -43,8 +43,8 @@ class Config:
         "track NPS improvements, and benchmark NPS against competitors."
     )
    
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.4
-    SIMILARITY_THRESHOLD_DOCUMENT_AVG: float = 0.35
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
+    SIMILARITY_THRESHOLD_DOCUMENT_AVG: float = 0.2
 
     """ LLM CONFIG """
     # OLLAMA
