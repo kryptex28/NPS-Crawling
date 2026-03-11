@@ -3,8 +3,6 @@
 import json
 import re
 
-import pandas as pd
-
 from nps_crawling.config import Config
 
 

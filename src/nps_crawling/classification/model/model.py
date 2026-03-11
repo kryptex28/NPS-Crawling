@@ -1,13 +1,10 @@
-
+"""Module for classification models used in the NPS crawling project."""
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from pathlib import Path
 
 import joblib
 from sentence_transformers import SentenceTransformer
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
 
 from nps_crawling.config import Config
 from nps_crawling.llm.llm_ollama import LLMOllama
@@ -16,14 +13,17 @@ log = logging.getLogger(__package__)
 
 
 class ClassificationModel(ABC):
+    """Abstract base class for classification models."""
 
-    @abstractmethod
-    def classify(self, text: str) -> str: ...
+    def classify(self, text: str) -> str:
+        """Classify the given text and return the predicted label."""
+        pass
 
 
 class OllamaModel(ClassificationModel, Config):
-
+    """Classification model using Ollama LLM."""
     def __init__(self):
+        """Initialize OllamaModel with LLMOllama."""
         self.llm = LLMOllama(
             persona=self.OLLAMA_PERSONA,
             model="mistral",
@@ -38,12 +38,14 @@ class OllamaModel(ClassificationModel, Config):
         )
 
     def classify(self, text: str) -> str:
+        """Classify the given text using the Ollama LLM."""
         return self.llm.classify(text)
 
 
 class SVMClassificationModel(ClassificationModel):
-
+    """Classification model using SVM."""
     def __init__(self):
+        """Initialize SVMClassificationModel by loading the embedding model and SVM pipeline."""
         # Load your pre-trained Emedding and SVM model
         BASE_DIR = Path(__file__).resolve().parent
         BGE_CACHE_DIR = BASE_DIR / "cache" / "bge-m3"
@@ -72,6 +74,7 @@ class SVMClassificationModel(ClassificationModel):
         self.label_encoder = joblib.load(LABEL_ENCODER_CACHE_DIR)
 
     def classify(self, text: str) -> str:
+        """Classify the given text using the SVM model."""
         # Implement classification logic using the loaded SVM model
         embedding = self.embedding_model.encode([text])
         prediction = self.svm_model.predict(embedding)
@@ -86,6 +89,7 @@ _MODEL_MAP = {
 
 
 def get_classification_model(model_name: str) -> ClassificationModel:
+    """Factory function to get the classification model based on the model name."""
     model_class = _MODEL_MAP.get(model_name)
     if not model_class:
         raise ValueError(f"Model '{model_name}' not recognized. Available models: {list(_MODEL_MAP.keys())}")

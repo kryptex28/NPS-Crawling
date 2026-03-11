@@ -1,6 +1,6 @@
 """Filings and type abstraction module with utility functions."""
 from enum import Enum
-from typing import Literal, Optional
+from typing import Optional
 
 
 class Filing:

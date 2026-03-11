@@ -32,7 +32,9 @@ def create_params_from_config(path: str) -> list[SecParams]:
                                                              cik=query_data.get('individual_search_cik', ''),
                                                              title=query_data.get('individual_search_title', ''))
 
-        filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(query_data.get('filing_category', ''))
+        filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(
+            query_data.get('filing_category', ''),
+        )
         if filing_category == FilingsCategoryCollectionCoarse.CUSTOM:
             filing_categories: list[str] = query_data.get('filing_categories', [])
         else:
@@ -111,7 +113,7 @@ class SecParams:
         if self.individual_search:
             query_url = f'{query_url}&entityName={self.individual_search.create_entity_name()}'
             query_url = f'{query_url}&ciks={self.individual_search.cik}'
-            text = self.individual_search.create_entity_name()
+            self.individual_search.create_entity_name()
 
         self.last_query = query_url
 

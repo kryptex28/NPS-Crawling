@@ -1,3 +1,4 @@
+"""Example usage of the NpsFilingsDB class."""
 import os
 
 from nps_filings_db import NpsFilingsDB
@@ -5,6 +6,7 @@ from sqlalchemy import create_engine, text
 
 
 def main():
+    """Main function to demonstrate usage of NpsFilingsDB."""
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
 
     db = NpsFilingsDB(engine)
