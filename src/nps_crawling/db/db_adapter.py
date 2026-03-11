@@ -30,7 +30,7 @@ class DbAdapter:
         Args:
             filing_id (str): The unique identifier for the filing.
             **kwargs: Other fields matching the database schema 
-                      (e.g., ciks, display_names, has_nps, path_to_raw, etc.)
+                      (e.g., ciks, display_names, nps_relevant, path_to_raw, etc.)
         """
         # We pass the unpacked dictionary to upsert_filing.
         # NpsFilingsDB will handle matching them to columns or using defaults.

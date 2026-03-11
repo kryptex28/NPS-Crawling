@@ -82,7 +82,7 @@ class SaveToJSONPipeline(Config):
                         film_num=filing.get("film_num", []),
                         keywords=keywords_list,
                         blacklisted=False,
-                        has_nps=True,
+                        nps_relevant=False,
                         path_to_raw=None, # Will be set once batched to disk
                         
                         # New NPS fields

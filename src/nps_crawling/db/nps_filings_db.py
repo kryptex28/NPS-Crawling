@@ -26,7 +26,7 @@ class NpsFilingsDB:
         "keywords",
         "last_crawled",
         "blacklisted",
-        "has_nps",
+        "nps_relevant",
         "path_to_raw",
         "path_to_preprocessed",
         "path_to_classified",
@@ -73,7 +73,7 @@ class NpsFilingsDB:
         film_num: list[str] | None = None,
         keywords: list[str] | None = None,
         blacklisted: bool = False,
-        has_nps: bool = False,
+        nps_relevant: bool = False,
         meta: dict[str, Any] | None = None,
         path_to_raw: str | None = None,
         path_to_preprocessed: str | None = None,
@@ -84,7 +84,7 @@ class NpsFilingsDB:
         nps_value_below: bool | None = None,
         nps_goal_value: float | None = None,
         nps_goal_reached: bool | None = None,
-        KPI_CURRENT_VALUE: float | None = None,
+        KPI_CURRENT_VALUE: bool | None = None,
         KPI_HISTORICAL_COMPARISON: bool | None = None,
         BENCHMARK_COMPARISON: bool | None = None,
         CUSTOMER_CASE_EVIDENCE: bool | None = None,
@@ -92,8 +92,8 @@ class NpsFilingsDB:
         MGMT_COMPENSATION_GOVERNANCE: bool | None = None,
         QUALITATIVE_ONLY: bool | None = None,
         TARGET_OUTLOOK: bool | None = None,
-        NPS_SERVICE_PROVIDER: str | None = None,
-        OTHER: str | None = None,
+        NPS_SERVICE_PROVIDER: bool | None = None,
+        OTHER: bool | None = None,
         has_numeric_nps: bool | None = None,
         nps_value_fix: float | None = None,
         nps_trend_sentiment: str | None = None,
@@ -105,7 +105,7 @@ class NpsFilingsDB:
         INSERT INTO {self.TABLE} (
           id, ciks, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
-          blacklisted, has_nps, path_to_raw, path_to_preprocessed, path_to_classified,
+          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified,
           nps_competition_industry, nps_value_over, nps_value_below, nps_goal_value, nps_goal_reached,
           "KPI_CURRENT_VALUE", "KPI_HISTORICAL_COMPARISON", "BENCHMARK_COMPARISON",
           "CUSTOMER_CASE_EVIDENCE", "METHODOLOGY_DEFINITION", "MGMT_COMPENSATION_GOVERNANCE",
@@ -122,7 +122,7 @@ class NpsFilingsDB:
           :file_type, :file_description,
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
-          :blacklisted, :has_nps,
+          :blacklisted, :nps_relevant,
           :path_to_raw, :path_to_preprocessed, :path_to_classified,
           :nps_competition_industry, :nps_value_over, :nps_value_below, :nps_goal_value, :nps_goal_reached,
           :KPI_CURRENT_VALUE, :KPI_HISTORICAL_COMPARISON, :BENCHMARK_COMPARISON,
@@ -136,7 +136,7 @@ class NpsFilingsDB:
           last_crawled     = now(),
           -- "Sticky" booleans: once TRUE, remain TRUE.
           blacklisted      = {self.TABLE}.blacklisted OR EXCLUDED.blacklisted,
-          has_nps          = {self.TABLE}.has_nps OR EXCLUDED.has_nps,
+          nps_relevant     = {self.TABLE}.nps_relevant OR EXCLUDED.nps_relevant,
 
           -- Only overwrite paths when a new non-NULL value is provided.
           path_to_raw              = COALESCE(EXCLUDED.path_to_raw, {self.TABLE}.path_to_raw),
@@ -198,7 +198,7 @@ class NpsFilingsDB:
                     "film_num": film_num,
                     "keywords": keywords,
                     "blacklisted": blacklisted,
-                    "has_nps": has_nps,
+                    "nps_relevant": nps_relevant,
                     "path_to_raw": path_to_raw,
                     "path_to_preprocessed": path_to_preprocessed,
                     "path_to_classified": path_to_classified,
@@ -296,8 +296,8 @@ class NpsFilingsDB:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
-    def has_nps(self, id: str) -> bool:
-        stmt = text(f"SELECT has_nps FROM {self.TABLE} WHERE id = :id;")
+    def nps_relevant(self, id: str) -> bool:
+        stmt = text(f"SELECT nps_relevant FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False

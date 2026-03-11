@@ -59,7 +59,7 @@ def main():
                         film_num=filing.get("film_num", []),
                         keywords=keywords,
                         blacklisted=False,
-                        has_nps=True, # Assuming any file ending up here comes from the NPS crawler
+                        nps_relevant=False, # Now defaults to False initially
                         path_to_raw=str(json_file.absolute()),
                         
                         # New NPS fields set to default values explicitly
@@ -68,7 +68,7 @@ def main():
                         nps_value_below=False,
                         nps_goal_value=None,
                         nps_goal_reached=False,
-                        KPI_CURRENT_VALUE=None,
+                        KPI_CURRENT_VALUE=False,
                         KPI_HISTORICAL_COMPARISON=False,
                         BENCHMARK_COMPARISON=False,
                         CUSTOMER_CASE_EVIDENCE=False,
@@ -76,8 +76,8 @@ def main():
                         MGMT_COMPENSATION_GOVERNANCE=False,
                         QUALITATIVE_ONLY=False,
                         TARGET_OUTLOOK=False,
-                        NPS_SERVICE_PROVIDER=None,
-                        OTHER=None,
+                        NPS_SERVICE_PROVIDER=False,
+                        OTHER=False,
                         has_numeric_nps=False,
                         nps_value_fix=None,
                         nps_trend_sentiment=None,

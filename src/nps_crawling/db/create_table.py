@@ -27,7 +27,7 @@ def create_table():
         -- Extraction/Processing Metadata
         keywords TEXT[],
         blacklisted BOOLEAN DEFAULT FALSE,
-        has_nps BOOLEAN DEFAULT FALSE,
+        nps_relevant BOOLEAN DEFAULT FALSE,
         
         -- File Paths
         path_to_raw VARCHAR,
@@ -40,7 +40,7 @@ def create_table():
         nps_value_below BOOLEAN DEFAULT FALSE,
         nps_goal_value DOUBLE PRECISION,
         nps_goal_reached BOOLEAN DEFAULT FALSE,
-        "KPI_CURRENT_VALUE" DOUBLE PRECISION,
+        "KPI_CURRENT_VALUE" BOOLEAN DEFAULT FALSE,
         "KPI_HISTORICAL_COMPARISON" BOOLEAN DEFAULT FALSE,
         "BENCHMARK_COMPARISON" BOOLEAN DEFAULT FALSE,
         "CUSTOMER_CASE_EVIDENCE" BOOLEAN DEFAULT FALSE,
@@ -48,8 +48,8 @@ def create_table():
         "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN DEFAULT FALSE,
         "QUALITATIVE_ONLY" BOOLEAN DEFAULT FALSE,
         "TARGET_OUTLOOK" BOOLEAN DEFAULT FALSE,
-        "NPS_SERVICE_PROVIDER" VARCHAR,
-        "OTHER" TEXT,
+        "NPS_SERVICE_PROVIDER" BOOLEAN DEFAULT FALSE,
+        "OTHER" BOOLEAN DEFAULT FALSE,
         has_numeric_nps BOOLEAN DEFAULT FALSE,
         nps_value_fix DOUBLE PRECISION,
         nps_trend_sentiment VARCHAR,

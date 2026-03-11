@@ -26,7 +26,7 @@ def test_adapter():
     
     # 1. Add filing (simulate scrapy pipeline)
     print("\n1. Testing add_filing (Upsert)...")
-    adapter.add_filing(filing_id=test_id, form="10-K", has_nps=True, display_names=["Test Company Inc."])
+    adapter.add_filing(filing_id=test_id, form="10-K", nps_relevant=True, display_names=["Test Company Inc."])
     print(f"Filing '{test_id}' added/upserted.")
     
     # 2. Check if filing exists
