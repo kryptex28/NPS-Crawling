@@ -28,7 +28,7 @@ class Filing:
                  inc_states: list[str],
                  file_path_name: str):
         """Initialize the filing."""
-        self._id: str = _id
+        self.id: str = _id
         self._index: str = _index
 
         self.ciks: list[str] = ciks
