@@ -13,7 +13,7 @@ def create_table():
     create_stmt = text(f"""
     CREATE TABLE IF NOT EXISTS {table_name} (
         id VARCHAR PRIMARY KEY,
-        
+
         -- SEC Metadata
         ciks TEXT[],
         period_ending DATE,
@@ -25,17 +25,17 @@ def create_table():
         file_type VARCHAR,
         file_description TEXT,
         film_num TEXT[],
-        
+
         -- Extraction/Processing Metadata
         keywords TEXT[],
         blacklisted BOOLEAN DEFAULT FALSE,
         nps_relevant BOOLEAN DEFAULT FALSE,
-        
+
         -- File Paths
         path_to_raw VARCHAR,
         path_to_preprocessed VARCHAR,
         path_to_classified VARCHAR,
-        
+
         -- New NPS Fields
         nps_competition_industry BOOLEAN DEFAULT FALSE,
         nps_value_over BOOLEAN DEFAULT FALSE,
@@ -57,7 +57,7 @@ def create_table():
         nps_trend_sentiment VARCHAR,
         nps_scope VARCHAR,
         nps_formal_role VARCHAR,
-        
+
         -- Crawl Tracking
         last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     );

@@ -8,6 +8,7 @@ from sqlalchemy import Engine, text
 
 
 class NpsFilingsDB:
+    """Database access layer for NPS filings."""
     # Name of the target PostgreSQL table.
     TABLE = "nps_filings"
 
@@ -57,6 +58,7 @@ class NpsFilingsDB:
     }
 
     def __init__(self, engine: Engine):
+        """Initialize NpsFilingsDB with a SQLAlchemy Engine."""
         # Store the SQLAlchemy Engine used for all DB operations.
         self.engine = engine
 
@@ -160,7 +162,7 @@ class NpsFilingsDB:
           adsh             = COALESCE(EXCLUDED.adsh, {self.TABLE}.adsh),
           file_type        = COALESCE(EXCLUDED.file_type, {self.TABLE}.file_type),
           file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description),
-          
+
           -- NPS Fields Update
           nps_competition_industry     = COALESCE(EXCLUDED.nps_competition_industry, {self.TABLE}.nps_competition_industry),
           nps_value_over               = COALESCE(EXCLUDED.nps_value_over, {self.TABLE}.nps_value_over),
@@ -235,6 +237,7 @@ class NpsFilingsDB:
         touch_last_crawled: bool = True,
         **fields: Any,
     ) -> int:
+        """Update specified fields of an existing filing by id."""
         # No updates requested.
         if not fields:
             return 0

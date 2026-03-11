@@ -13,13 +13,15 @@ log = logging.getLogger(__package__)
 
 
 class ClassificationModel(ABC):
+    """Abstract base class for classification models."""
 
-    @abstractmethod
-    def classify(self, text: str) -> str: ...
+    def classify(self, text: str) -> str:
+        """Classify the given text and return the predicted label."""
+        pass
 
 
 class OllamaModel(ClassificationModel, Config):
-
+    """Classification model using Ollama LLM."""
     def __init__(self):
         base_url = (
             os.environ.get("OLLAMA_API_BASE")
@@ -59,7 +61,7 @@ class OllamaModel(ClassificationModel, Config):
 
 
 class SVMClassificationModel(ClassificationModel):
-
+    """Classification model using SVM."""
     def __init__(self):
         BASE_DIR = Path(__file__).resolve().parent
         BGE_CACHE_DIR = BASE_DIR / "cache" / "bge-m3"
@@ -103,6 +105,7 @@ _MODEL_MAP = {
 
 
 def get_classification_model(model_name: str) -> ClassificationModel:
+    """Factory function to get the classification model based on the model name."""
     model_class = _MODEL_MAP.get(model_name)
     if not model_class:
         raise ValueError(

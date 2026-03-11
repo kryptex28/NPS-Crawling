@@ -1,7 +1,6 @@
 """Storage pipeline to save processed context windows as JSON files."""
 
 import json
-from pathlib import Path
 
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter

@@ -29,10 +29,10 @@ class DbAdapter:
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """
         Adds or updates a new filing in the database.
-        
+
         Args:
             filing_id (str): The unique identifier for the filing.
-            **kwargs: Other fields matching the database schema 
+            **kwargs: Other fields matching the database schema
                       (e.g., ciks, display_names, nps_relevant, path_to_raw, etc.)
         """
         # We pass the unpacked dictionary to upsert_filing.
@@ -42,10 +42,10 @@ class DbAdapter:
     def filing_exists(self, filing_id: str) -> bool:
         """
         Checks if a filing with the given ID already exists in the database.
-        
+
         Args:
             filing_id (str): The unique identifier for the filing.
-            
+
         Returns:
             bool: True if the filing exists, False otherwise.
         """
@@ -57,11 +57,11 @@ class DbAdapter:
         """
         Adds a single keyword to the keywords array for a specific filing.
         If the filing does not exist, nothing will be done.
-        
+
         Args:
             filing_id (str): The unique identifier for the filing.
             keyword (str): The keyword to add.
-            
+
         Returns:
             bool: True if keyword was successfully added, False if the filing did not exist or the keyword already existed.
         """
@@ -70,10 +70,10 @@ class DbAdapter:
     def get_filing(self, filing_id: str) -> dict | None:
         """
         Retrieves all data for a specific filing and returns it as a dictionary.
-        
+
         Args:
             filing_id (str): The unique identifier for the filing.
-            
+
         Returns:
             dict | None: A dictionary representation of the row if found, otherwise None.
         """
@@ -88,13 +88,13 @@ class DbAdapter:
     def update_filing(self, filing_id: str, touch_last_crawled: bool = True, **kwargs) -> bool:
         """
         Updates one or multiple fields for a specific filing.
-        
+
         Args:
             filing_id (str): The unique identifier for the filing.
             touch_last_crawled (bool): If True, updates the `last_crawled` timestamp. Defaults to True.
-            **kwargs: Arbitrary fields to update matching the database schema 
+            **kwargs: Arbitrary fields to update matching the database schema
                       (e.g., nps_goal_reached=True, nps_value_fix=8.5)
-            
+
         Returns:
             bool: True if the filing was found and updated, False otherwise.
         """
@@ -127,10 +127,10 @@ class DbAdapter:
     def get_all_filings(self, limit: int = 100) -> list[dict]:
         """
         Retrieves a list of up to `limit` filings.
-        
+
         Args:
             limit (int): The maximum number of filings to retrieve. Defaults to 100.
-            
+
         Returns:
             list[dict]: A list of dictionary representations of the rows.
         """
@@ -144,8 +144,8 @@ class DbAdapter:
         A convenience method to just retrieve the file paths for a filing.
         """
         stmt = text(f"""
-            SELECT path_to_raw, path_to_preprocessed, path_to_classified 
-            FROM {self.table_name} 
+            SELECT path_to_raw, path_to_preprocessed, path_to_classified
+            FROM {self.table_name}
             WHERE id = :id
         """)
         with self.engine.connect() as conn:
