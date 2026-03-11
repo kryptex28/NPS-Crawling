@@ -96,6 +96,7 @@ class SecParams:
 
         if page > 1:
             query_url = f'{query_url}&page={page}'
+            query_url = f'{query_url}&from={(page - 1) * 100}'
 
         if self.from_date:
             query_url = f'{query_url}&startdt={self.from_date}'
