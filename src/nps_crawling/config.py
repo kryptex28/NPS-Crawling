@@ -46,4 +46,4 @@ class Config:
             "Second line optional 'Reason: <brief why>'. Keep it concise."
         )
 
-    MODEL = "SVM"  # Options: "SVM", "Ollama"
+    MODEL = "Ollama"  # Options: "SVM", "Ollama"
