@@ -9,3 +9,7 @@ requests
 sentence-transformers~=5.2.3
 transformers
 torch
+langchain
+langchain-huggingface
+tqdm
+sqlalchemy
