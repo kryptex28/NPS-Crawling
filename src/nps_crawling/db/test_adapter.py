@@ -79,7 +79,7 @@ def test_adapter():
         print("\nSuccessfully retrieved filing. Here is the current state:")
         for key, value in item.items():
             # Only print fields that have actual values to keep output readable
-            if value is not None and value != [] and value != False:
+            if value is not None and value != [] and value:
                 print(f"  {key}: {value}")
     else:
         print("Failed to retrieve filing.")
