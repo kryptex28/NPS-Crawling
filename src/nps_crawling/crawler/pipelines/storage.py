@@ -20,7 +20,7 @@ class SaveToJSONPipeline(Config):
         self.json_root = Config.RAW_JSON_PATH_CRAWLER
         self.records = []
         self.flush_every = 1
-        
+
         # Initialize the database adapter for real-time upserts
         try:
             self.db = DbAdapter()
@@ -62,11 +62,11 @@ class SaveToJSONPipeline(Config):
             filing = metadata.get("filing", {})
             keyword = metadata.get("keyword")
             filing_id = filing.get("id")
-            
+
             if filing_id:
                 keywords_list = [keyword] if keyword else []
                 # path_to_raw will be set later during the flush, so we set it to None initially
-                
+
                 try:
                     self.db.add_filing(
                         filing_id=filing_id,
@@ -83,8 +83,8 @@ class SaveToJSONPipeline(Config):
                         keywords=keywords_list,
                         blacklisted=False,
                         nps_relevant=False,
-                        path_to_raw=None, # Will be set once batched to disk
-                        
+                        path_to_raw=None,  # Will be set once batched to disk
+
                         # New NPS fields
                         nps_competition_industry=False,
                         nps_value_over=False,
@@ -105,7 +105,7 @@ class SaveToJSONPipeline(Config):
                         nps_value_fix=None,
                         nps_trend_sentiment=None,
                         nps_scope=None,
-                        nps_formal_role=None
+                        nps_formal_role=None,
                     )
                 except Exception as e:
                     # Log silently or configure scrapy logger and skip
@@ -141,7 +141,7 @@ class SaveToJSONPipeline(Config):
                 metadata = record.get("metadata", {})
                 filing = metadata.get("filing", {})
                 filing_id = filing.get("id")
-                
+
                 if filing_id:
                     try:
                         self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))

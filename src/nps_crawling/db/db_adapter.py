@@ -1,6 +1,9 @@
 import os
+
 from sqlalchemy import create_engine, text
+
 from nps_crawling.db.nps_filings_db import NpsFilingsDB
+
 
 class DbAdapter:
     """
@@ -8,7 +11,7 @@ class DbAdapter:
     Wraps around NpsFilingsDB to provide specific, easy-to-use methods
     for adding filings, checking existence, adding keywords, and retrieving filings.
     """
-    
+
     def __init__(self, connection_string: str = None):
         """
         Initializes the database connection and the underlying DB wrapper.
@@ -18,7 +21,7 @@ class DbAdapter:
             connection_string = os.environ.get('POSTGRES_ENGINE')
             if not connection_string:
                 raise ValueError("No connection string provided and POSTGRES_ENGINE environment variable is not set.")
-                
+
         self.engine = create_engine(f"postgresql+psycopg2://{connection_string}")
         self._db = NpsFilingsDB(self.engine)
         self.table_name = self._db.TABLE
@@ -35,7 +38,7 @@ class DbAdapter:
         # We pass the unpacked dictionary to upsert_filing.
         # NpsFilingsDB will handle matching them to columns or using defaults.
         self._db.upsert_filing(id=filing_id, **kwargs)
-        
+
     def filing_exists(self, filing_id: str) -> bool:
         """
         Checks if a filing with the given ID already exists in the database.
@@ -135,7 +138,7 @@ class DbAdapter:
         with self.engine.connect() as conn:
             rows = conn.execute(stmt, {"limit": limit}).mappings().all()
             return [dict(row) for row in rows]
-            
+
     def get_filing_paths(self, filing_id: str) -> dict | None:
         """
         A convenience method to just retrieve the file paths for a filing.

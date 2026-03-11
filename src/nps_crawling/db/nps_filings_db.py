@@ -1,8 +1,11 @@
 # nps_filings_db.py
 from __future__ import annotations
+
 import json
 from typing import Any, Literal
+
 from sqlalchemy import Engine, text
+
 
 class NpsFilingsDB:
     # Name of the target PostgreSQL table.
@@ -10,7 +13,7 @@ class NpsFilingsDB:
 
     # Columns stored as PostgreSQL text arrays (TEXT[]).
     _ARRAY_COLS = {"ciks", "display_names", "root_forms", "film_num", "keywords"}
-    
+
     # Columns that are allowed to be updated via update_fields().
     _UPDATABLE_COLS = {
         "ciks",
@@ -50,7 +53,7 @@ class NpsFilingsDB:
         "nps_value_fix",
         "nps_trend_sentiment",
         "nps_scope",
-        "nps_formal_role"
+        "nps_formal_role",
     }
 
     def __init__(self, engine: Engine):
