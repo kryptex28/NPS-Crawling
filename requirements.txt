@@ -4,9 +4,9 @@ pyarrow~=22.0.0
 pandas~=2.3.3
 bs4~=0.0.2
 ollama
-psycopg2
 pypdf
 requests
 sentence-transformers~=5.2.3
 transformers
 torch
+sqlalchemy
