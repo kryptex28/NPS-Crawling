@@ -1,15 +1,8 @@
-# nps_filings.py
+# nps_filings_db.py
 from __future__ import annotations
-
-# Used to serialize Python dicts into JSON strings for JSONB parameters.
 import json
-
-# Types for metadata dicts and for restricting meta_mode to allowed strings.
 from typing import Any, Literal
-
-# Engine is the database entry point; text() creates parameterized SQL strings.
 from sqlalchemy import Engine, text
-
 
 class NpsFilingsDB:
     # Name of the target PostgreSQL table.
@@ -17,6 +10,7 @@ class NpsFilingsDB:
 
     # Columns stored as PostgreSQL text arrays (TEXT[]).
     _ARRAY_COLS = {"ciks", "display_names", "root_forms", "film_num", "keywords"}
+    
     # Columns that are allowed to be updated via update_fields().
     _UPDATABLE_COLS = {
         "ciks",
@@ -33,10 +27,30 @@ class NpsFilingsDB:
         "last_crawled",
         "blacklisted",
         "has_nps",
-        "meta",
-        "path_raw",
-        "path_cleaned",
-        "path_prepro",
+        "path_to_raw",
+        "path_to_preprocessed",
+        "path_to_classified",
+        # New NPS Fields
+        "nps_competition_industry",
+        "nps_value_over",
+        "nps_value_below",
+        "nps_goal_value",
+        "nps_goal_reached",
+        "KPI_CURRENT_VALUE",
+        "KPI_HISTORICAL_COMPARISON",
+        "BENCHMARK_COMPARISON",
+        "CUSTOMER_CASE_EVIDENCE",
+        "METHODOLOGY_DEFINITION",
+        "MGMT_COMPENSATION_GOVERNANCE",
+        "QUALITATIVE_ONLY",
+        "TARGET_OUTLOOK",
+        "NPS_SERVICE_PROVIDER",
+        "OTHER",
+        "has_numeric_nps",
+        "nps_value_fix",
+        "nps_trend_sentiment",
+        "nps_scope",
+        "nps_formal_role"
     }
 
     def __init__(self, engine: Engine):
@@ -61,29 +75,42 @@ class NpsFilingsDB:
         blacklisted: bool = False,
         has_nps: bool = False,
         meta: dict[str, Any] | None = None,
-        path_raw: str | None = None,
-        path_cleaned: str | None = None,
-        path_prepro: str | None = None,
-        meta_mode: Literal["merge", "replace"] = "merge",
+        path_to_raw: str | None = None,
+        path_to_preprocessed: str | None = None,
+        path_to_classified: str | None = None,
+        # New NPS Fields
+        nps_competition_industry: bool | None = None,
+        nps_value_over: bool | None = None,
+        nps_value_below: bool | None = None,
+        nps_goal_value: float | None = None,
+        nps_goal_reached: bool | None = None,
+        KPI_CURRENT_VALUE: float | None = None,
+        KPI_HISTORICAL_COMPARISON: bool | None = None,
+        BENCHMARK_COMPARISON: bool | None = None,
+        CUSTOMER_CASE_EVIDENCE: bool | None = None,
+        METHODOLOGY_DEFINITION: bool | None = None,
+        MGMT_COMPENSATION_GOVERNANCE: bool | None = None,
+        QUALITATIVE_ONLY: bool | None = None,
+        TARGET_OUTLOOK: bool | None = None,
+        NPS_SERVICE_PROVIDER: str | None = None,
+        OTHER: str | None = None,
+        has_numeric_nps: bool | None = None,
+        nps_value_fix: float | None = None,
+        nps_trend_sentiment: str | None = None,
+        nps_scope: str | None = None,
+        nps_formal_role: str | None = None,
     ) -> None:
-        # Ensure meta is always a dict so it can be serialized and stored in JSONB.
-        meta = meta or {}
 
-        # Choose whether meta is merged with existing JSONB (||) or replaced entirely.
-        meta_update = (
-            f"{self.TABLE}.meta || EXCLUDED.meta"
-            if meta_mode == "merge"
-            else "EXCLUDED.meta"
-        )
-
-        # Insert a new filing; on id conflict update selected fields.
-        # Arrays: CAST is used to avoid issues with typed parameters in SQLAlchemy text().
-        # COALESCE(..., ARRAY[]::text[]) ensures NOT NULL array columns get an empty array if None is passed.
         stmt = text(f"""
         INSERT INTO {self.TABLE} (
           id, ciks, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
-          blacklisted, has_nps, meta, path_raw, path_cleaned, path_prepro
+          blacklisted, has_nps, path_to_raw, path_to_preprocessed, path_to_classified,
+          nps_competition_industry, nps_value_over, nps_value_below, nps_goal_value, nps_goal_reached,
+          "KPI_CURRENT_VALUE", "KPI_HISTORICAL_COMPARISON", "BENCHMARK_COMPARISON",
+          "CUSTOMER_CASE_EVIDENCE", "METHODOLOGY_DEFINITION", "MGMT_COMPENSATION_GOVERNANCE",
+          "QUALITATIVE_ONLY", "TARGET_OUTLOOK", "NPS_SERVICE_PROVIDER", "OTHER",
+          has_numeric_nps, nps_value_fix, nps_trend_sentiment, nps_scope, nps_formal_role
         )
         VALUES (
           :id,
@@ -95,8 +122,13 @@ class NpsFilingsDB:
           :file_type, :file_description,
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
-          :blacklisted, :has_nps, CAST(:meta AS jsonb),
-          :path_raw, :path_cleaned, :path_prepro
+          :blacklisted, :has_nps,
+          :path_to_raw, :path_to_preprocessed, :path_to_classified,
+          :nps_competition_industry, :nps_value_over, :nps_value_below, :nps_goal_value, :nps_goal_reached,
+          :KPI_CURRENT_VALUE, :KPI_HISTORICAL_COMPARISON, :BENCHMARK_COMPARISON,
+          :CUSTOMER_CASE_EVIDENCE, :METHODOLOGY_DEFINITION, :MGMT_COMPENSATION_GOVERNANCE,
+          :QUALITATIVE_ONLY, :TARGET_OUTLOOK, :NPS_SERVICE_PROVIDER, :OTHER,
+          :has_numeric_nps, :nps_value_fix, :nps_trend_sentiment, :nps_scope, :nps_formal_role
         )
         ON CONFLICT (id) DO UPDATE
         SET
@@ -105,31 +137,50 @@ class NpsFilingsDB:
           -- "Sticky" booleans: once TRUE, remain TRUE.
           blacklisted      = {self.TABLE}.blacklisted OR EXCLUDED.blacklisted,
           has_nps          = {self.TABLE}.has_nps OR EXCLUDED.has_nps,
-          -- Meta can be merged or replaced depending on meta_mode.
-          meta             = {meta_update},
 
           -- Only overwrite paths when a new non-NULL value is provided.
-          path_raw         = COALESCE(EXCLUDED.path_raw, {self.TABLE}.path_raw),
-          path_cleaned     = COALESCE(EXCLUDED.path_cleaned, {self.TABLE}.path_cleaned),
-          path_prepro      = COALESCE(EXCLUDED.path_prepro, {self.TABLE}.path_prepro),
+          path_to_raw              = COALESCE(EXCLUDED.path_to_raw, {self.TABLE}.path_to_raw),
+          path_to_preprocessed     = COALESCE(EXCLUDED.path_to_preprocessed, {self.TABLE}.path_to_preprocessed),
+          path_to_classified       = COALESCE(EXCLUDED.path_to_classified, {self.TABLE}.path_to_classified),
 
-          -- Arrays: only overwrite when the corresponding parameter is not NULL.
+          -- Array fields
           ciks             = CASE WHEN :ciks IS NULL THEN {self.TABLE}.ciks ELSE EXCLUDED.ciks END,
           display_names    = CASE WHEN :display_names IS NULL THEN {self.TABLE}.display_names ELSE EXCLUDED.display_names END,
           root_forms       = CASE WHEN :root_forms IS NULL THEN {self.TABLE}.root_forms ELSE EXCLUDED.root_forms END,
           film_num         = CASE WHEN :film_num IS NULL THEN {self.TABLE}.film_num ELSE EXCLUDED.film_num END,
           keywords         = CASE WHEN :keywords IS NULL THEN {self.TABLE}.keywords ELSE EXCLUDED.keywords END,
 
-          -- For scalar fields, keep existing values if the new value is NULL.
+          -- Scalar fields
           period_ending    = COALESCE(EXCLUDED.period_ending, {self.TABLE}.period_ending),
           file_date        = COALESCE(EXCLUDED.file_date, {self.TABLE}.file_date),
           form             = COALESCE(EXCLUDED.form, {self.TABLE}.form),
           adsh             = COALESCE(EXCLUDED.adsh, {self.TABLE}.adsh),
           file_type        = COALESCE(EXCLUDED.file_type, {self.TABLE}.file_type),
-          file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description);
+          file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description),
+          
+          -- NPS Fields Update
+          nps_competition_industry     = COALESCE(EXCLUDED.nps_competition_industry, {self.TABLE}.nps_competition_industry),
+          nps_value_over               = COALESCE(EXCLUDED.nps_value_over, {self.TABLE}.nps_value_over),
+          nps_value_below              = COALESCE(EXCLUDED.nps_value_below, {self.TABLE}.nps_value_below),
+          nps_goal_value               = COALESCE(EXCLUDED.nps_goal_value, {self.TABLE}.nps_goal_value),
+          nps_goal_reached             = COALESCE(EXCLUDED.nps_goal_reached, {self.TABLE}.nps_goal_reached),
+          "KPI_CURRENT_VALUE"            = COALESCE(EXCLUDED."KPI_CURRENT_VALUE", {self.TABLE}."KPI_CURRENT_VALUE"),
+          "KPI_HISTORICAL_COMPARISON"    = COALESCE(EXCLUDED."KPI_HISTORICAL_COMPARISON", {self.TABLE}."KPI_HISTORICAL_COMPARISON"),
+          "BENCHMARK_COMPARISON"         = COALESCE(EXCLUDED."BENCHMARK_COMPARISON", {self.TABLE}."BENCHMARK_COMPARISON"),
+          "CUSTOMER_CASE_EVIDENCE"       = COALESCE(EXCLUDED."CUSTOMER_CASE_EVIDENCE", {self.TABLE}."CUSTOMER_CASE_EVIDENCE"),
+          "METHODOLOGY_DEFINITION"       = COALESCE(EXCLUDED."METHODOLOGY_DEFINITION", {self.TABLE}."METHODOLOGY_DEFINITION"),
+          "MGMT_COMPENSATION_GOVERNANCE" = COALESCE(EXCLUDED."MGMT_COMPENSATION_GOVERNANCE", {self.TABLE}."MGMT_COMPENSATION_GOVERNANCE"),
+          "QUALITATIVE_ONLY"             = COALESCE(EXCLUDED."QUALITATIVE_ONLY", {self.TABLE}."QUALITATIVE_ONLY"),
+          "TARGET_OUTLOOK"               = COALESCE(EXCLUDED."TARGET_OUTLOOK", {self.TABLE}."TARGET_OUTLOOK"),
+          "NPS_SERVICE_PROVIDER"         = COALESCE(EXCLUDED."NPS_SERVICE_PROVIDER", {self.TABLE}."NPS_SERVICE_PROVIDER"),
+          "OTHER"                        = COALESCE(EXCLUDED."OTHER", {self.TABLE}."OTHER"),
+          has_numeric_nps              = COALESCE(EXCLUDED.has_numeric_nps, {self.TABLE}.has_numeric_nps),
+          nps_value_fix                = COALESCE(EXCLUDED.nps_value_fix, {self.TABLE}.nps_value_fix),
+          nps_trend_sentiment          = COALESCE(EXCLUDED.nps_trend_sentiment, {self.TABLE}.nps_trend_sentiment),
+          nps_scope                    = COALESCE(EXCLUDED.nps_scope, {self.TABLE}.nps_scope),
+          nps_formal_role              = COALESCE(EXCLUDED.nps_formal_role, {self.TABLE}.nps_formal_role);
         """)
 
-        # Use a transaction (engine.begin) so the statement is committed automatically on success.
         with self.engine.begin() as conn:
             conn.execute(
                 stmt,
@@ -148,10 +199,29 @@ class NpsFilingsDB:
                     "keywords": keywords,
                     "blacklisted": blacklisted,
                     "has_nps": has_nps,
-                    "meta": json.dumps(meta),
-                    "path_raw": path_raw,
-                    "path_cleaned": path_cleaned,
-                    "path_prepro": path_prepro,
+                    "path_to_raw": path_to_raw,
+                    "path_to_preprocessed": path_to_preprocessed,
+                    "path_to_classified": path_to_classified,
+                    "nps_competition_industry": nps_competition_industry,
+                    "nps_value_over": nps_value_over,
+                    "nps_value_below": nps_value_below,
+                    "nps_goal_value": nps_goal_value,
+                    "nps_goal_reached": nps_goal_reached,
+                    "KPI_CURRENT_VALUE": KPI_CURRENT_VALUE,
+                    "KPI_HISTORICAL_COMPARISON": KPI_HISTORICAL_COMPARISON,
+                    "BENCHMARK_COMPARISON": BENCHMARK_COMPARISON,
+                    "CUSTOMER_CASE_EVIDENCE": CUSTOMER_CASE_EVIDENCE,
+                    "METHODOLOGY_DEFINITION": METHODOLOGY_DEFINITION,
+                    "MGMT_COMPENSATION_GOVERNANCE": MGMT_COMPENSATION_GOVERNANCE,
+                    "QUALITATIVE_ONLY": QUALITATIVE_ONLY,
+                    "TARGET_OUTLOOK": TARGET_OUTLOOK,
+                    "NPS_SERVICE_PROVIDER": NPS_SERVICE_PROVIDER,
+                    "OTHER": OTHER,
+                    "has_numeric_nps": has_numeric_nps,
+                    "nps_value_fix": nps_value_fix,
+                    "nps_trend_sentiment": nps_trend_sentiment,
+                    "nps_scope": nps_scope,
+                    "nps_formal_role": nps_formal_role,
                 },
             )
 
@@ -160,7 +230,6 @@ class NpsFilingsDB:
         id: str,
         *,
         touch_last_crawled: bool = True,
-        meta_mode: Literal["merge", "replace"] = "replace",
         **fields: Any,
     ) -> int:
         # No updates requested.
@@ -177,16 +246,6 @@ class NpsFilingsDB:
         params: dict[str, Any] = {"id": id}
 
         for col, val in fields.items():
-            # Meta is stored as JSONB and can be merged or replaced.
-            if col == "meta":
-                val = {} if val is None else val
-                params["meta"] = json.dumps(val)
-                if meta_mode == "merge":
-                    set_parts.append(f"meta = {self.TABLE}.meta || CAST(:meta AS jsonb)")
-                else:
-                    set_parts.append("meta = CAST(:meta AS jsonb)")
-                continue
-
             # Array columns are stored as TEXT[].
             if col in self._ARRAY_COLS:
                 if val is None:
@@ -199,10 +258,16 @@ class NpsFilingsDB:
 
             # For scalar columns, None means set the column to NULL.
             if val is None:
-                set_parts.append(f"{col} = NULL")
+                if col.isupper():
+                    set_parts.append(f'"{col}" = NULL')
+                else:
+                    set_parts.append(f"{col} = NULL")
             else:
                 params[col] = val
-                set_parts.append(f"{col} = :{col}")
+                if col.isupper():
+                    set_parts.append(f'"{col}" = :{col}')
+                else:
+                    set_parts.append(f"{col} = :{col}")
 
         # Optionally update last_crawled unless the caller explicitly sets it.
         if touch_last_crawled and "last_crawled" not in fields:
@@ -220,30 +285,26 @@ class NpsFilingsDB:
             return int(res.rowcount or 0)
 
     def delete_filing(self, id: str) -> bool:
-        # Delete by primary key and return whether any row was removed.
         stmt = text(f"DELETE FROM {self.TABLE} WHERE id = :id;")
         with self.engine.begin() as conn:
             res = conn.execute(stmt, {"id": id})
             return (res.rowcount or 0) > 0
 
     def is_blacklisted(self, id: str) -> bool:
-        # Read the blacklisted flag; return False if the row does not exist.
         stmt = text(f"SELECT blacklisted FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
     def has_nps(self, id: str) -> bool:
-        # Read the has_nps flag; return False if the row does not exist.
         stmt = text(f"SELECT has_nps FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
-    def cleaned_exists(self, id: str) -> bool:
-        # True if path_cleaned is set and non-empty; False if row does not exist.
+    def classified_exists(self, id: str) -> bool:
         stmt = text(f"""
-        SELECT (path_cleaned IS NOT NULL AND path_cleaned <> '')
+        SELECT (path_to_classified IS NOT NULL AND path_to_classified <> '')
         FROM {self.TABLE}
         WHERE id = :id;
         """)
@@ -252,9 +313,18 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def preprocessed_exists(self, id: str) -> bool:
-        # True if path_prepro is set and non-empty; False if row does not exist.
         stmt = text(f"""
-        SELECT (path_prepro IS NOT NULL AND path_prepro <> '')
+        SELECT (path_to_preprocessed IS NOT NULL AND path_to_preprocessed <> '')
+        FROM {self.TABLE}
+        WHERE id = :id;
+        """)
+        with self.engine.connect() as conn:
+            val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
+            return bool(val) if val is not None else False
+
+    def raw_exists(self, id: str) -> bool:
+        stmt = text(f"""
+        SELECT (path_to_raw IS NOT NULL AND path_to_raw <> '')
         FROM {self.TABLE}
         WHERE id = :id;
         """)
@@ -263,7 +333,6 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def blacklist(self, id: str) -> None:
-        # Mark a filing as blacklisted; creates the row if it does not exist.
         stmt = text(f"""
         INSERT INTO {self.TABLE} (id, blacklisted)
         VALUES (:id, TRUE)
@@ -274,30 +343,18 @@ class NpsFilingsDB:
             conn.execute(stmt, {"id": id})
 
     def add_keyword(self, id: str, kw: str) -> bool:
-        # Add a keyword only if it is not already present.
-        # If the row does not exist, create it with keywords = [kw].
-        # Returns True if a keyword was added or the row was inserted; otherwise False.
         stmt = text(f"""
-        WITH updated AS (
-          UPDATE {self.TABLE}
-          SET
-            keywords = array_append(keywords, :kw),
-            last_crawled = now()
-          WHERE id = :id
-            AND NOT (:kw = ANY(keywords))
-          RETURNING 1
-        ),
-        inserted AS (
-          INSERT INTO {self.TABLE} (id, keywords)
-          SELECT :id, CAST(ARRAY[:kw] AS text[])
-          WHERE NOT EXISTS (SELECT 1 FROM {self.TABLE} WHERE id = :id)
-          RETURNING 1
-        )
-        SELECT EXISTS (
-          SELECT 1 FROM updated
-          UNION ALL
-          SELECT 1 FROM inserted
-        ) AS added;
+        UPDATE {self.TABLE}
+        SET
+          keywords = CASE
+            WHEN NOT (:kw = ANY(keywords)) THEN array_append(keywords, :kw)
+            ELSE keywords
+          END,
+          last_crawled = now()
+        WHERE id = :id
+        RETURNING 1;
         """)
         with self.engine.begin() as conn:
-            return bool(conn.execute(stmt, {"id": id, "kw": kw}).scalar_one())
+            # scalar() returns 1 if row was updated (meaning the keyword was successfully added),
+            # or None if row doesn't exist or keyword was already in the array.
+            return bool(conn.execute(stmt, {"id": id, "kw": kw}).scalar())
