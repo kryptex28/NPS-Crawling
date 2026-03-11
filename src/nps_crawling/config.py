@@ -11,11 +11,13 @@ class Config:
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
     NPS_CONTEXT_JSON_PATH = DATA_PATH / "json_processed"
     NPS_CLASSIFIED_JSON = DATA_PATH / "json_classified"
+    NPS_REJECTED_JSON_PATH = DATA_PATH / "json_reject"
 
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
     NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
     NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
+    NPS_REJECTED_JSON_PATH.mkdir(parents=True, exist_ok=True)
 
     """ FILES """
     RAW_PARQUET_FILE_CRAWLER = "nps_filings.parquet"
@@ -24,14 +26,25 @@ class Config:
     # define the batch size of how many filing should run through data processing pipeline at once
     FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE: int = 2  # 2 just to simulate batch processing, will be way higher
 
-    # define what phrases to filter in text here
+    
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
                                                    "customer satisfaction score", "customer loyalty metric",
                                                    "likelihood to recommend"]
 
-    # define the size of the context window here. how many sentences before and after should be included
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2
     AMOUNT_SENTENCES_INCLUDED_AFTER: int = 2
+
+    """ SIMILARITY SEARCH CONFIG """
+    SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    SIMILARITY_REFERENCE_TEXT: str = (
+        "Net Promoter Score (NPS) is a customer satisfaction and loyalty metric "
+        "that measures how likely customers are to recommend a company's products "
+        "or services to others on a scale from 0 to 10. Companies report NPS scores, "
+        "track NPS improvements, and benchmark NPS against competitors."
+    )
+   
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
+    SIMILARITY_THRESHOLD_DOCUMENT_AVG: float = 0.2
 
     """ LLM CONFIG """
     # OLLAMA
