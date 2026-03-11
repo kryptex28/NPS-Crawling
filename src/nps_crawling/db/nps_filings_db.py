@@ -1,3 +1,7 @@
+"""Database access layer for NPS filings.
+
+Provides methods to upsert, update, delete, and query filings in a PostgreSQL database using SQLAlchemy.
+"""
 # nps_filings.py
 from __future__ import annotations
 
@@ -12,6 +16,7 @@ from sqlalchemy import Engine, text
 
 
 class NpsFilingsDB:
+    """Database access layer for NPS filings."""
     # Name of the target PostgreSQL table.
     TABLE = "nps_filings"
 
@@ -40,6 +45,7 @@ class NpsFilingsDB:
     }
 
     def __init__(self, engine: Engine):
+        """Initialize NpsFilingsDB with a SQLAlchemy Engine."""
         # Store the SQLAlchemy Engine used for all DB operations.
         self.engine = engine
 
@@ -66,6 +72,7 @@ class NpsFilingsDB:
         path_prepro: str | None = None,
         meta_mode: Literal["merge", "replace"] = "merge",
     ) -> None:
+        """Insert a new filing or update an existing one based on the id primary key."""
         # Ensure meta is always a dict so it can be serialized and stored in JSONB.
         meta = meta or {}
 
@@ -127,7 +134,7 @@ class NpsFilingsDB:
           adsh             = COALESCE(EXCLUDED.adsh, {self.TABLE}.adsh),
           file_type        = COALESCE(EXCLUDED.file_type, {self.TABLE}.file_type),
           file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description);
-        """)
+        """)  # noqa: E501
 
         # Use a transaction (engine.begin) so the statement is committed automatically on success.
         with self.engine.begin() as conn:
@@ -163,6 +170,7 @@ class NpsFilingsDB:
         meta_mode: Literal["merge", "replace"] = "replace",
         **fields: Any,
     ) -> int:
+        """Update specified fields of an existing filing by id."""
         # No updates requested.
         if not fields:
             return 0
@@ -220,6 +228,7 @@ class NpsFilingsDB:
             return int(res.rowcount or 0)
 
     def delete_filing(self, id: str) -> bool:
+        """Delete a filing by id; return True if a row was deleted, False if no such id existed."""
         # Delete by primary key and return whether any row was removed.
         stmt = text(f"DELETE FROM {self.TABLE} WHERE id = :id;")
         with self.engine.begin() as conn:
@@ -227,6 +236,7 @@ class NpsFilingsDB:
             return (res.rowcount or 0) > 0
 
     def is_blacklisted(self, id: str) -> bool:
+        """Check if a filing is blacklisted; return False if the row does not exist."""
         # Read the blacklisted flag; return False if the row does not exist.
         stmt = text(f"SELECT blacklisted FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
@@ -234,6 +244,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def has_nps(self, id: str) -> bool:
+        """Check if a filing has NPS; return False if the row does not exist."""
         # Read the has_nps flag; return False if the row does not exist.
         stmt = text(f"SELECT has_nps FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
@@ -241,6 +252,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def cleaned_exists(self, id: str) -> bool:
+        """Check if a cleaned path exists for the filing; return False if the row does not exist."""
         # True if path_cleaned is set and non-empty; False if row does not exist.
         stmt = text(f"""
         SELECT (path_cleaned IS NOT NULL AND path_cleaned <> '')
@@ -252,6 +264,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def preprocessed_exists(self, id: str) -> bool:
+        """Check if a preprocessed path exists for the filing; return False if the row does not exist."""
         # True if path_prepro is set and non-empty; False if row does not exist.
         stmt = text(f"""
         SELECT (path_prepro IS NOT NULL AND path_prepro <> '')
@@ -263,6 +276,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def blacklist(self, id: str) -> None:
+        """Mark a filing as blacklisted; creates the row if it does not exist."""
         # Mark a filing as blacklisted; creates the row if it does not exist.
         stmt = text(f"""
         INSERT INTO {self.TABLE} (id, blacklisted)
@@ -274,6 +288,10 @@ class NpsFilingsDB:
             conn.execute(stmt, {"id": id})
 
     def add_keyword(self, id: str, kw: str) -> bool:
+        """Add a keyword to the filing's keywords array if not already present.
+
+        Return True if added or row created, False if keyword already existed.
+        """
         # Add a keyword only if it is not already present.
         # If the row does not exist, create it with keywords = [kw].
         # Returns True if a keyword was added or the row was inserted; otherwise False.

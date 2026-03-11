@@ -1,7 +1,6 @@
 """Storage pipeline to save processed context windows as JSON files."""
 
 import json
-from pathlib import Path
 
 from nps_crawling.config import Config
 
@@ -23,7 +22,7 @@ class SaveToJSONPipeline(Config):
         """
         out_path = self.json_root / f"{source_filename}.json"
 
-        #TODO: David - preprocessed json saving
+        # TODO: David - preprocessed json saving
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
 

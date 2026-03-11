@@ -2,8 +2,8 @@
 
 import json
 
-from nps_crawling.config import Config
 from nps_crawling.classification.model.model import get_classification_model
+from nps_crawling.config import Config
 
 
 class ClassificationModelPipeline(Config):
