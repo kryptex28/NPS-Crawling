@@ -1,3 +1,4 @@
+"""Entry point for the Flask web application."""
 import json
 import threading
 import time
@@ -12,22 +13,26 @@ from nps_crawling.utils import filings
 from nps_crawling.utils.sec_params import SecParams, create_sec_param_from_dict
 from nps_crawling.utils.sec_query import SecQuery
 from nps_crawling.utils.filings import Filing
+from flask import Flask, jsonify, request, send_from_directory
 
 app = Flask(__name__, static_folder=".", static_url_path="")
 crawl_results = []
 
 @app.get("/")
 def index():
+    """Serve the index.html file."""
     return send_from_directory(".", "index.html")
 
 
 @app.get("/results")
 def results():
+    """Serve the results.html file."""
     return send_from_directory(".", "results.html")
 
 
 @app.get("/check")
 def check():
+    """Serve the check.html file."""
     return send_from_directory(".", "check.html")
 
 import json
@@ -56,6 +61,7 @@ def filing_crawled(filing: Filing):
 
 @app.post("/search")
 def search():
+    """Handle search form submission."""
     crawl_results.clear()
     data = request.form.to_dict(flat=True)
 

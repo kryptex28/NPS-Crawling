@@ -3,7 +3,7 @@
 import logging
 
 from nps_crawling.classification.data_processing.preprocess_data import ClassificationDataProcessing
-from nps_crawling.classification.model.classification_model import ClassificationModelPipeline
+from nps_crawling.classification.model.classification import ClassificationModelPipeline
 from nps_crawling.config import Config
 
 logger = logging.getLogger(__name__)
@@ -11,28 +11,28 @@ logger = logging.getLogger(__name__)
 
 class ClassificationPipeline(Config):
     """Classification pipeline class."""
+
     def __init__(self):
         """Initialize the ClassificationPipeline."""
         self.get_data = ClassificationDataProcessing()
         self.model_pipeline = ClassificationModelPipeline()
 
     def classification_workflow(self):
-        """Classification workflow method.
-
-        Get all company names --> loop through all companies 1 by 1 --> create dataframe with all
-        context windows for 1 company --> ...
-        """
+        """Classification workflow method."""
         logger.info("Starting classification")
 
-        companies_list = self.get_data.get_list_of_all_companies()
+        json_files = self.get_data.get_all_json_files()
+        total_files = len(json_files)
+        logger.info(f"Number of files to classify: {total_files}")
 
-        logger.info(f"Number of companies to be classified: {len(companies_list)}")
-
-        for company in companies_list:
-
-            single_company_df = self.get_data.get_data_for_classification(company)
-            self.model_pipeline.model_workflow(single_company_df)
+        for i, json_file in enumerate(json_files, start=1):
+            logger.info(f"[{i}/{total_files}] Processing {json_file.name}")
+            records = self.get_data.load_file(json_file)
+            self.model_pipeline.model_workflow(
+                records,
+                source_filename=json_file.stem,
+            )
+            logger.info(f"[{i}/{total_files}] Finished {json_file.name}")
 
         logger.info("Finished classification")
-
         return None

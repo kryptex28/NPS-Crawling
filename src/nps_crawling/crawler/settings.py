@@ -17,9 +17,7 @@ DEFAULT_REQUEST_HEADERS = {
 ROBOTSTXT_OBEY = False
 
 ITEM_PIPELINES = {
-    'nps_crawling.crawler.pipelines.cleaning.CleanTextPipeline': 300,
-    'nps_crawling.crawler.pipelines.filtering.NpsMentionFilterPipeline': 400,
-    'nps_crawling.crawler.pipelines.storage.SaveToParquetPipeline': 500,
+    'nps_crawling.crawler.pipelines.storage.SaveToJSONPipeline': 500,
 }
 
 DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
@@ -27,7 +25,7 @@ DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEC_QUERY_FILE_PATH = os.path.join(PROJECT_ROOT, 'queries', 'query.json')
 
-SEC_QUERY_LIMIT_COUNT = 1000
+SEC_QUERY_LIMIT_COUNT = 10000
 
 STATS_DUMP = True
 JOB_DIR = 'crawls/sec_filings_spider'

@@ -1,6 +1,6 @@
 """Filings and type abstraction module with utility functions."""
 from enum import Enum
-from typing import Literal, Optional
+from typing import Optional
 
 
 class Filing:
@@ -28,7 +28,7 @@ class Filing:
                  inc_states: list[str],
                  file_path_name: str):
         """Initialize the filing."""
-        self._id: str = _id
+        self.id: str = _id
         self._index: str = _index
 
         self.ciks: list[str] = ciks
@@ -109,6 +109,7 @@ class FilingsCategoryCollectionCoarse(Enum):
     def to_string(self) -> str:
         """Convert an enum to a string."""
         return self.name
+
 
 class FilingCategoryCollection:
     """Collection of parameter values for categories."""

@@ -1,152 +1,151 @@
 """Pipelines for storing crawled data."""
-
-# import json
-# from pathlib import Path
-#
-# from nps_crawling.preprocessing.json_to_parquet import json_input_to_parquet
-#
-#
-# class SaveToJSONPipeline:
-#    """Pipeline to save items to a JSON file and convert to Parquet."""
-#
-#    def __init__(self):
-#        """Initialize the pipeline."""
-#        self.json_path = Path('')
-#        self.parquet_path = Path('')
-#
-#    def open_spider(self, spider):
-#        """Initialize file handles and paths."""
-#        self.file = open('nps_filings.json', 'w')
-#        self.file.write('[')
-#
-#    def close_spider(self, spider):
-#        """Finalize file and convert to Parquet."""
-#        self.file.write(']')
-#        self.file.close()
-#
-#        # Convert JSON to Parquet
-#        json_input_to_parquet(self.json_path, self.parquet_path)
-#
-#    def process_item(self, item, spider):
-#        """Write item to JSON file."""
-#        line = json.dumps(dict(item)) + ",\n"
-#        self.file.write(line)
-#        return item
-#
-
+import json
 from datetime import datetime
 from uuid import uuid4
 
-import pyarrow as pa
-import pyarrow.parquet as pq
-
 from nps_crawling.config import Config
-
-# Remark: for backup reasons - not needed anymore due to storing into parquet Files
-"""class SaveToJSONPipeline(Config):
-    # Pipeline to save items to a JSONL file.
-    def __init__(self):
-        # Initialize the pipeline.
-        self.json_path = Config.RAW_JSON_PATH_CRAWLER / Config.RAW_JSON_FILE_CRAWLER
-
-    def open_spider(self, spider):
-        # Initialize file handles and paths.
-        self.file = open(self.json_path, 'w', encoding='utf-8')
-
-    def process_item(self, item, spider):
-        # Write item to JSONL file.
-        # TODO: save as parquet instead of jsonl here somewhere probably
-        line = json.dumps(dict(item), ensure_ascii=False)
-        self.file.write(line + "\n")
-        return item
-
-    def close_spider(self, spider):
-        # Finalize file.
-        self.file.close() """
+from nps_crawling.db.db_adapter import DbAdapter
 
 
-class SaveToParquetPipeline(Config):
-    """Collect scraped items during a crawl and persist them as Parquet chunks.
+class SaveToJSONPipeline(Config):
+    """Collect scraped items during a crawl and persist them as JSON files.
 
-    This writes multiple files under RAW_PARQUET_PATH_CRAWLER so data is
-    persisted incrementally.
+    Each record is written as a JSON file with two top-level keys:
+    - ``metadata``: all filing fields except ``core_text``
+    - ``core_text``: the extracted text content of the filing
     """
 
     def __init__(self):
-        """Initialize pipeline state.
-
-        Attributes:
-            parquet_root (Path): Directory where parquet chunks are written.
-            records (list): In-memory buffer of records to flush.
-            flush_every (int): Number of records to collect before flushing.
-        """
-        self.parquet_root = Config.RAW_PARQUET_PATH_CRAWLER
+        """Initialize pipeline state."""
+        self.json_root = Config.RAW_JSON_PATH_CRAWLER
         self.records = []
         self.flush_every = 1
 
-    def open_spider(self, spider):
-        """Called when the spider is opened.
+        # Initialize the database adapter for real-time upserts
+        try:
+            self.db = DbAdapter()
+        except ModuleNotFoundError as e:
+            # For environments where SQLAlchemy or psycopg2 isn't strictly required
+            pass
+        except ValueError as e:
+            # Fallback if connection string provides errors
+            self.db = None
 
-        Resets the in-memory buffer to start collecting records for a new
-        crawl run.
-        """
-        # reset buffer when a spider starts
+    def open_spider(self, spider):
+        """Reset the in-memory buffer when the spider starts."""
         self.records = []
 
+    def _to_serializable(self, val):
+        """Recursively convert a value to a JSON-serializable type."""
+        if isinstance(val, (str, int, float, bool, type(None))):
+            return val
+        if isinstance(val, list):
+            return [self._to_serializable(x) for x in val]
+        if hasattr(val, "__dict__"):
+            return {
+                k: self._to_serializable(v)
+                for k, v in vars(val).items()
+                if not k.startswith("_")
+            }
+        return str(val)
+
     def process_item(self, item, spider):
-        """Process and buffer a single scraped item.
-
-        Flattens list fields that would otherwise create nested types in
-        Parquet, appends the record to the buffer and flushes the buffer to
-        disk when it reaches the configured size.
-
-        Args:
-            item (scrapy.Item or dict): Scraped item to persist.
-            spider: The spider instance (unused).
-
-        Returns:
-            The original item (unchanged).
-        """
-        # flatten list fields to avoid nested parquet issues
+        """Buffer a single scraped item, store in DB immediately, and flush buffer when full."""
         record = dict(item)
-        keywords = record.get("keywords_found")
-        if isinstance(keywords, list):
-            record["keywords_found"] = "; ".join(keywords)
 
-        self.records.append(record)
+        core_text = self._to_serializable(record.pop("core_text", None))
+        metadata = {k: self._to_serializable(v) for k, v in record.items()}
+
+        # 1. Add to Postgres right away
+        if hasattr(self, 'db') and self.db is not None:
+            # Reconstruct the filing dictionary since scrapy items are flat
+            filing = metadata.get("filing", {})
+            keyword = metadata.get("keyword")
+            filing_id = filing.get("id")
+
+            if filing_id:
+                keywords_list = [keyword] if keyword else []
+                # path_to_raw will be set later during the flush, so we set it to None initially
+
+                try:
+                    self.db.add_filing(
+                        filing_id=filing_id,
+                        ciks=filing.get("ciks", []),
+                        period_ending=filing.get("period_ending"),
+                        display_names=filing.get("display_names", []),
+                        root_forms=filing.get("root_forms", []),
+                        file_date=filing.get("file_date"),
+                        form=filing.get("form"),
+                        adsh=filing.get("adsh"),
+                        file_type=filing.get("file_type"),
+                        file_description=filing.get("file_description"),
+                        film_num=filing.get("film_num", []),
+                        keywords=keywords_list,
+                        blacklisted=False,
+                        nps_relevant=False,
+                        path_to_raw=None,  # Will be set once batched to disk
+
+                        # New NPS fields
+                        nps_competition_industry=False,
+                        nps_value_over=False,
+                        nps_value_below=False,
+                        nps_goal_value=None,
+                        nps_goal_reached=False,
+                        KPI_CURRENT_VALUE=None,
+                        KPI_HISTORICAL_COMPARISON=False,
+                        BENCHMARK_COMPARISON=False,
+                        CUSTOMER_CASE_EVIDENCE=False,
+                        METHODOLOGY_DEFINITION=False,
+                        MGMT_COMPENSATION_GOVERNANCE=False,
+                        QUALITATIVE_ONLY=False,
+                        TARGET_OUTLOOK=False,
+                        NPS_SERVICE_PROVIDER=False,
+                        OTHER=False,
+                        has_numeric_nps=False,
+                        nps_value_fix=None,
+                        nps_trend_sentiment=None,
+                        nps_scope=None,
+                        nps_formal_role=None,
+                    )
+                except Exception as e:
+                    # Log silently or configure scrapy logger and skip
+                    pass
+
+        # 2. Add to Memory buffer for JSON export
+        self.records.append({"metadata": metadata, "core_text": core_text})
 
         if len(self.records) >= self.flush_every:
             self._flush_buffer()
         return item
 
     def close_spider(self, spider):
-        """Flush any remaining records when the spider closes.
-
-        If the buffer is empty this is a no-op.
-        """
-        if not self.records:
-            return
-
-        self._flush_buffer()
+        """Flush any remaining records when the spider closes."""
+        if self.records:
+            self._flush_buffer()
 
     def _flush_buffer(self):
         if not self.records:
             return
 
-        schema = pa.schema([
-            ("company", pa.string()),
-            ("ticker", pa.string()),
-            ("cik", pa.string()),
-            ("filing_url", pa.string()),
-            ("keywords_found", pa.string()),
-            ("html_text", pa.string()),
-        ])
-
-        table = pa.Table.from_pylist(self.records, schema=schema)
-
         ts = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
-        fname = f"chunk_{ts}_{uuid4().hex}.parquet"
-        pq.write_table(table, self.parquet_root / fname, compression="snappy")
+        fname = f"chunk_{ts}_{uuid4().hex}.json"
 
-        # clear buffer after flush
+        # Save raw json to file
+        saved_path = self.json_root / fname
+        with open(saved_path, "w", encoding="utf-8") as f:
+            json.dump(self.records, f, ensure_ascii=False, indent=2)
+
+        # Update the path_to_raw in the database since the file is now saved
+        if hasattr(self, 'db') and self.db is not None:
+            for record in self.records:
+                metadata = record.get("metadata", {})
+                filing = metadata.get("filing", {})
+                filing_id = filing.get("id")
+
+                if filing_id:
+                    try:
+                        self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))
+                    except Exception:
+                        pass
+
         self.records = []

@@ -9,9 +9,9 @@ from scrapy.utils.project import get_project_settings
 from scrapy import signals
 
 from nps_crawling.crawler.items import FilingItem
-from nps_crawling.utils.filings import CompanyTicker, Filing, FilingDateRange
+from nps_crawling.utils.filings import Filing
+from nps_crawling.utils.sec_params import create_params_from_config
 from nps_crawling.utils.sec_query import SecParams, SecQuery
-from nps_crawling.utils.sec_params import create_params_from_config, create_config_from_params
 
 
 class BetterSpider(scrapy.Spider):
@@ -25,7 +25,7 @@ class BetterSpider(scrapy.Spider):
                  **kwargs):
         """Initializes spider."""
         super(BetterSpider, self).__init__()
-        self.logger.info(f"Initializes spider.")
+        self.logger.info("Initializes spider.")
         # 'Hotkey' map for specific file types
         self.function_map: dict = {
             'pdf': self.extract_pdf_content,
@@ -39,7 +39,7 @@ class BetterSpider(scrapy.Spider):
 
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
-        self.logger.info(f"Starting scrapy spider.")
+        self.logger.info("Starting scrapy spider.")
 
         settings = get_project_settings()
         sec_query_limit_count: int = settings.get('SEC_QUERY_LIMIT_COUNT')
@@ -72,6 +72,7 @@ class BetterSpider(scrapy.Spider):
                     meta={'filing': filing,
                           'keyword': sec_query.sec_params.keyword,
                           },
+                    dont_filter=True
                 )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:

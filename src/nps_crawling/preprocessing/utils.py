@@ -1,13 +1,15 @@
-"""Pre-processing pipeline to clean, filter, and store data."""
+"""Pre-processing pipeline to clean, filter, score similarity, and store data."""
 
+import json
 import logging
 
-import pandas as pd
+from tqdm import tqdm
 
 from nps_crawling.config import Config
 
 from .cleaning import CleanTextPipeline
 from .filtering import NpsMentionFilterPipeline
+from .similarity import SimilarityPipeline
 from .storage import SaveToJSONPipeline
 
 logger = logging.getLogger(__name__)
@@ -16,70 +18,74 @@ logger = logging.getLogger(__name__)
 class PreProcessingPipeline(Config):
     """Pre-processing pipeline class to clean, filter, and store data.
 
-    This pipeline coordinates text cleaning, NPS-mention filtering and
-    storage of processed results.
+    Pipeline per file
+    -----------------
+    1. **Clean** – HTML/XML → plain text.
+    2. **Filter** – extract context windows around NPS-related phrases.
+    3. **Score** – semantic similarity of each window against a reference text.
+    4. **Decide** – accept or reject based on the document-average score.
+    5. **Store** – accepted files (with low-scoring windows removed) go to
+       ``json_processed/``; rejected files (full data) go to ``json_reject/``.
     """
     def __init__(self):
         """Initialize the PreProcessingPipeline."""
-        self.files_at_once = Config.FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE
-        self.raw_parquet_dir_crawler = Config.RAW_PARQUET_PATH_CRAWLER
+        self.json_raw_dir = Config.RAW_JSON_PATH_CRAWLER
 
         self.cleaner = CleanTextPipeline()
         self.filter = NpsMentionFilterPipeline()
+        self.similarity = SimilarityPipeline()
         self.storage = SaveToJSONPipeline()
 
-    # TODO: logic here needs to be adapted later on. we don't want to run over all stored
-    # filings everytime, just the ones that are new
-    # --> edit 27.11.25: only pre-process the parquet files, that are not marked in database
-    # as pre-processed yet (need to implement that logic first though)
     def pre_processing_workflow(self):
-        """Workflow method to pre process data.
-
-        Cleaning --> filtering --> storaging. Processes the filings (stored in
-        Parquet) in batch sizes as defined in the Config variable
-        FILINGS_PASSED_THROUGH_PROCESS_AT_ONCE.
-        """
-        logger.info(f"Starting pre-processing raw data in batch sizes of {self.files_at_once}")
-
-        files_before = self.storage.count_parquet_files()
-
-        batch = []
-        batch_size = self.files_at_once
-        processed_count = 0
-
-        parquet_files = sorted(self.raw_parquet_dir_crawler.glob("*.parquet"))
-        if not parquet_files:
-            logger.info("No raw filings found to process")
+        """Run the full pre-processing workflow over all raw JSON files."""
+        json_files = sorted(self.json_raw_dir.glob("*.json"))
+        if not json_files:
+            logger.info("No raw JSON files found to process")
             return None
 
-        for parquet_file in parquet_files:
-            df = pd.read_parquet(parquet_file)
-            if df.empty:
+        files_before_processed = self.storage.count_json_files()
+        files_before_rejected = self.storage.count_rejected_files()
+        processed_count = 0
+        accepted_count = 0
+        rejected_count = 0
+
+        for json_file in tqdm(json_files, desc="Pre-processing documents", unit="file"):
+            with open(json_file, "r", encoding="utf-8") as f:
+                records = json.load(f)
+
+            if not records:
                 continue
 
-            for filing in df.to_dict(orient="records"):
-                batch.append(filing)
+            records = self.cleaner.cleaning_workflow(records)
+            records = self.filter.filtering_workflow(records)
 
-                if len(batch) >= batch_size:
-                    cleaned_dict_batch = self.cleaner.cleaning_workflow(batch)
-                    context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
-                    self.storage.storage_workflow(context_windows_dict_batch)
+            scored_records, filtered_records, should_reject = (
+                self.similarity.similarity_workflow(records)
+            )
 
-                    processed_count += len(batch)
-                    logger.info(f"Processed {processed_count} filings")
-                    batch = []
+            if should_reject:
+                self.storage.storage_workflow(
+                    scored_records, source_filename=json_file.stem, reject=True,
+                )
+                rejected_count += 1
+            else:
+                self.storage.storage_workflow(
+                    filtered_records, source_filename=json_file.stem,
+                )
+                accepted_count += 1
 
-        # last batch leftovers
-        if batch:
-            cleaned_dict_batch = self.cleaner.cleaning_workflow(batch)
-            context_windows_dict_batch = self.filter.filtering_workflow(cleaned_dict_batch)
-            self.storage.storage_workflow(context_windows_dict_batch)
+            processed_count += len(records)
+            status = "REJECTED" if should_reject else "ACCEPTED"
+            logger.info("Processed %s (%d records) — %s", json_file.name, len(records), status)
 
-            processed_count += len(batch)
-
-        files_after = self.storage.count_parquet_files()
-
-        logger.info(f"Finished pre-processing data. Total filings processed: {processed_count}")
-        logger.info(f"New parquet files created: {files_after - files_before}")
+        files_after_processed = self.storage.count_json_files()
+        files_after_rejected = self.storage.count_rejected_files()
+        logger.info("Finished pre-processing. Total records processed: %d", processed_count)
+        logger.info("Files accepted: %d  |  Files rejected: %d", accepted_count, rejected_count)
+        logger.info(
+            "New processed files: %d  |  New rejected files: %d",
+            files_after_processed - files_before_processed,
+            files_after_rejected - files_before_rejected,
+        )
 
         return None

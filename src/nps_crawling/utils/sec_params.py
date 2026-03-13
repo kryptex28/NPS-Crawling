@@ -1,7 +1,10 @@
 """SEC Parameter search abstraction module with utility functions."""
+from __future__ import annotations
+
 import json
 
-from nps_crawling.utils.filings import CompanyTicker, FilingsCategoryCollectionCoarse, FilingCategoryCollection
+from nps_crawling.utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
+
 
 def create_params_from_config(path: str) -> list[SecParams]:
     """Create params from config file."""
@@ -29,12 +32,13 @@ def create_params_from_config(path: str) -> list[SecParams]:
                                                              cik=query_data.get('individual_search_cik', ''),
                                                              title=query_data.get('individual_search_title', ''))
 
-        filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(query_data.get('filing_category', ''))
+        filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(
+            query_data.get('filing_category', ''),
+        )
         if filing_category == FilingsCategoryCollectionCoarse.CUSTOM:
             filing_categories: list[str] = query_data.get('filing_categories', [])
         else:
             filing_categories: list[str] = FilingCategoryCollection.filing_categories[filing_category]
-
 
         p = SecParams(query_base=query_base,
                       individual_search=individual_search,
@@ -49,10 +53,11 @@ def create_params_from_config(path: str) -> list[SecParams]:
         params.append(p)
     return params
 
+
 def create_config_from_params(params: list[SecParams]) -> dict:
     """Create config data from parameter list."""
     data: dict = {
-        "queries": {}
+        "queries": {},
     }
 
     queries: dict = data['queries']
@@ -93,6 +98,7 @@ class SecParams:
 
         if page > 1:
             query_url = f'{query_url}&page={page}'
+            query_url = f'{query_url}&from={(page - 1) * 100}'
 
         if self.from_date:
             query_url = f'{query_url}&startdt={self.from_date}'
@@ -110,7 +116,7 @@ class SecParams:
         if self.individual_search:
             query_url = f'{query_url}&entityName={self.individual_search.create_entity_name()}'
             query_url = f'{query_url}&ciks={self.individual_search.cik}'
-            text = self.individual_search.create_entity_name()
+            self.individual_search.create_entity_name()
 
         if self.principal_office_in:
             query_url = f'{query_url}&locationCode={self.principal_office_in}'
