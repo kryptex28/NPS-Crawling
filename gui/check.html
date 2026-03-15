@@ -18,6 +18,16 @@
           <div class="spinner" aria-hidden="true"></div>
           <p class="status-text">The search has started. This may take some time. Please keep this window open until the process completes.</p>
         </div>
+        <div id="filing-display-control">
+          <div class="paging-control" id="paging-control">
+            <button id="paging-prev" disabled>&#8592; Prev</button> 
+            <span id="paging-info">Page 1 of 1</span>
+            <button id="paging-next">Next &#8594;</button>
+          </div>
+          <div>
+            <span id="element-count">Elements: 0</span>
+          </div>
+        </div>
         <div class="status-complete" id="status-complete" hidden>
           <p>Process completed. Duration: 00:10. Newly crawled files: 12.</p>
           <div class="form-actions">
@@ -25,6 +35,7 @@
             <a class="ghost button-link" href="/">Back to search</a>
           </div>
         </div>
+        <div class="results-list" id="results-list"></div>
       </section>
     </main>
     <script src="check.js"></script>

@@ -1,5 +1,6 @@
 """Improved Spider to crawl SEC filings for NPS mentions based on parameters and SEC search function."""
 import io
+import os
 from typing import Any, AsyncIterator, Iterable, Self
 
 import pypdf
@@ -46,23 +47,20 @@ class BetterSpider(scrapy.Spider):
         query_file_path = settings.get('SEC_QUERY_FILE_PATH')
 
         # Create a list of parameters for all defined keywords in the config file
-        #if params is None:
-        #    sec_params: list[SecParams] = create_params_from_config(query_file_path)
-        #else:
-        #    sec_params = params
+        sec_params: list[SecParams] = create_params_from_config(query_file_path)
 
         # Create a list of query to fetch all related documents
-        #sec_queries: list[SecQuery] = []
-        #for sec_param in sec_params:
-        #    query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
-        #    sec_queries.append(query)
+        sec_queries: list[SecQuery] = []
+        for sec_param in sec_params:
+            query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
+            sec_queries.append(query)
 
         # Fetch now all documents per query
-        for sec_query in self.queries:
+        for sec_query in sec_queries:
             sec_query.fetch_filings()
 
         # Iterate through all filings
-        for sec_query in self.queries:
+        for sec_query in sec_queries:
             for i, filing in enumerate(sec_query.keyword_filings):
                 self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
                 url: str = filing.get_url()[0]

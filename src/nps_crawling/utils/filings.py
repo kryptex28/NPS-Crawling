@@ -64,7 +64,7 @@ class Filing:
     def to_json(self) -> dict:
         data: dict = {
             'ciks': self.ciks,
-            'filing_id': self._id,
+            'filing_id': self.id,
             'url': self.get_url()[0],
             'display_names': self.display_names,
             'form': self.form,
