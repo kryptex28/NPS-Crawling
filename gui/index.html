@@ -39,10 +39,16 @@
               <label for="filing-category">Filing category</label>
               <select id="filing-category" name="filing_category">
                 <option value="">View all</option>
-                <option value="company">Company filings</option>
-                <option value="insider">Insider filings</option>
-                <option value="fund">Funds</option>
-                <option value="other">Other</option>
+                <option value="form-cat1">All annual, quarterly, and current reports</option>
+                <option value="form-cat2">Insider equity awards, transactions, and ownership</option>
+                <option value="form-cat3">Beneficial ownership reports</option>
+                <option value="form-cat4">Exempt offerings</option>
+                <option value="form-cat5">Registration statements and prospectuses</option>
+                <option value="form-cat6">Filing review correspondence</option>
+                <option value="form-cat7">SEC orders and notices</option>
+                <option value="form-cat8">Proxy Materials</option>
+                <option value="form-cat9">Tender offers and going private transactions</option>
+                <option value="form-cat10">Trust indenture filings</option>
               </select>
             </div>
             <div>
@@ -51,21 +57,219 @@
                 <summary>Browse filing types</summary>
                 <div class="options">
                   <label><input type="checkbox" name="filing_types" value="10-K" /> 10-K</label>
+                  <label><input type="checkbox" name="filing_types" value="10-KT" /> 10-KT</label>
                   <label><input type="checkbox" name="filing_types" value="10-Q" /> 10-Q</label>
+                  <label><input type="checkbox" name="filing_types" value="10-QT" /> 10-QT</label>
+                  <label><input type="checkbox" name="filing_types" value="11-K" /> 11-K</label>
+                  <label><input type="checkbox" name="filing_types" value="11-KT" /> 11-KT</label>
+                  <label><input type="checkbox" name="filing_types" value="13F-HR" /> 13F-HR</label>
+                  <label><input type="checkbox" name="filing_types" value="13F-NT" /> 13F-NT</label>
+                  <label><input type="checkbox" name="filing_types" value="15-12B" /> 15-12B</label>
+                  <label><input type="checkbox" name="filing_types" value="15-12G" /> 15-12G</label>
+                  <label><input type="checkbox" name="filing_types" value="15-15D" /> 15-15D</label>
+                  <label><input type="checkbox" name="filing_types" value="15F-12B" /> 15F-12B</label>
+                  <label><input type="checkbox" name="filing_types" value="15F-12G" /> 15F-12G</label>
+                  <label><input type="checkbox" name="filing_types" value="15F-15D" /> 15F-15D</label>
+                  <label><input type="checkbox" name="filing_types" value="18-K" /> 18-K</label>
+                  <label><input type="checkbox" name="filing_types" value="20-F" /> 20-F</label>
+                  <label><input type="checkbox" name="filing_types" value="24F-2NT" /> 24F-2NT</label>
+                  <label><input type="checkbox" name="filing_types" value="25" /> 25</label>
+                  <label><input type="checkbox" name="filing_types" value="25-NSE" /> 25-NSE</label>
+                  <label><input type="checkbox" name="filing_types" value="40-17F2" /> 40-17F2</label>
+                  <label><input type="checkbox" name="filing_types" value="40-17G" /> 40-17G</label>
+                  <label><input type="checkbox" name="filing_types" value="40-F" /> 40-F</label>
+                  <label><input type="checkbox" name="filing_types" value="6-K" /> 6-K</label>
                   <label><input type="checkbox" name="filing_types" value="8-K" /> 8-K</label>
-                  <label><input type="checkbox" name="filing_types" value="S-1" /> S-1</label>
-                  <label><input type="checkbox" name="filing_types" value="DEF 14A" /> DEF 14A</label>
-                  <label><input type="checkbox" name="filing_types" value="13F" /> 13F</label>
+                  <label><input type="checkbox" name="filing_types" value="8-K12G3" /> 8-K12G3</label>
+                  <label><input type="checkbox" name="filing_types" value="8-K15D5" /> 8-K15D5</label>
+                  <label><input type="checkbox" name="filing_types" value="ABS-15G" /> ABS-15G</label>
+                  <label><input type="checkbox" name="filing_types" value="ABS-EE" /> ABS-EE</label>
+                  <label><input type="checkbox" name="filing_types" value="ANNLRPT" /> ANNLRPT</label>
+                  <label><input type="checkbox" name="filing_types" value="DSTRBRPT" /> DSTRBRPT</label>
+                  <label><input type="checkbox" name="filing_types" value="IRANNOTICE" /> IRANNOTICE</label>
+                  <label><input type="checkbox" name="filing_types" value="N-30B-2" /> N-30B-2</label>
+                  <label><input type="checkbox" name="filing_types" value="N-30D" /> N-30D</label>
+                  <label><input type="checkbox" name="filing_types" value="N-CEN" /> N-CEN</label>
+                  <label><input type="checkbox" name="filing_types" value="N-CSR" /> N-CSR</label>
+                  <label><input type="checkbox" name="filing_types" value="N-CSRS" /> N-CSRS</label>
+                  <label><input type="checkbox" name="filing_types" value="N-MFP" /> N-MFP</label>
+                  <label><input type="checkbox" name="filing_types" value="N-MFP1" /> N-MFP1</label>
+                  <label><input type="checkbox" name="filing_types" value="N-MFP2" /> N-MFP2</label>
+                  <label><input type="checkbox" name="filing_types" value="N-PX" /> N-PX</label>
+                  <label><input type="checkbox" name="filing_types" value="N-Q" /> N-Q</label>
+                  <label><input type="checkbox" name="filing_types" value="NPORT-EX" /> NPORT-EX</label>
+                  <label><input type="checkbox" name="filing_types" value="NSAR-A" /> NSAR-A</label>
+                  <label><input type="checkbox" name="filing_types" value="NSAR-B" /> NSAR-B</label>
+                  <label><input type="checkbox" name="filing_types" value="NSAR-U" /> NSAR-U</label>
+                  <label><input type="checkbox" name="filing_types" value="NT 10-D" /> NT 10-D</label>
+                  <label><input type="checkbox" name="filing_types" value="NT 10-K" /> NT 10-K</label>
+                  <label><input type="checkbox" name="filing_types" value="NT 10-Q" /> NT 10-Q</label>
+                  <label><input type="checkbox" name="filing_types" value="NT 11-K" /> NT 11-K</label>
+                  <label><input type="checkbox" name="filing_types" value="NT 20-F" /> NT 20-F</label>
+                  <label><input type="checkbox" name="filing_types" value="QRTLYRPT" /> QRTLYRPT</label>
+                  <label><input type="checkbox" name="filing_types" value="SD" /> SD</label>
+                  <label><input type="checkbox" name="filing_types" value="SP 15D2" /> SP 15D2</label>
+                  <label><input type="checkbox" name="filing_types" value="3" /> 3</label>
+                  <label><input type="checkbox" name="filing_types" value="4" /> 4</label>
+                  <label><input type="checkbox" name="filing_types" value="5" /> 5</label>
                   <label><input type="checkbox" name="filing_types" value="SC 13D" /> SC 13D</label>
                   <label><input type="checkbox" name="filing_types" value="SC 13G" /> SC 13G</label>
-                  <label><input type="checkbox" name="filing_types" value="4" /> 4</label>
-                  <label><input type="checkbox" name="filing_types" value="144" /> 144</label>
+                  <label><input type="checkbox" name="filing_types" value="SCHEDULE 13D" /> SCHEDULE 13D</label>
+                  <label><input type="checkbox" name="filing_types" value="SCHEDULE 13G" /> SCHEDULE 13G</label>
+                  <label><input type="checkbox" name="filing_types" value="1-A" /> 1-A</label>
+                  <label><input type="checkbox" name="filing_types" value="1-A POS" /> 1-A POS</label>
+                  <label><input type="checkbox" name="filing_types" value="1-A-W" /> 1-A-W</label>
+                  <label><input type="checkbox" name="filing_types" value="253G1" /> 253G1</label>
+                  <label><input type="checkbox" name="filing_types" value="253G2" /> 253G2</label>
+                  <label><input type="checkbox" name="filing_types" value="253G3" /> 253G3</label>
+                  <label><input type="checkbox" name="filing_types" value="253G4" /> 253G4</label>
+                  <label><input type="checkbox" name="filing_types" value="C" /> C</label>
+                  <label><input type="checkbox" name="filing_types" value="D" /> D</label>
+                  <label><input type="checkbox" name="filing_types" value="DOS" /> DOS</label>
+                  <label><input type="checkbox" name="filing_types" value="10-12B" /> 10-12B</label>
+                  <label><input type="checkbox" name="filing_types" value="10-12G" /> 10-12G</label>
+                  <label><input type="checkbox" name="filing_types" value="18-12B" /> 18-12B</label>
+                  <label><input type="checkbox" name="filing_types" value="20FR12B" /> 20FR12B</label>
+                  <label><input type="checkbox" name="filing_types" value="20FR12G" /> 20FR12G</label>
+                  <label><input type="checkbox" name="filing_types" value="40-24B2" /> 40-24B2</label>
+                  <label><input type="checkbox" name="filing_types" value="40FR12B" /> 40FR12B</label>
+                  <label><input type="checkbox" name="filing_types" value="40FR12G" /> 40FR12G</label>
+                  <label><input type="checkbox" name="filing_types" value="424A" /> 424A</label>
+                  <label><input type="checkbox" name="filing_types" value="424B1" /> 424B1</label>
+                  <label><input type="checkbox" name="filing_types" value="424B2" /> 424B2</label>
+                  <label><input type="checkbox" name="filing_types" value="424B3" /> 424B3</label>
+                  <label><input type="checkbox" name="filing_types" value="424B4" /> 424B4</label>
+                  <label><input type="checkbox" name="filing_types" value="424B5" /> 424B5</label>
+                  <label><input type="checkbox" name="filing_types" value="424B7" /> 424B7</label>
+                  <label><input type="checkbox" name="filing_types" value="424B8" /> 424B8</label>
+                  <label><input type="checkbox" name="filing_types" value="424H" /> 424H</label>
+                  <label><input type="checkbox" name="filing_types" value="425" /> 425</label>
+                  <label><input type="checkbox" name="filing_types" value="485APOS" /> 485APOS</label>
+                  <label><input type="checkbox" name="filing_types" value="485BPOS" /> 485BPOS</label>
+                  <label><input type="checkbox" name="filing_types" value="485BXT" /> 485BXT</label>
+                  <label><input type="checkbox" name="filing_types" value="487" /> 487</label>
+                  <label><input type="checkbox" name="filing_types" value="497" /> 497</label>
+                  <label><input type="checkbox" name="filing_types" value="497J" /> 497J</label>
+                  <label><input type="checkbox" name="filing_types" value="497K" /> 497K</label>
+                  <label><input type="checkbox" name="filing_types" value="8-A12B" /> 8-A12B</label>
+                  <label><input type="checkbox" name="filing_types" value="8-A12G" /> 8-A12G</label>
+                  <label><input type="checkbox" name="filing_types" value="AW" /> AW</label>
+                  <label><input type="checkbox" name="filing_types" value="AW WD" /> AW WD</label>
+                  <label><input type="checkbox" name="filing_types" value="DEL AM" /> DEL AM</label>
+                  <label><input type="checkbox" name="filing_types" value="DRS" /> DRS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-1" /> F-1</label>
+                  <label><input type="checkbox" name="filing_types" value="F-10" /> F-10</label>
+                  <label><input type="checkbox" name="filing_types" value="F-10EF" /> F-10EF</label>
+                  <label><input type="checkbox" name="filing_types" value="F-10POS" /> F-10POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-3" /> F-3</label>
+                  <label><input type="checkbox" name="filing_types" value="F-3ASR" /> F-3ASR</label>
+                  <label><input type="checkbox" name="filing_types" value="F-3D" /> F-3D</label>
+                  <label><input type="checkbox" name="filing_types" value="F-3DPOS" /> F-3DPOS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-3MEF" /> F-3MEF</label>
+                  <label><input type="checkbox" name="filing_types" value="F-4" /> F-4</label>
+                  <label><input type="checkbox" name="filing_types" value="F-4 POS" /> F-4 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-4MEF" /> F-4MEF</label>
+                  <label><input type="checkbox" name="filing_types" value="F-6" /> F-6</label>
+                  <label><input type="checkbox" name="filing_types" value="F-6 POS" /> F-6 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-6EF" /> F-6EF</label>
+                  <label><input type="checkbox" name="filing_types" value="F-7" /> F-7</label>
+                  <label><input type="checkbox" name="filing_types" value="F-7 POS" /> F-7 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-8" /> F-8</label>
+                  <label><input type="checkbox" name="filing_types" value="F-8 POS" /> F-8 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-80" /> F-80</label>
+                  <label><input type="checkbox" name="filing_types" value="F-80POS" /> F-80POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-9" /> F-9</label>
+                  <label><input type="checkbox" name="filing_types" value="F-9 POS" /> F-9 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="F-N" /> F-N</label>
+                  <label><input type="checkbox" name="filing_types" value="F-X" /> F-X</label>
+                  <label><input type="checkbox" name="filing_types" value="FWP" /> FWP</label>
+                  <label><input type="checkbox" name="filing_types" value="N-2" /> N-2</label>
+                  <label><input type="checkbox" name="filing_types" value="POS AM" /> POS AM</label>
+                  <label><input type="checkbox" name="filing_types" value="POS EX" /> POS EX</label>
+                  <label><input type="checkbox" name="filing_types" value="POS462B" /> POS462B</label>
+                  <label><input type="checkbox" name="filing_types" value="POS462C" /> POS462C</label>
+                  <label><input type="checkbox" name="filing_types" value="POSASR" /> POSASR</label>
+                  <label><input type="checkbox" name="filing_types" value="RW" /> RW</label>
+                  <label><input type="checkbox" name="filing_types" value="RW WD" /> RW WD</label>
+                  <label><input type="checkbox" name="filing_types" value="S-1" /> S-1</label>
+                  <label><input type="checkbox" name="filing_types" value="S-11" /> S-11</label>
+                  <label><input type="checkbox" name="filing_types" value="S-11MEF" /> S-11MEF</label>
+                  <label><input type="checkbox" name="filing_types" value="S-1MEF" /> S-1MEF</label>
+                  <label><input type="checkbox" name="filing_types" value="S-20" /> S-20</label>
+                  <label><input type="checkbox" name="filing_types" value="S-3" /> S-3</label>
+                  <label><input type="checkbox" name="filing_types" value="S-3ASR" /> S-3ASR</label>
+                  <label><input type="checkbox" name="filing_types" value="S-3D" /> S-3D</label>
+                  <label><input type="checkbox" name="filing_types" value="S-3DPOS" /> S-3DPOS</label>
+                  <label><input type="checkbox" name="filing_types" value="S-3MEF" /> S-3MEF</label>
+                  <label><input type="checkbox" name="filing_types" value="S-4" /> S-4</label>
+                  <label><input type="checkbox" name="filing_types" value="S-4 POS" /> S-4 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="S-4EF" /> S-4EF</label>
+                  <label><input type="checkbox" name="filing_types" value="S-4MEF" /> S-4MEF</label>
+                  <label><input type="checkbox" name="filing_types" value="S-6" /> S-6</label>
+                  <label><input type="checkbox" name="filing_types" value="S-8" /> S-8</label>
+                  <label><input type="checkbox" name="filing_types" value="S-8 POS" /> S-8 POS</label>
+                  <label><input type="checkbox" name="filing_types" value="S-B" /> S-B</label>
+                  <label><input type="checkbox" name="filing_types" value="S-BMEF" /> S-BMEF</label>
+                  <label><input type="checkbox" name="filing_types" value="SF-1" /> SF-1</label>
+                  <label><input type="checkbox" name="filing_types" value="SF-3" /> SF-3</label>
+                  <label><input type="checkbox" name="filing_types" value="SUPPL" /> SUPPL</label>
+                  <label><input type="checkbox" name="filing_types" value="UNDER" /> UNDER</label>
+                  <label><input type="checkbox" name="filing_types" value="CORRESP" /> CORRESP</label>
+                  <label><input type="checkbox" name="filing_types" value="DOSLTR" /> DOSLTR</label>
+                  <label><input type="checkbox" name="filing_types" value="DRSLTR" /> DRSLTR</label>
+                  <label><input type="checkbox" name="filing_types" value="UPLOAD " /> UPLOAD </label>
+                  <label><input type="checkbox" name="filing_types" value="40-APP" /> 40-APP</label>
+                  <label><input type="checkbox" name="filing_types" value="CT ORDER" /> CT ORDER</label>
+                  <label><input type="checkbox" name="filing_types" value="EFFECT" /> EFFECT</label>
+                  <label><input type="checkbox" name="filing_types" value="QUALIF" /> QUALIF</label>
+                  <label><input type="checkbox" name="filing_types" value="REVOKED" /> REVOKED</label>
+                  <label><input type="checkbox" name="filing_types" value="ARS" /> ARS</label>
+                  <label><input type="checkbox" name="filing_types" value="DEF 14A" /> DEF 14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DEF 14C" /> DEF 14C</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFA14A" /> DEFA14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFA14C" /> DEFA14C</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFC14A" /> DEFC14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFC14C" /> DEFC14C</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFM14A" /> DEFM14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFM14C" /> DEFM14C</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFN14A" /> DEFN14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFR14A" /> DEFR14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DEFR14C" /> DEFR14C</label>
+                  <label><input type="checkbox" name="filing_types" value="DFAN14A" /> DFAN14A</label>
+                  <label><input type="checkbox" name="filing_types" value="DFRN14A" /> DFRN14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PRE 14A" /> PRE 14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PRE 14C" /> PRE 14C</label>
+                  <label><input type="checkbox" name="filing_types" value="PREC14A" /> PREC14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PREC14C" /> PREC14C</label>
+                  <label><input type="checkbox" name="filing_types" value="PREM14A" /> PREM14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PREM14C" /> PREM14C</label>
+                  <label><input type="checkbox" name="filing_types" value="PREN14A" /> PREN14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PRER14A" /> PRER14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PRER14C" /> PRER14C</label>
+                  <label><input type="checkbox" name="filing_types" value="PRRN14A" /> PRRN14A</label>
+                  <label><input type="checkbox" name="filing_types" value="PX14A6G" /> PX14A6G</label>
+                  <label><input type="checkbox" name="filing_types" value="PX14A6N" /> PX14A6N</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 14N " /> SC 14N </label>
+                  <label><input type="checkbox" name="filing_types" value="CB" /> CB</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 13E1" /> SC 13E1</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 13E3" /> SC 13E3</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 14D9" /> SC 14D9</label>
+                  <label><input type="checkbox" name="filing_types" value="SC 14F1" /> SC 14F1</label>
+                  <label><input type="checkbox" name="filing_types" value="SC TO-C" /> SC TO-C</label>
+                  <label><input type="checkbox" name="filing_types" value="SC TO-I" /> SC TO-I</label>
+                  <label><input type="checkbox" name="filing_types" value="SC TO-T" /> SC TO-T</label>
+                  <label><input type="checkbox" name="filing_types" value="SC13E4F" /> SC13E4F</label>
+                  <label><input type="checkbox" name="filing_types" value="SC14D1F" /> SC14D1F</label>
+                  <label><input type="checkbox" name="filing_types" value="SC14D9C" /> SC14D9C</label>
+                  <label><input type="checkbox" name="filing_types" value="SC14D9F " /> SC14D9F </label>
+                  <label><input type="checkbox" name="filing_types" value="305B2" /> 305B2</label>
+                  <label><input type="checkbox" name="filing_types" value="T-3 " /> T-3 </label>
                 </div>
               </details>
             </div>
           </div>
 
-          <fieldset class="form-row">
+          <fieldset class="form-row">g
             <legend>Filed date range</legend>
             <div class="segmented">
               <label><input type="radio" name="date_range" value="all" checked /> All (since 2001)</label>
