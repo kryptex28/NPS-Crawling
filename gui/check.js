@@ -117,6 +117,15 @@ sseStream.onmessage = (e) => {
   addResults(items);
 };
 
+document.querySelectorAll('.segmented-control input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    maxItemsPerPage = parseInt(e.target.value);
+    currentPage = 0;
+    renderPage(currentPage);
+    updatePaging();
+  });
+});
+
 const addResults = (items) => {
   allItems.push(...items);
   totalCount += items.length;
@@ -133,7 +142,7 @@ const addResults = (items) => {
 };
 
 sseStream.onopen = () => {
-    resultsPanel.hidden = false;
+
 };
 
 sseStream.onerror = (e) => {

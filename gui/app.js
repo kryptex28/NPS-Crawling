@@ -101,28 +101,3 @@ bulkSelect.addEventListener("change", () => {
     setAllCheckboxes(false);
   }
 });
-
-const source = new EventSource('/crawl-stream');
-
-source.onmessage = (e) => {
-
-  let result;
-  try {
-    result = JSON.parse(e.data);
-  } catch(err) {
-    console.error("JSON parse failed:", err);
-    return;
-  }
-
-  const items = Array.isArray(result) ? result : [result];
-
-  renderResults(items);
-};
-
-source.onopen = () => {
-    resultsPanel.hidden = false;
-};
-
-source.onerror = (e) => {
-  console.error("SSE error:", e);
-};
