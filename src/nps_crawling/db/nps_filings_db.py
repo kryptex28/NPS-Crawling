@@ -364,3 +364,13 @@ class NpsFilingsDB:
             # scalar() returns 1 if row was updated (meaning the keyword was successfully added),
             # or None if row doesn't exist or keyword was already in the array.
             return bool(conn.execute(stmt, {"id": id, "kw": kw}).scalar())
+
+    def get_field(self, id: str, field: str) -> Any:
+        """Retrieve a specific field for a given filing."""
+        if field not in self._UPDATABLE_COLS and field != "id":
+            raise ValueError(f"Unknown column: {field}")
+            
+        col_name = f'"{field}"' if field.isupper() else field
+        stmt = text(f"SELECT {col_name} FROM {self.TABLE} WHERE id = :id;")
+        with self.engine.connect() as conn:
+            return conn.execute(stmt, {"id": id}).scalar_one_or_none()

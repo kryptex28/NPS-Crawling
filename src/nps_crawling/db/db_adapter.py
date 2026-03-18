@@ -85,6 +85,19 @@ class DbAdapter:
                 return dict(row)
             return None
 
+    def get_filing_field(self, filing_id: str, field_name: str) -> Any:
+        """
+        Retrieves a specific field for a given filing.
+
+        Args:
+            filing_id (str): The unique identifier for the filing.
+            field_name (str): The name of the field to retrieve.
+
+        Returns:
+            Any: The value of the field, or None if the filing is not found.
+        """
+        return self._db.get_field(id=filing_id, field=field_name)
+
     def update_filing(self, filing_id: str, touch_last_crawled: bool = True, **kwargs) -> bool:
         """
         Updates one or multiple fields for a specific filing.
