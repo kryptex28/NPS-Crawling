@@ -38,8 +38,8 @@ def create_table():
 
         -- New NPS Fields
         nps_competition_industry BOOLEAN DEFAULT FALSE,
-        nps_value_over BOOLEAN DEFAULT FALSE,
-        nps_value_below BOOLEAN DEFAULT FALSE,
+        nps_value_over DOUBLE PRECISION,
+        nps_value_below DOUBLE PRECISION,
         nps_goal_value DOUBLE PRECISION,
         nps_goal_reached BOOLEAN DEFAULT FALSE,
         "KPI_CURRENT_VALUE" BOOLEAN DEFAULT FALSE,

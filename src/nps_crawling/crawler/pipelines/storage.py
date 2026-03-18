@@ -91,8 +91,8 @@ class SaveToJSONPipeline(Config):
 
                             # New NPS fields
                             nps_competition_industry=False,
-                            nps_value_over=False,
-                            nps_value_below=False,
+                            nps_value_over=None,
+                            nps_value_below=None,
                             nps_goal_value=None,
                             nps_goal_reached=False,
                             KPI_CURRENT_VALUE=None,

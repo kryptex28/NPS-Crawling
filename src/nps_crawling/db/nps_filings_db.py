@@ -85,8 +85,8 @@ class NpsFilingsDB:
         path_to_classified: str | None = None,
         # New NPS Fields
         nps_competition_industry: bool | None = None,
-        nps_value_over: bool | None = None,
-        nps_value_below: bool | None = None,
+        nps_value_over: float | None = None,
+        nps_value_below: float | None = None,
         nps_goal_value: float | None = None,
         nps_goal_reached: bool | None = None,
         KPI_CURRENT_VALUE: bool | None = None,
