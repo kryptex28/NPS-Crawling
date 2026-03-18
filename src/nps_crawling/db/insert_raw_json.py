@@ -94,7 +94,6 @@ def main():
                     )
                     inserted_count += 1
 
-
         except Exception as e:
             print(f"Error processing {json_file.name}: {e}")
 

@@ -61,7 +61,7 @@ class BetterSpider(scrapy.Spider):
                     meta={'filing': filing,
                           'keyword': sec_query.sec_params.keyword,
                           },
-                    dont_filter=True
+                    dont_filter=True,
                 )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
