@@ -369,7 +369,7 @@ class NpsFilingsDB:
         """Retrieve a specific field for a given filing."""
         if field not in self._UPDATABLE_COLS and field != "id":
             raise ValueError(f"Unknown column: {field}")
-            
+
         col_name = f'"{field}"' if field.isupper() else field
         stmt = text(f"SELECT {col_name} FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
