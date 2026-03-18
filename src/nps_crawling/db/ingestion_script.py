@@ -5,7 +5,11 @@ from pathlib import Path
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def main():
+def main() -> None:
+    """
+    Reads all raw JSON files from the data/json_raw directory and inserts them into the database.
+    If a filing already exists, only the new keyword is added to the existing record.
+    """
     try:
         db = DbAdapter()
     except Exception as e:

@@ -12,7 +12,7 @@ class DbAdapter:
     for adding filings, checking existence, adding keywords, and retrieving filings.
     """
 
-    def __init__(self, connection_string: str = None):
+    def __init__(self, connection_string: str = None) -> None:
         """
         Initializes the database connection and the underlying DB wrapper.
         If no connection string is provided, falls back to the POSTGRES_ENGINE env variable.

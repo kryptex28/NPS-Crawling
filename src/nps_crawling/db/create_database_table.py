@@ -3,7 +3,11 @@ import os
 from sqlalchemy import create_engine, text
 
 
-def create_table():
+def create_table() -> None:
+    """
+    Creates the 'nps_filings' table in the PostgreSQL database if it does not already exist.
+    Uses the connection string from the 'POSTGRES_ENGINE' environment variable.
+    """
     # Connect to PostgreSQL using the environment variable
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
 

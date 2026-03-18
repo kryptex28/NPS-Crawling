@@ -57,7 +57,7 @@ class NpsFilingsDB:
         "nps_formal_role",
     }
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine) -> None:
         """Initialize NpsFilingsDB with a SQLAlchemy Engine."""
         # Store the SQLAlchemy Engine used for all DB operations.
         self.engine = engine
@@ -291,24 +291,28 @@ class NpsFilingsDB:
             return int(res.rowcount or 0)
 
     def delete_filing(self, id: str) -> bool:
+        """Deletes a filing from the database by its ID."""
         stmt = text(f"DELETE FROM {self.TABLE} WHERE id = :id;")
         with self.engine.begin() as conn:
             res = conn.execute(stmt, {"id": id})
             return (res.rowcount or 0) > 0
 
     def is_blacklisted(self, id: str) -> bool:
+        """Checks if a filing is marked as blacklisted."""
         stmt = text(f"SELECT blacklisted FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
     def nps_relevant(self, id: str) -> bool:
+        """Checks if a filing is marked as relevant for NPS calculations."""
         stmt = text(f"SELECT nps_relevant FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
     def classified_exists(self, id: str) -> bool:
+        """Checks whether the filing has a classified file path."""
         stmt = text(f"""
         SELECT (path_to_classified IS NOT NULL AND path_to_classified <> '')
         FROM {self.TABLE}
@@ -319,6 +323,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def preprocessed_exists(self, id: str) -> bool:
+        """Checks whether the filing has a preprocessed file path."""
         stmt = text(f"""
         SELECT (path_to_preprocessed IS NOT NULL AND path_to_preprocessed <> '')
         FROM {self.TABLE}
@@ -329,6 +334,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def raw_exists(self, id: str) -> bool:
+        """Checks whether the filing has a raw file path."""
         stmt = text(f"""
         SELECT (path_to_raw IS NOT NULL AND path_to_raw <> '')
         FROM {self.TABLE}
@@ -339,6 +345,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def blacklist(self, id: str) -> None:
+        """Marks a filing as blacklisted, inserting a new record if it does not exist."""
         stmt = text(f"""
         INSERT INTO {self.TABLE} (id, blacklisted)
         VALUES (:id, TRUE)
@@ -349,6 +356,7 @@ class NpsFilingsDB:
             conn.execute(stmt, {"id": id})
 
     def add_keyword(self, id: str, kw: str) -> bool:
+        """Appends a new keyword to the keywords array for a filing. Returns True if successfully added."""
         stmt = text(f"""
         UPDATE {self.TABLE}
         SET
