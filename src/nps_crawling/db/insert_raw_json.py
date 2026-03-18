@@ -40,6 +40,12 @@ def main():
                         print("Skipping record with no id")
                         continue
 
+                    if db.filing_exists(filing_id):
+                        if keyword:
+                            db.add_keyword(filing_id, keyword)
+                        inserted_count += 1
+                        continue
+
                     # Store keywords in an array
                     keywords = [keyword] if keyword else []
 
@@ -48,7 +54,7 @@ def main():
 
                     # Call adapter add_filing with data mapped from the JSON and None/False for new fields automatically
                     db.add_filing(
-                        id=filing_id,
+                        filing_id=filing_id,
                         ciks=filing.get("ciks", []),
                         period_ending=filing.get("period_ending"),
                         display_names=filing.get("display_names", []),
@@ -87,6 +93,7 @@ def main():
                         nps_formal_role=None,
                     )
                     inserted_count += 1
+
 
         except Exception as e:
             print(f"Error processing {json_file.name}: {e}")

@@ -64,52 +64,56 @@ class SaveToJSONPipeline(Config):
             filing_id = filing.get("id")
 
             if filing_id:
-                keywords_list = [keyword] if keyword else []
-                # path_to_raw will be set later during the flush, so we set it to None initially
+                if self.db.filing_exists(filing_id):
+                    if keyword:
+                        self.db.add_keyword(filing_id, keyword)
+                else:
+                    keywords_list = [keyword] if keyword else []
+                    # path_to_raw will be set later during the flush, so we set it to None initially
 
-                try:
-                    self.db.add_filing(
-                        filing_id=filing_id,
-                        ciks=filing.get("ciks", []),
-                        period_ending=filing.get("period_ending"),
-                        display_names=filing.get("display_names", []),
-                        root_forms=filing.get("root_forms", []),
-                        file_date=filing.get("file_date"),
-                        form=filing.get("form"),
-                        adsh=filing.get("adsh"),
-                        file_type=filing.get("file_type"),
-                        file_description=filing.get("file_description"),
-                        film_num=filing.get("film_num", []),
-                        keywords=keywords_list,
-                        blacklisted=False,
-                        nps_relevant=False,
-                        path_to_raw=None,  # Will be set once batched to disk
+                    try:
+                        self.db.add_filing(
+                            filing_id=filing_id,
+                            ciks=filing.get("ciks", []),
+                            period_ending=filing.get("period_ending"),
+                            display_names=filing.get("display_names", []),
+                            root_forms=filing.get("root_forms", []),
+                            file_date=filing.get("file_date"),
+                            form=filing.get("form"),
+                            adsh=filing.get("adsh"),
+                            file_type=filing.get("file_type"),
+                            file_description=filing.get("file_description"),
+                            film_num=filing.get("film_num", []),
+                            keywords=keywords_list,
+                            blacklisted=False,
+                            nps_relevant=False,
+                            path_to_raw=None,  # Will be set once batched to disk
 
-                        # New NPS fields
-                        nps_competition_industry=False,
-                        nps_value_over=False,
-                        nps_value_below=False,
-                        nps_goal_value=None,
-                        nps_goal_reached=False,
-                        KPI_CURRENT_VALUE=None,
-                        KPI_HISTORICAL_COMPARISON=False,
-                        BENCHMARK_COMPARISON=False,
-                        CUSTOMER_CASE_EVIDENCE=False,
-                        METHODOLOGY_DEFINITION=False,
-                        MGMT_COMPENSATION_GOVERNANCE=False,
-                        QUALITATIVE_ONLY=False,
-                        TARGET_OUTLOOK=False,
-                        NPS_SERVICE_PROVIDER=False,
-                        OTHER=False,
-                        has_numeric_nps=False,
-                        nps_value_fix=None,
-                        nps_trend_sentiment=None,
-                        nps_scope=None,
-                        nps_formal_role=None,
-                    )
-                except Exception as e:
-                    # Log silently or configure scrapy logger and skip
-                    pass
+                            # New NPS fields
+                            nps_competition_industry=False,
+                            nps_value_over=False,
+                            nps_value_below=False,
+                            nps_goal_value=None,
+                            nps_goal_reached=False,
+                            KPI_CURRENT_VALUE=None,
+                            KPI_HISTORICAL_COMPARISON=False,
+                            BENCHMARK_COMPARISON=False,
+                            CUSTOMER_CASE_EVIDENCE=False,
+                            METHODOLOGY_DEFINITION=False,
+                            MGMT_COMPENSATION_GOVERNANCE=False,
+                            QUALITATIVE_ONLY=False,
+                            TARGET_OUTLOOK=False,
+                            NPS_SERVICE_PROVIDER=False,
+                            OTHER=False,
+                            has_numeric_nps=False,
+                            nps_value_fix=None,
+                            nps_trend_sentiment=None,
+                            nps_scope=None,
+                            nps_formal_role=None,
+                        )
+                    except Exception as e:
+                        # Log silently or configure scrapy logger and skip
+                        pass
 
         # 2. Add to Memory buffer for JSON export
         self.records.append({"metadata": metadata, "core_text": core_text})
