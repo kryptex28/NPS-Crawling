@@ -3,7 +3,11 @@ import os
 from sqlalchemy import create_engine, text
 
 
-def create_table():
+def create_table() -> None:
+    """
+    Creates the 'nps_filings' table in the PostgreSQL database if it does not already exist.
+    Uses the connection string from the 'POSTGRES_ENGINE' environment variable.
+    """
     # Connect to PostgreSQL using the environment variable
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
 
@@ -38,8 +42,8 @@ def create_table():
 
         -- New NPS Fields
         nps_competition_industry BOOLEAN DEFAULT FALSE,
-        nps_value_over BOOLEAN DEFAULT FALSE,
-        nps_value_below BOOLEAN DEFAULT FALSE,
+        nps_value_over DOUBLE PRECISION,
+        nps_value_below DOUBLE PRECISION,
         nps_goal_value DOUBLE PRECISION,
         nps_goal_reached BOOLEAN DEFAULT FALSE,
         "KPI_CURRENT_VALUE" BOOLEAN DEFAULT FALSE,

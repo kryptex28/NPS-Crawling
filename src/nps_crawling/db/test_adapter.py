@@ -14,7 +14,11 @@ if 'POSTGRES_ENGINE' not in os.environ:
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def test_adapter():
+def test_adapter() -> None:
+    """
+    Runs basic tests to verify that the DbAdapter can insert filings, 
+    update fields and file paths, and retrieve rows from the database.
+    """
     print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
     try:
         adapter = DbAdapter()

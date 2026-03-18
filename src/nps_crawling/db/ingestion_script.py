@@ -5,7 +5,11 @@ from pathlib import Path
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def main():
+def main() -> None:
+    """
+    Reads all raw JSON files from the data/json_raw directory and inserts them into the database.
+    If a filing already exists, only the new keyword is added to the existing record.
+    """
     try:
         db = DbAdapter()
     except Exception as e:
@@ -40,6 +44,12 @@ def main():
                         print("Skipping record with no id")
                         continue
 
+                    if db.filing_exists(filing_id):
+                        if keyword:
+                            db.add_keyword(filing_id, keyword)
+                        inserted_count += 1
+                        continue
+
                     # Store keywords in an array
                     keywords = [keyword] if keyword else []
 
@@ -48,7 +58,7 @@ def main():
 
                     # Call adapter add_filing with data mapped from the JSON and None/False for new fields automatically
                     db.add_filing(
-                        id=filing_id,
+                        filing_id=filing_id,
                         ciks=filing.get("ciks", []),
                         period_ending=filing.get("period_ending"),
                         display_names=filing.get("display_names", []),
@@ -66,8 +76,8 @@ def main():
 
                         # New NPS fields set to default values explicitly
                         nps_competition_industry=False,
-                        nps_value_over=False,
-                        nps_value_below=False,
+                        nps_value_over=None,
+                        nps_value_below=None,
                         nps_goal_value=None,
                         nps_goal_reached=False,
                         KPI_CURRENT_VALUE=False,

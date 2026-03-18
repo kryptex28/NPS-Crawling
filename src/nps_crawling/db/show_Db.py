@@ -4,7 +4,11 @@ import os
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def main():
+def main() -> None:
+    """
+    Connects to the database and prints out a summary of the stored NPS filings.
+    First, it prints a compressed list of items, then a full detailed view of the latest few.
+    """
     try:
         db = DbAdapter()
     except Exception as e:

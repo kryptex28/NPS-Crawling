@@ -36,7 +36,7 @@ class SimilarityPipeline:
         logger.info("Loading embedding model '%s' …", Config.SIMILARITY_EMBEDDING_MODEL)
         self.embeddings = HuggingFaceEmbeddings(model_name=Config.SIMILARITY_EMBEDDING_MODEL)
         self.reference_embedding = np.array(
-            self.embeddings.embed_query(Config.SIMILARITY_REFERENCE_TEXT)
+            self.embeddings.embed_query(Config.SIMILARITY_REFERENCE_TEXT),
         )
         self.threshold_context = Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW
         self.threshold_document = Config.SIMILARITY_THRESHOLD_DOCUMENT_AVG
