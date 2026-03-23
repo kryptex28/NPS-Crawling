@@ -72,7 +72,7 @@ def main() -> None:
                         film_num=filing.get("film_num", []),
                         keywords=keywords,
                         blacklisted=False,
-                        nps_relevant=False,  # Now defaults to False initially
+                        nps_relevant=None,  # Now defaults to None initially
                         path_to_raw=str(json_file.absolute()),
                         url=url,
 

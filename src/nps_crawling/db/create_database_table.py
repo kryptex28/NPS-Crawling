@@ -33,7 +33,7 @@ def create_table() -> None:
         -- Extraction/Processing Metadata
         keywords TEXT[],
         blacklisted BOOLEAN DEFAULT FALSE,
-        nps_relevant BOOLEAN DEFAULT FALSE,
+        nps_relevant BOOLEAN,
 
         -- File Paths
         path_to_raw VARCHAR,

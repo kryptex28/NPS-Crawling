@@ -80,7 +80,7 @@ class NpsFilingsDB:
         film_num: list[str] | None = None,
         keywords: list[str] | None = None,
         blacklisted: bool = False,
-        nps_relevant: bool = False,
+        nps_relevant: bool | None = None,
         meta: dict[str, Any] | None = None,
         path_to_raw: str | None = None,
         path_to_preprocessed: str | None = None,
