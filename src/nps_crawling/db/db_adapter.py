@@ -1,5 +1,7 @@
 import os
 
+from typing import Any
+
 from sqlalchemy import create_engine, text
 
 from nps_crawling.db.nps_filings_db import NpsFilingsDB
