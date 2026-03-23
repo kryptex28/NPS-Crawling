@@ -89,6 +89,7 @@ class SaveToJSONPipeline(Config):
                             blacklisted=False,
                             nps_relevant=False,
                             path_to_raw=None,  # Will be set once batched to disk
+                            url=url,
 
                             # New NPS fields
                             nps_competition_industry=False,

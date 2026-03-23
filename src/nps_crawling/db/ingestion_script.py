@@ -38,6 +38,7 @@ def main() -> None:
 
                     filing = metadata.get("filing", {})
                     keyword = metadata.get("keyword")
+                    url = record.get("url")
 
                     filing_id = filing.get("id")
                     if not filing_id:
@@ -73,6 +74,7 @@ def main() -> None:
                         blacklisted=False,
                         nps_relevant=False,  # Now defaults to False initially
                         path_to_raw=str(json_file.absolute()),
+                        url=url,
 
                         # New NPS fields set to default values explicitly
                         nps_competition_industry=False,

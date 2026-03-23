@@ -39,6 +39,7 @@ def create_table() -> None:
         path_to_raw VARCHAR,
         path_to_preprocessed VARCHAR,
         path_to_classified VARCHAR,
+        url VARCHAR,
 
         -- New NPS Fields
         nps_competition_industry BOOLEAN DEFAULT FALSE,

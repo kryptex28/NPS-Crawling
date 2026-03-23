@@ -137,6 +137,13 @@ class DbAdapter:
         rows_affected = self._db.update_fields(filing_id, touch_last_crawled=False, path_to_classified=path)
         return rows_affected > 0
 
+    def update_url(self, filing_id: str, url: str) -> bool:
+        """
+        Updates only the `url` field for a specific filing without modifying `last_crawled`.
+        """
+        rows_affected = self._db.update_fields(filing_id, touch_last_crawled=False, url=url)
+        return rows_affected > 0
+
     def get_all_filings(self, limit: int = 100) -> list[dict]:
         """
         Retrieves a list of up to `limit` filings.
