@@ -77,7 +77,7 @@ def test_scenarios() -> None:
     # --- SCENARIO 3: Testing get_filing_field for UPPERCASE columns ---
     print("\n--- Scenario 3: Fetching UPPERCASE fields ---")
 
-    # Default should be False since we didn't set it
+    # Default should be None since we didn't set it (and changed default to None)
     kpi_val = adapter.get_filing_field(test_id, "KPI_CURRENT_VALUE")
     print(f"Verification - KPI_CURRENT_VALUE: {kpi_val}")
 
