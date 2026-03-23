@@ -57,7 +57,7 @@ def create_table() -> None:
         "TARGET_OUTLOOK" BOOLEAN,
         "NPS_SERVICE_PROVIDER" BOOLEAN,
         "OTHER" BOOLEAN,
-        has_numeric_nps BOOLEAN DEFAULT FALSE,
+        has_numeric_nps BOOLEAN,
         nps_value_fix DOUBLE PRECISION,
         nps_trend_sentiment VARCHAR,
         nps_scope VARCHAR,

@@ -107,7 +107,7 @@ class SaveToJSONPipeline(Config):
                             TARGET_OUTLOOK=None,
                             NPS_SERVICE_PROVIDER=None,
                             OTHER=None,
-                            has_numeric_nps=False,
+                            has_numeric_nps=None,
                             nps_value_fix=None,
                             nps_trend_sentiment=None,
                             nps_scope=None,
