@@ -24,6 +24,11 @@ def export_to_excel(filepath: str = "nps_filings_export.xlsx") -> None:
         # Read the data into a pandas DataFrame using the SQLAlchemy engine
         df = pd.read_sql(query, db.engine)
         
+        # Excel does not support timezone-aware datetimes.
+        # Convert any timezone-aware datetime columns to timezone-naive.
+        for col in df.select_dtypes(include=['datetimetz']).columns:
+            df[col] = df[col].dt.tz_localize(None)
+        
         # Write DataFrame to an Excel file
         # 'index=False' prevents pandas from writing row indices to the excel file
         df.to_excel(filepath, index=False, engine='openpyxl')
