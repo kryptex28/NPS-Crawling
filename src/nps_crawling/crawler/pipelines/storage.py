@@ -53,6 +53,7 @@ class SaveToJSONPipeline(Config):
         """Buffer a single scraped item, store in DB immediately, and flush buffer when full."""
         record = dict(item)
 
+        url = self._to_serializable(record.pop("url"))
         core_text = self._to_serializable(record.pop("core_text", None))
         metadata = {k: self._to_serializable(v) for k, v in record.items()}
 
@@ -116,7 +117,7 @@ class SaveToJSONPipeline(Config):
                         pass
 
         # 2. Add to Memory buffer for JSON export
-        self.records.append({"metadata": metadata, "core_text": core_text})
+        self.records.append({"metadata": metadata, "core_text": core_text, "url": url})
 
         if len(self.records) >= self.flush_every:
             self._flush_buffer()
