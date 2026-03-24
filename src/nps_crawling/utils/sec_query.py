@@ -1,5 +1,6 @@
 """SEC Query abstraction module with utility functions."""
 import requests
+import time
 
 from nps_crawling.utils.filings import Filing
 from nps_crawling.utils.sec_params import SecParams
@@ -85,9 +86,13 @@ def create_filings(data: list) -> list[Filing]:
     """Create list of filings based on JSON payload."""
     filings: list = []
 
-    for page in data:
-        for entry in page['hits']['hits']:
-            filings.append(create_filing(entry))
+    try:
+        for page in data:
+            for entry in page['hits']['hits']:
+                filings.append(create_filing(entry))
+    except Exception as e:
+        print(e)
+        print(data)
 
     return filings
 
@@ -99,7 +104,11 @@ def get_total_filings_count(data: dict) -> int:
 
 def get_fetched_filings_count(data: dict) -> int:
     """Get total number of queried filings of the requested page."""
-    return int(data['query']['size'])
+    try:
+        return int(data['query']['size'])
+    except Exception as e:
+        print(e)
+        print(data)
 
 
 class SecQuery:
@@ -133,21 +142,33 @@ class SecQuery:
         limit: int = self.limit
         page: int = 1
         queries: list = []
+        end_fetch: bool = False
 
-        while True:
-            response: dict = self.query_request(page=page)
-            queries.append(response)
-            # Set total results of the query on first query
-            if self.results == -1:
-                self.results = get_total_filings_count(response)
-                total = self.results
-                print(f'Total Results: {total}')
-            query = get_fetched_filings_count(response)
-            total -= query
-            limit -= query
-            if total <= 0 or limit <= 0:
-                break
-            page += 1
-            print(f'Page: {page}')
+        while end_fetch == False:
+            retry: int = 0
+            while retry < 5:
+                try:
+                    response: dict = self.query_request(page=page)
+                    queries.append(response)
+                    # Set total results of the query on first query
+                    if self.results == -1:
+                        self.results = get_total_filings_count(response)
+                        total = self.results
+                        print(f'Total Results: {total}')
+                    query = get_fetched_filings_count(response)
+                    if query == None: raise Exception('No filings found')
+                    total -= query
+                    limit -= query
+                    if total <= 0 or limit <= 0:
+                        end_fetch = True
+                        break
+                    page += 1
+                    print(f'Page: {page}')
+                    break
+                except Exception as e:
+                    print("Error in fetching filings")
+                    print("Retrying again in 5 seconds...")
+                    time.sleep(5)
+                    retry += 1
 
         return queries

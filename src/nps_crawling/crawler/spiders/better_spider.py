@@ -46,9 +46,20 @@ class BetterSpider(scrapy.Spider):
             query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
             sec_queries.append(query)
 
+        retry: int = 0
         # Fetch now all documents per query
         for sec_query in sec_queries:
-            sec_query.fetch_filings()
+            while retry < 5:
+                try:
+                    sec_query.fetch_filings()
+                    break
+                except Exception as e:
+                    self.logger.error(f"Error: {e}")
+                    self.logger.info("Sleeping for 5 seconds...")
+                    sec_query.keyword_filings.clear()
+                    import time
+                    time.sleep(5)
+                    retry += 1
 
         # Iterate through all filings
         for sec_query in sec_queries:
