@@ -38,6 +38,7 @@ def main() -> None:
 
                     filing = metadata.get("filing", {})
                     keyword = metadata.get("keyword")
+                    url = record.get("url")
 
                     filing_id = filing.get("id")
                     if not filing_id:
@@ -71,26 +72,27 @@ def main() -> None:
                         film_num=filing.get("film_num", []),
                         keywords=keywords,
                         blacklisted=False,
-                        nps_relevant=False,  # Now defaults to False initially
+                        nps_relevant=None,  # Now defaults to None initially
                         path_to_raw=str(json_file.absolute()),
+                        url=url,
 
                         # New NPS fields set to default values explicitly
-                        nps_competition_industry=False,
+                        nps_competition_industry=None,
                         nps_value_over=None,
                         nps_value_below=None,
                         nps_goal_value=None,
-                        nps_goal_reached=False,
-                        KPI_CURRENT_VALUE=False,
-                        KPI_HISTORICAL_COMPARISON=False,
-                        BENCHMARK_COMPARISON=False,
-                        CUSTOMER_CASE_EVIDENCE=False,
-                        METHODOLOGY_DEFINITION=False,
-                        MGMT_COMPENSATION_GOVERNANCE=False,
-                        QUALITATIVE_ONLY=False,
-                        TARGET_OUTLOOK=False,
-                        NPS_SERVICE_PROVIDER=False,
-                        OTHER=False,
-                        has_numeric_nps=False,
+                        nps_goal_reached=None,
+                        KPI_CURRENT_VALUE=None,
+                        KPI_HISTORICAL_COMPARISON=None,
+                        BENCHMARK_COMPARISON=None,
+                        CUSTOMER_CASE_EVIDENCE=None,
+                        METHODOLOGY_DEFINITION=None,
+                        MGMT_COMPENSATION_GOVERNANCE=None,
+                        QUALITATIVE_ONLY=None,
+                        TARGET_OUTLOOK=None,
+                        NPS_SERVICE_PROVIDER=None,
+                        OTHER=None,
+                        has_numeric_nps=None,
                         nps_value_fix=None,
                         nps_trend_sentiment=None,
                         nps_scope=None,

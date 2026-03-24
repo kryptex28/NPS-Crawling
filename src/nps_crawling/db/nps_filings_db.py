@@ -34,6 +34,7 @@ class NpsFilingsDB:
         "path_to_raw",
         "path_to_preprocessed",
         "path_to_classified",
+        "url",
         # New NPS Fields
         "nps_competition_industry",
         "nps_value_over",
@@ -50,6 +51,7 @@ class NpsFilingsDB:
         "TARGET_OUTLOOK",
         "NPS_SERVICE_PROVIDER",
         "OTHER",
+        #nps values
         "has_numeric_nps",
         "nps_value_fix",
         "nps_trend_sentiment",
@@ -78,11 +80,12 @@ class NpsFilingsDB:
         film_num: list[str] | None = None,
         keywords: list[str] | None = None,
         blacklisted: bool = False,
-        nps_relevant: bool = False,
+        nps_relevant: bool | None = None,
         meta: dict[str, Any] | None = None,
         path_to_raw: str | None = None,
         path_to_preprocessed: str | None = None,
         path_to_classified: str | None = None,
+        url: str | None = None,
         # New NPS Fields
         nps_competition_industry: bool | None = None,
         nps_value_over: float | None = None,
@@ -110,7 +113,7 @@ class NpsFilingsDB:
         INSERT INTO {self.TABLE} (
           id, ciks, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
-          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified,
+          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url,
           nps_competition_industry, nps_value_over, nps_value_below, nps_goal_value, nps_goal_reached,
           "KPI_CURRENT_VALUE", "KPI_HISTORICAL_COMPARISON", "BENCHMARK_COMPARISON",
           "CUSTOMER_CASE_EVIDENCE", "METHODOLOGY_DEFINITION", "MGMT_COMPENSATION_GOVERNANCE",
@@ -128,7 +131,7 @@ class NpsFilingsDB:
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
           :blacklisted, :nps_relevant,
-          :path_to_raw, :path_to_preprocessed, :path_to_classified,
+          :path_to_raw, :path_to_preprocessed, :path_to_classified, :url,
           :nps_competition_industry, :nps_value_over, :nps_value_below, :nps_goal_value, :nps_goal_reached,
           :KPI_CURRENT_VALUE, :KPI_HISTORICAL_COMPARISON, :BENCHMARK_COMPARISON,
           :CUSTOMER_CASE_EVIDENCE, :METHODOLOGY_DEFINITION, :MGMT_COMPENSATION_GOVERNANCE,
@@ -147,6 +150,7 @@ class NpsFilingsDB:
           path_to_raw              = COALESCE(EXCLUDED.path_to_raw, {self.TABLE}.path_to_raw),
           path_to_preprocessed     = COALESCE(EXCLUDED.path_to_preprocessed, {self.TABLE}.path_to_preprocessed),
           path_to_classified       = COALESCE(EXCLUDED.path_to_classified, {self.TABLE}.path_to_classified),
+          url                      = COALESCE(EXCLUDED.url, {self.TABLE}.url),
 
           -- Array fields
           ciks             = CASE WHEN :ciks IS NULL THEN {self.TABLE}.ciks ELSE EXCLUDED.ciks END,
@@ -207,6 +211,7 @@ class NpsFilingsDB:
                     "path_to_raw": path_to_raw,
                     "path_to_preprocessed": path_to_preprocessed,
                     "path_to_classified": path_to_classified,
+                    "url": url,
                     "nps_competition_industry": nps_competition_industry,
                     "nps_value_over": nps_value_over,
                     "nps_value_below": nps_value_below,

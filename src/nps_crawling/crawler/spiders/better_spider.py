@@ -60,6 +60,7 @@ class BetterSpider(scrapy.Spider):
                     callback=self.parse,
                     meta={'filing': filing,
                           'keyword': sec_query.sec_params.keyword,
+                          'url': url
                           },
                     dont_filter=True,
                 )
@@ -69,6 +70,7 @@ class BetterSpider(scrapy.Spider):
         self.logger.info(f"Parsing {response.url}")
         filing: Filing = response.meta['filing']
         keyword: str = response.meta['keyword']
+        url: str = response.meta['url']
 
         # Extract text from response content
         text: str = self.function_map[filing.file_container_type](response)
@@ -77,6 +79,7 @@ class BetterSpider(scrapy.Spider):
         item['filing'] = filing
         item['core_text'] = text
         item['keyword'] = keyword
+        item['url'] = url
 
         # Dispatch into pipeline
         yield item

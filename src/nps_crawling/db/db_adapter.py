@@ -1,5 +1,7 @@
 import os
 
+from typing import Any
+
 from sqlalchemy import create_engine, text
 
 from nps_crawling.db.nps_filings_db import NpsFilingsDB
@@ -135,6 +137,13 @@ class DbAdapter:
         Updates only the `path_to_classified` field for a specific filing without modifying `last_crawled`.
         """
         rows_affected = self._db.update_fields(filing_id, touch_last_crawled=False, path_to_classified=path)
+        return rows_affected > 0
+
+    def update_url(self, filing_id: str, url: str) -> bool:
+        """
+        Updates only the `url` field for a specific filing without modifying `last_crawled`.
+        """
+        rows_affected = self._db.update_fields(filing_id, touch_last_crawled=False, url=url)
         return rows_affected > 0
 
     def get_all_filings(self, limit: int = 100) -> list[dict]:
