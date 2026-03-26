@@ -41,6 +41,7 @@ class SaveToJSONPipeline(Config):
     def open_spider(self, spider):
         """Reset the in-memory buffer when the spider starts."""
         self.records = []
+        self.start_timestamp = datetime.now()
 
     def _to_serializable(self, val):
         """Recursively convert a value to a JSON-serializable type."""
@@ -147,6 +148,13 @@ class SaveToJSONPipeline(Config):
         if self.records:
             self._flush_buffer()
 
+        end_timestamp = datetime.now()
+        duration = end_timestamp - getattr(self, "start_timestamp", end_timestamp)
+        tot_sec = int(duration.total_seconds())
+        hrs, rem = divmod(tot_sec, 3600)
+        mins, secs = divmod(rem, 60)
+        fmt_duration = f"{hrs:02d}h {mins:02d}m {secs:02d}s"
+
         # Generate and save crawl report
         report_dir = self.json_root.parent / "crawl-report"
         report_dir.mkdir(parents=True, exist_ok=True)
@@ -178,7 +186,8 @@ class SaveToJSONPipeline(Config):
                 "total_items_crawled": self.stats["total_items_crawled"],
                 "new_records_added_to_db": self.stats["new_records_added_to_db"],
                 "existing_records_updated": self.stats["existing_records_updated"],
-                "unique_keywords_found": list(self.stats["keywords_found"])
+                "unique_keywords_found": list(self.stats["keywords_found"]),
+                "crawl_duration": fmt_duration
             }
         }
 
