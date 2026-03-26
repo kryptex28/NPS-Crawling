@@ -164,16 +164,16 @@ class SaveToJSONPipeline(Config):
             except Exception as e:
                 pass
 
+        import nps_crawling.crawler.settings as crawler_settings
+        custom_settings = {
+            k: getattr(crawler_settings, k) 
+            for k in dir(crawler_settings) 
+            if k.isupper()
+        }
+
         report_data = {
             "query": query_content,
-            "spider_parameters": {
-                "keywords": getattr(spider, "keywords", []),
-                "form_types": getattr(spider, "form_types", []),
-                "ticker_list": getattr(spider, "ticker_list", []),
-                "cik_list": getattr(spider, "cik_list", []),
-                "use_all_companies": getattr(spider, "use_all_companies", False)
-            },
-            "spider_settings": self._to_serializable(spider.settings.copy_to_dict()),
+            "crawler_settings": self._to_serializable(custom_settings),
             "statistics": {
                 "total_items_crawled": self.stats["total_items_crawled"],
                 "new_records_added_to_db": self.stats["new_records_added_to_db"],
