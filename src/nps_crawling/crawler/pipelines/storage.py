@@ -91,27 +91,32 @@ class SaveToJSONPipeline(Config):
                             path_to_raw=None,  # Will be set once batched to disk
                             url=url,
 
-                            # New NPS fields
+                            # Main Categories
+                            KPI_CURRENT_VALUE=None,
+                            KPI_TREND=None,
+                            KPI_HISTORICAL_COMPARISON=None,
+                            BENCHMARK_COMPARISON=None,
+                            TARGET_OUTLOOK=None,
+                            MGMT_COMPENSATION_GOVERNANCE=None,
+                            CUSTOMER_CASE_EVIDENCE=None,
+                            NPS_SERVICE_PROVIDER=None,
+                            METHODOLOGY_DEFINITION=None,
+                            QUALITATIVE_ONLY=None,
+                            OTHER=None,
+                            # Category Helper Columns
+                            has_numeric_nps=None,
+                            numeric_nps_count=None,
+                            nps_value_fix=None,
                             nps_competition_industry=None,
                             nps_value_over=None,
                             nps_value_below=None,
                             nps_goal_value=None,
+                            nps_goal_change=None,
                             nps_goal_reached=None,
-                            KPI_CURRENT_VALUE=None,
-                            KPI_HISTORICAL_COMPARISON=None,
-                            BENCHMARK_COMPARISON=None,
-                            CUSTOMER_CASE_EVIDENCE=None,
-                            METHODOLOGY_DEFINITION=None,
-                            MGMT_COMPENSATION_GOVERNANCE=None,
-                            QUALITATIVE_ONLY=None,
-                            TARGET_OUTLOOK=None,
-                            NPS_SERVICE_PROVIDER=None,
-                            OTHER=None,
-                            has_numeric_nps=None,
-                            nps_value_fix=None,
-                            nps_trend_sentiment=None,
-                            nps_scope=None,
-                            nps_formal_role=None,
+                            nps_trend_detected=None,
+                            has_target_language=None,
+                            keywords_found=None,
+                            matched_phrase=None,
                         )
                     except Exception as e:
                         # Log silently or configure scrapy logger and skip

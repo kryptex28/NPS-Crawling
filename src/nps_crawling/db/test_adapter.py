@@ -60,7 +60,7 @@ def test_adapter() -> None:
         filing_id=test_id,
         nps_goal_reached=True,
         nps_value_fix=10.5,
-        nps_trend_sentiment="Super Positive",
+        keywords_found="test keyword",
     )
     print(f"update_filing successful: {updated_fields}")
 
