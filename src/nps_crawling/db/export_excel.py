@@ -4,9 +4,10 @@ import pandas as pd
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def export_to_excel(filepath: str = "nps_filings_export.xlsx") -> None:
+def export_to_excel(filepath: str = "nps_filings_export.xlsx", only_relevant: bool = True) -> None:
     """
     Exports the entire database table to an Excel (.xlsx) file using pandas.
+    If only_relevant is True, only rows where nps_relevant is True are exported.
     Requires 'openpyxl' to write the file.
     """
     try:
@@ -19,7 +20,10 @@ def export_to_excel(filepath: str = "nps_filings_export.xlsx") -> None:
 
     try:
         # Construct query to fetch all data
-        query = f"SELECT * FROM {db.table_name}"
+        if only_relevant:
+            query = f"SELECT * FROM {db.table_name} WHERE nps_relevant = True"
+        else:
+            query = f"SELECT * FROM {db.table_name}"
         
         # Read the data into a pandas DataFrame using the SQLAlchemy engine
         df = pd.read_sql(query, db.engine)
