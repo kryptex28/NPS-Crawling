@@ -12,8 +12,8 @@ from nps_crawling.utils.filings import Filing, CompanyTicker, FilingsCategoryCol
 EXPECTED_RESULTS = 6
 EXPECTED_RESULTS_COUNT = 6
 
-EXPECTED_RESULTS_2 = 818
-EXPECTED_RESULTS_COUNT_2 = 818
+EXPECTED_RESULTS_2 = 744
+EXPECTED_RESULTS_COUNT_2 = 744
 
 params1 = SecParams (
     query_base = "https://efts.sec.gov/LATEST/search-index?",
@@ -32,9 +32,9 @@ params1 = SecParams (
 params2 = SecParams (
     query_base = "https://efts.sec.gov/LATEST/search-index?",
     keyword = "net promoter",
-    from_date = "2026-02-24",
-    to_date = "2026-03-26",
-    date_range = "30d",
+    from_date = "2026-02-25",
+    to_date = "2026-03-25",
+    date_range = "custom",
 )
 def run():
     sq = SecQuery (
@@ -56,22 +56,23 @@ def run():
     )
 
     sq2 = SecQuery (
-        sec_params = params2
+        sec_params = params2,
+        limit = 10_000
     )
 
     sq2.fetch_filings()
 
-    filings = sq2.keyword_filings
-    total = sq2.results
+    filings2 = sq2.keyword_filings
+    total2 = sq2.results
 
-    print(f"Total results reported by EDGAR : {total}")
-    print(f"Filings fetched : {len(filings)}")
+    print(f"Total results reported by EDGAR : {total2}")
+    print(f"Filings fetched : {len(filings2)}")
     
-    assert total == EXPECTED_RESULTS_2, (
-        f"Expected {EXPECTED_RESULTS_2} results, got {total}"
+    assert total2 == EXPECTED_RESULTS_2, (
+        f"Expected {EXPECTED_RESULTS_2} results, got {total2}"
     )
-    assert len(filings) == EXPECTED_RESULTS_COUNT_2, (
-        f"Expected {EXPECTED_RESULTS_COUNT_2} results, got {len(filings)}"
+    assert len(filings2) == EXPECTED_RESULTS_COUNT_2, (
+        f"Expected {EXPECTED_RESULTS_COUNT_2} results, got {len(filings2)}"
     )
 
     print("\nAll smoke checks passed.")
