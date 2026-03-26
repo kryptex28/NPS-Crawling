@@ -21,6 +21,13 @@ class SaveToJSONPipeline(Config):
         self.records = []
         self.flush_every = 1
 
+        self.stats = {
+            "total_items_crawled": 0,
+            "new_records_added_to_db": 0,
+            "existing_records_updated": 0,
+            "keywords_found": set()
+        }
+
         # Initialize the database adapter for real-time upserts
         try:
             self.db = DbAdapter()
@@ -65,10 +72,16 @@ class SaveToJSONPipeline(Config):
             filing_id = filing.get("id")
 
             if filing_id:
+                self.stats["total_items_crawled"] += 1
+                if keyword:
+                    self.stats["keywords_found"].add(keyword)
+
                 if self.db.filing_exists(filing_id):
+                    self.stats["existing_records_updated"] += 1
                     if keyword:
                         self.db.add_keyword(filing_id, keyword)
                 else:
+                    self.stats["new_records_added_to_db"] += 1
                     keywords_list = [keyword] if keyword else []
                     # path_to_raw will be set later during the flush, so we set it to None initially
 
@@ -133,6 +146,32 @@ class SaveToJSONPipeline(Config):
         """Flush any remaining records when the spider closes."""
         if self.records:
             self._flush_buffer()
+
+        # Generate and save crawl report
+        report_dir = self.json_root.parent / "crawl-report"
+        report_dir.mkdir(parents=True, exist_ok=True)
+
+        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        report_path = report_dir / f"crawl-report-{ts}.json"
+        
+        report_data = {
+            "query": {
+                "keywords": getattr(spider, "keywords", []),
+                "form_types": getattr(spider, "form_types", []),
+                "ticker_list": getattr(spider, "ticker_list", []),
+                "cik_list": getattr(spider, "cik_list", []),
+                "use_all_companies": getattr(spider, "use_all_companies", False)
+            },
+            "statistics": {
+                "total_items_crawled": self.stats["total_items_crawled"],
+                "new_records_added_to_db": self.stats["new_records_added_to_db"],
+                "existing_records_updated": self.stats["existing_records_updated"],
+                "unique_keywords_found": list(self.stats["keywords_found"])
+            }
+        }
+
+        with open(report_path, "w", encoding="utf-8") as f:
+            json.dump(report_data, f, indent=4, ensure_ascii=False)
 
     def _flush_buffer(self):
         if not self.records:

@@ -27,7 +27,11 @@ def main() -> None:
     # Process all JSON files
     added_count = 0
     skipped_count = 0
+    files_processed = 0
+    keywords_processed = set()
+
     for json_file in json_dir.glob("*.json"):
+        files_processed += 1
         print(f"Processing {json_file.name}...")
 
         try:
@@ -40,6 +44,9 @@ def main() -> None:
                     filing = metadata.get("filing", {})
                     keyword = metadata.get("keyword")
                     url = record.get("url")
+
+                    if keyword:
+                        keywords_processed.add(keyword)
 
                     filing_id = filing.get("id")
                     if not filing_id:
@@ -113,7 +120,6 @@ def main() -> None:
     print(f"Newly added filings: {added_count}")
     print(f"Already existing (skipped/updated): {skipped_count}")
     print(f"Total processed: {added_count + skipped_count}")
-
 
 if __name__ == "__main__":
     main()
