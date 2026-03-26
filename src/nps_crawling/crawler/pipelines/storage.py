@@ -154,14 +154,26 @@ class SaveToJSONPipeline(Config):
         ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         report_path = report_dir / f"crawl-report-{ts}.json"
         
+        # Read query.json content
+        query_json_path = Config.ROOT_DIR / "src" / "nps_crawling" / "queries" / "query.json"
+        query_content = {}
+        if query_json_path.exists():
+            try:
+                with open(query_json_path, "r", encoding="utf-8") as qf:
+                    query_content = json.load(qf)
+            except Exception as e:
+                pass
+
         report_data = {
-            "query": {
+            "query": query_content,
+            "spider_parameters": {
                 "keywords": getattr(spider, "keywords", []),
                 "form_types": getattr(spider, "form_types", []),
                 "ticker_list": getattr(spider, "ticker_list", []),
                 "cik_list": getattr(spider, "cik_list", []),
                 "use_all_companies": getattr(spider, "use_all_companies", False)
             },
+            "spider_settings": self._to_serializable(spider.settings.copy_to_dict()),
             "statistics": {
                 "total_items_crawled": self.stats["total_items_crawled"],
                 "new_records_added_to_db": self.stats["new_records_added_to_db"],
