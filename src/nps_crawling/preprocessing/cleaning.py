@@ -1,10 +1,14 @@
 """Text cleaning pipeline for preprocessing HTML content."""
 
 import re
+import warnings
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 from nps_crawling.config import Config
+
+# Ignore warning about parsing XML documents with an HTML parser
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 
 class CleanTextPipeline(Config):

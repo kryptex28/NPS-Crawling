@@ -1,5 +1,7 @@
 import os
+
 from sqlalchemy import create_engine, text
+
 
 def drop_table() -> None:
     """
@@ -14,12 +16,13 @@ def drop_table() -> None:
     table_name = "nps_filings"
 
     print(f"Attempting to drop table '{table_name}'...")
-    
+
     with engine.connect() as conn:
         conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}"'))
         conn.commit()
-        
+
     print(f"Table '{table_name}' dropped successfully.")
+
 
 if __name__ == "__main__":
     drop_table()

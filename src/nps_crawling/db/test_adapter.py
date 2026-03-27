@@ -2,6 +2,8 @@ import os
 import sys
 from pathlib import Path
 
+from nps_crawling.db.db_adapter import DbAdapter
+
 # Ensure the src directory is in the Python path so module imports work
 src_dir = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(src_dir))
@@ -11,12 +13,10 @@ sys.path.insert(0, str(src_dir))
 if 'POSTGRES_ENGINE' not in os.environ:
     os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
 
-from nps_crawling.db.db_adapter import DbAdapter
-
 
 def test_adapter() -> None:
     """
-    Runs basic tests to verify that the DbAdapter can insert filings, 
+    Runs basic tests to verify that the DbAdapter can insert filings,
     update fields and file paths, and retrieve rows from the database.
     """
     print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")

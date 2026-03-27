@@ -47,7 +47,8 @@ class NpsFilingsDB:
         "METHODOLOGY_DEFINITION",
         "QUALITATIVE_ONLY",
         "OTHER",
-        #Category Helper Columns
+        # Category Helper Columns
+        # nps values
         "has_numeric_nps",
         "numeric_nps_count",
         "nps_value_fix",

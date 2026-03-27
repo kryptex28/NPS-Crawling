@@ -1,5 +1,4 @@
 import os
-
 from typing import Any
 
 from sqlalchemy import create_engine, text
