@@ -7,6 +7,7 @@ import scrapy
 from scrapy.utils.project import get_project_settings
 
 from nps_crawling.crawler.items import FilingItem
+from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.filings import Filing
 from nps_crawling.utils.sec_params import create_params_from_config
 from nps_crawling.utils.sec_query import SecParams, SecQuery
@@ -49,6 +50,24 @@ class BetterSpider(scrapy.Spider):
         # Fetch now all documents per query
         for sec_query in sec_queries:
             sec_query.fetch_filings()
+
+        # Check if filings are already present in the database, and if so => remove
+        # Initialize the database adapter for real-time upserts
+        try:
+            db = DbAdapter()
+            for sec_query in sec_queries:
+                for filing in sec_query.keyword_filings:
+                    print("Lol")
+                    if db.filing_exists(filing.get_id()):
+                        print("Exists already")
+        except ModuleNotFoundError as e:
+            # For environments where SQLAlchemy or psycopg2 isn't strictly required
+            print(f"ModuleNotFoundError: {e}")
+        except ValueError as e:
+            # Fallback if connection string provides errors
+            print(f"ValueError: {e}")
+
+        exit()
 
         # Iterate through all filings
         for sec_query in sec_queries:
