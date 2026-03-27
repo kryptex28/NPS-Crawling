@@ -60,9 +60,10 @@ class SimilarityPipeline:
             contexts = record.get("context", [])
             if "metadata" not in record:
                 record["metadata"] = {}
-                
-            record["metadata"]["Context Windows total"] = len(contexts)
             
+            record["metadata"]["experiment"] = Config.EXPERIMENT_NAME
+            record["metadata"]["Context Windows total"] = len(contexts)
+
             if not contexts:
                 record["metadata"]["Context Windows Accept"] = 0
                 record["metadata"]["Context Windows Reject"] = 0

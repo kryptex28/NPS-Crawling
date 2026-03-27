@@ -8,18 +8,31 @@ class Config:
     ROOT_DIR = Path.cwd()
     DATA_PATH = ROOT_DIR / "data"
 
-    RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
-    NPS_CONTEXT_JSON_PATH = DATA_PATH / "json_processed"
-    NPS_CLASSIFIED_JSON = DATA_PATH / "json_classified"
-    NPS_REJECTED_JSON_PATH = DATA_PATH / "json_reject"
+    # Define experiment name here.
+    # For PREPROCESSING:
+    # Will check if data/<EXPERIMENT_NAME>/json_processed already exists.
+    # If so, preprocessing will be skipped entirely.
+    # If not, it will create it and save the preprocessed JSONs there with the
+    # configurations set below.
+    EXPERIMENT_NAME: str = "A"
 
+    RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
+
+    # Experiment-specific output directories
+    EXPERIMENT_PATH = DATA_PATH / EXPERIMENT_NAME
+    NPS_CONTEXT_JSON_PATH = EXPERIMENT_PATH / "json_processed"
+    NPS_REJECTED_JSON_PATH = EXPERIMENT_PATH / "json_reject"
+
+    NPS_CLASSIFIED_JSON = DATA_PATH / "json_classified"
+    
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
+    EXPERIMENT_PATH.mkdir(parents=True, exist_ok=True)
     NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
     NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
     NPS_REJECTED_JSON_PATH.mkdir(parents=True, exist_ok=True)
 
-    """ PRE PROCESSING CONFIG """
+    """ PREPROCESSING CONFIG """
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
@@ -30,7 +43,7 @@ class Config:
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2
     AMOUNT_SENTENCES_INCLUDED_AFTER: int = 2
 
-    # Similarity Search
+    # Similarity Search Model
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     # The reference text for the similarity search. This is the text that the
