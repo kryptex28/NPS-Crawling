@@ -54,6 +54,7 @@ class SaveToJSONPipeline(Config):
                 if filing_id:
                     try:
                         self.db.update_path_to_preprocessed(filing_id, str(out_path.absolute()))
+                        self.db.update_filing(filing_id, nps_relevant=(not reject))
                     except Exception:
                         pass
 

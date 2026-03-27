@@ -5,9 +5,10 @@ from sqlalchemy import text
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def export_to_csv(filepath: str = "nps_filings_export.csv") -> None:
+def export_to_csv(filepath: str = "nps_filings_export.csv", only_relevant: bool = True) -> None:
     """
     Exports the entire database table to a CSV file.
+    If only_relevant is True, only rows where nps_relevant is True are exported.
     """
     try:
         db = DbAdapter()
@@ -18,7 +19,10 @@ def export_to_csv(filepath: str = "nps_filings_export.csv") -> None:
     print(f"Exporting data from '{db.table_name}' to '{filepath}'...")
 
     # Select all records from the table
-    stmt = text(f"SELECT * FROM {db.table_name}")
+    if only_relevant:
+        stmt = text(f"SELECT * FROM {db.table_name} WHERE nps_relevant = True")
+    else:
+        stmt = text(f"SELECT * FROM {db.table_name}")
 
     try:
         with db.engine.connect() as conn:
