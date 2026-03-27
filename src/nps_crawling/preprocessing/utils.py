@@ -23,9 +23,9 @@ class PreProcessingPipeline(Config):
     1. **Clean** – HTML/XML → plain text.
     2. **Filter** – extract context windows around NPS-related phrases.
     3. **Score** – semantic similarity of each window against a reference text.
-    4. **Decide** – accept or reject based on the document-average score.
-    5. **Store** – accepted files (with low-scoring windows removed) go to
-       ``json_processed/``; rejected files (full data) go to ``json_reject/``.
+    4. **Split** – splits contexts based on threshold.
+    5. **Store** – high-scoring contexts go to ``json_processed/``; low-scoring 
+       contexts go to ``json_reject/``. Both are saved.
     """
     def __init__(self):
         """Initialize the PreProcessingPipeline."""
@@ -59,24 +59,18 @@ class PreProcessingPipeline(Config):
             records = self.cleaner.cleaning_workflow(records)
             records = self.filter.filtering_workflow(records)
 
-            scored_records, filtered_records, should_reject = (
-                self.similarity.similarity_workflow(records)
-            )
+            accepted_records, rejected_records = self.similarity.similarity_workflow(records)
 
-            if should_reject:
-                self.storage.storage_workflow(
-                    scored_records, source_filename=json_file.stem, reject=True,
-                )
-                rejected_count += 1
-            else:
-                self.storage.storage_workflow(
-                    filtered_records, source_filename=json_file.stem,
-                )
-                accepted_count += 1
+            self.storage.storage_workflow(
+                accepted_records, source_filename=json_file.stem, reject=False, update_db=True
+            )
+            self.storage.storage_workflow(
+                rejected_records, source_filename=json_file.stem, reject=True, update_db=False
+            )
+            accepted_count += 1
 
             processed_count += len(records)
-            status = "REJECTED" if should_reject else "ACCEPTED"
-            logger.info("Processed %s (%d records) — %s", json_file.name, len(records), status)
+            logger.info("Processed %s (%d records) — SPLIT", json_file.name, len(records))
 
         files_after_processed = self.storage.count_json_files()
         files_after_rejected = self.storage.count_rejected_files()

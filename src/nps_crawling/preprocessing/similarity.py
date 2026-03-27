@@ -25,15 +25,11 @@ class SimilarityPipeline:
     Decision logic
     --------------
     1. Every context window receives a ``similarity_score``.
-    2. The **document average** (mean of all window scores in a record) decides
-       whether the file is accepted or rejected.
-       * avg >= ``SIMILARITY_THRESHOLD_DOCUMENT_AVG``  →  accepted
-       * avg <  threshold  →  rejected
-    3. For **accepted** files the per-window threshold is applied: only windows
-       with ``similarity_score >= SIMILARITY_THRESHOLD_CONTEXT_WINDOW`` are
-       kept in the output written to ``json_processed/``.
-    4. **Rejected** files are written to ``json_reject/`` with *all* windows
-       (including scores) so the full picture is preserved for auditing.
+    2. The records are split into two parallel collections: accepted and rejected.
+    3. Contexts with ``similarity_score >= SIMILARITY_THRESHOLD_CONTEXT_WINDOW``
+       are placed into the accepted output (to go to ``json_processed/``).
+    4. Contexts falling below the threshold are placed into the rejected output
+       (to go to ``json_reject/``) for auditing.
     """
 
     def __init__(self):
@@ -44,63 +40,69 @@ class SimilarityPipeline:
             self.embeddings.embed_query(Config.SIMILARITY_REFERENCE_TEXT),
         )
         self.threshold_context = Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW
-        self.threshold_document = Config.SIMILARITY_THRESHOLD_DOCUMENT_AVG
         logger.info(
-            "Similarity pipeline ready  (window threshold=%.2f, document threshold=%.2f)",
+            "Similarity pipeline ready (window threshold=%.2f)",
             self.threshold_context,
-            self.threshold_document,
         )
 
     def similarity_workflow(self, records):
-        """Score every context window and decide whether the file should be rejected.
+        """Score every context window and split based on threshold.
 
         Args:
-            records: list of dicts, each with optional ``context`` list produced
-                     by the filtering step.
+            records: list of dicts, each with optional ``context`` list.
 
         Returns:
-            tuple[list, list, bool]:
-                - *scored_records*: deep copy with all windows and scores
-                  (used for ``json_reject`` when the file is rejected).
-                - *filtered_records*: records with only above-threshold windows
-                  (used for ``json_processed`` when the file is accepted).
-                - *should_reject*: ``True`` when the document average of any
-                  record falls below ``SIMILARITY_THRESHOLD_DOCUMENT_AVG``.
+            tuple[list, list]:
+                - *accepted_records*: records with context windows >= SIMILARITY_THRESHOLD_CONTEXT_WINDOW.
+                - *rejected_records*: records with context windows < SIMILARITY_THRESHOLD_CONTEXT_WINDOW.
         """
-        should_reject = False
-
         for record in records:
             contexts = record.get("context", [])
+            if "metadata" not in record:
+                record["metadata"] = {}
+                
+            record["metadata"]["Context Windows total"] = len(contexts)
+            
             if not contexts:
-                record["document_avg_similarity"] = None
+                record["metadata"]["Context Windows Accept"] = 0
+                record["metadata"]["Context Windows Reject"] = 0
                 continue
 
             context_texts = [ctx["context"] for ctx in contexts]
             context_embeddings = self.embeddings.embed_documents(context_texts)
 
-            scores = []
+            accepted_count = 0
+            rejected_count = 0
             for ctx, emb in zip(contexts, context_embeddings):
                 score = self._cosine_similarity(np.array(emb), self.reference_embedding)
                 ctx["similarity_score"] = round(float(score), 4)
-                scores.append(score)
+                if score >= self.threshold_context:
+                    accepted_count += 1
+                else:
+                    rejected_count += 1
+            
+            record["metadata"]["Context Windows Accept"] = accepted_count
+            record["metadata"]["Context Windows Reject"] = rejected_count
 
-            avg_score = sum(scores) / len(scores)
-            record["document_avg_similarity"] = round(float(avg_score), 4)
+        accepted_records = copy.deepcopy(records)
+        rejected_records = copy.deepcopy(records)
 
-            if avg_score < self.threshold_document:
-                should_reject = True
-
-        scored_records = copy.deepcopy(records)
-
-        for record in records:
-            contexts = record.get("context", [])
-            if contexts:
-                record["context"] = [
-                    ctx for ctx in contexts
+        for rec_acc, rec_rej in zip(accepted_records, rejected_records):
+            ctxs_acc = rec_acc.get("context", [])
+            if ctxs_acc:
+                rec_acc["context"] = [
+                    ctx for ctx in ctxs_acc
                     if ctx.get("similarity_score", 0) >= self.threshold_context
                 ]
 
-        return scored_records, records, should_reject
+            ctxs_rej = rec_rej.get("context", [])
+            if ctxs_rej:
+                rec_rej["context"] = [
+                    ctx for ctx in ctxs_rej
+                    if ctx.get("similarity_score", 0) < self.threshold_context
+                ]
+
+        return accepted_records, rejected_records
 
     @staticmethod
     def _cosine_similarity(vec_a, vec_b):

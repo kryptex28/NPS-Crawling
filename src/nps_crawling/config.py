@@ -43,7 +43,6 @@ class Config:
     )
 
     SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
-    SIMILARITY_THRESHOLD_DOCUMENT_AVG: float = 0.2
 
     """ LLM CONFIG """
     # OLLAMA
