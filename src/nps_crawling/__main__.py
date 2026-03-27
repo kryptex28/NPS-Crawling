@@ -29,8 +29,17 @@ def main(argv=None):
             crawler = CrawlerPipeline()
             crawler.crawler_workflow()
         elif args.command == "process":
-            pre_processing = PreProcessingPipeline()
-            pre_processing.pre_processing_workflow()
+            # need to do check here, since otherwise huggingface weights would still be loaded
+            from nps_crawling.config import Config
+            processed_dir = Config.NPS_CONTEXT_JSON_PATH
+            if processed_dir.exists() and any(processed_dir.glob("*.json")):
+                print(
+                    f"Experiment '{Config.EXPERIMENT_NAME}' already has processed "
+                    f"data at {processed_dir} — skipping preprocessing"
+                )
+            else:
+                pre_processing = PreProcessingPipeline()
+                pre_processing.pre_processing_workflow()
         elif args.command == "classify":
             classification = ClassificationPipeline()
             classification.classification_workflow()
