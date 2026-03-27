@@ -31,6 +31,10 @@ class SaveToJSONPipeline(Config):
         target_dir = self.json_reject_root if reject else self.json_root
         out_path = target_dir / f"{source_filename}.json"
 
+        # Remove core_text from each record to save space in the final processed JSON
+        for record in records:
+            record.pop("core_text", None)
+
         # Save preprocessed json
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
