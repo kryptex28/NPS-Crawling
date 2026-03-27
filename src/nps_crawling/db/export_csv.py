@@ -2,6 +2,7 @@ import csv
 import os
 
 from sqlalchemy import text
+
 from nps_crawling.db.db_adapter import DbAdapter
 
 
@@ -34,10 +35,10 @@ def export_to_csv(filepath: str = "nps_filings_export.csv", only_relevant: bool 
             # Open the CSV file and write the data
             with open(filepath, mode="w", newline="", encoding="utf-8") as file:
                 writer = csv.writer(file)
-                
+
                 # Write the header row
                 writer.writerow(columns)
-                
+
                 # Fetch all rows and write them
                 rows = result.fetchall()
                 writer.writerows(rows)
