@@ -3,6 +3,11 @@
 import copy
 import logging
 
+# silence errors
+import transformers 
+transformers.utils.logging.set_verbosity_error()
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+
 import numpy as np
 from langchain_huggingface import HuggingFaceEmbeddings
 
