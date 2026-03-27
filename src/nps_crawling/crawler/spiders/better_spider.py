@@ -52,23 +52,9 @@ class BetterSpider(scrapy.Spider):
             sec_query.fetch_filings()
 
         # Check if filings are already present in the database, and if so => remove
-        # Initialize the database adapter for real-time upserts
-        try:
-            db = DbAdapter()
-            for sec_query in sec_queries:
-                for filing in sec_query.keyword_filings:
-                    print("Lol")
-                    if db.filing_exists(filing.get_id()):
-                        print("Exists already")
-        except ModuleNotFoundError as e:
-            # For environments where SQLAlchemy or psycopg2 isn't strictly required
-            print(f"ModuleNotFoundError: {e}")
-        except ValueError as e:
-            # Fallback if connection string provides errors
-            print(f"ValueError: {e}")
-
-        exit()
-
+        for sec_query in sec_queries:
+            self.is_filing_present(sec_query)
+        
         # Iterate through all filings
         for sec_query in sec_queries:
             for i, filing in enumerate(sec_query.keyword_filings):
@@ -127,3 +113,32 @@ class BetterSpider(scrapy.Spider):
         """Extracts content from HTML/XML file."""
         self.logger.info(f"Extracting content from {response.url} as XML/HTML.")
         return response.text
+
+    def is_filing_present(self, sec_query: SecQuery) -> None:
+        """Checks if filings are already present in the database."""
+        # Initialize the database adapter for real-time upserts
+        try:
+            db = DbAdapter()
+            new_list: list[Filing] = []
+            for filing in sec_query.keyword_filings:
+                # Add to new list if it is not present in DB
+                if not db.filing_exists(filing.get_id()):
+                    new_list.append(filing)
+                    self.logger.debug(f"Filing with ID {filing.get_id()} does not exists in DB")
+                else:
+                    self.logger.debug(f"Filing with ID {filing.get_id()} already exists in DB")
+    
+            # For memory clearing: Swap old list with new
+            old_length: int = len(sec_query.keyword_filings)
+            sec_query.keyword_filings.clear()
+            sec_query.keyword_filings = new_list
+            new_length: int = len(sec_query.keyword_filings)
+
+            self.logger.info(f"\n\tNew size: {new_length} {'-'*3} Old size: {old_length}")
+                        
+        except ModuleNotFoundError as e:
+            # For environments where SQLAlchemy or psycopg2 isn't strictly required
+            self.logger.warning(f"ModuleNotFoundError: {e}")
+        except ValueError as e:
+            # Fallback if connection string provides errors
+            self.logger.warning(f"ValueError: {e}")

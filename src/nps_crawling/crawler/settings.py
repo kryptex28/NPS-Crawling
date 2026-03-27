@@ -25,7 +25,7 @@ DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEC_QUERY_FILE_PATH = os.path.join(PROJECT_ROOT, 'queries', 'query.json')
 
-SEC_QUERY_LIMIT_COUNT = 10000
+SEC_QUERY_LIMIT_COUNT = 1_000
 
 STATS_DUMP = True
 JOB_DIR = 'crawls/sec_filings_spider'
