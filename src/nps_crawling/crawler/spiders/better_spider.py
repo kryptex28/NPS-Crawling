@@ -54,7 +54,7 @@ class BetterSpider(scrapy.Spider):
         # Check if filings are already present in the database, and if so => remove
         for sec_query in sec_queries:
             self.is_filing_present(sec_query)
-        
+
         # Iterate through all filings
         for sec_query in sec_queries:
             for i, filing in enumerate(sec_query.keyword_filings):
@@ -65,7 +65,7 @@ class BetterSpider(scrapy.Spider):
                     callback=self.parse,
                     meta={'filing': filing,
                           'keyword': sec_query.sec_params.keyword,
-                          'url': url
+                          'url': url,
                           },
                     dont_filter=True,
                 )
@@ -127,15 +127,15 @@ class BetterSpider(scrapy.Spider):
                     self.logger.debug(f"Filing with ID {filing.get_id()} does not exists in DB")
                 else:
                     self.logger.debug(f"Filing with ID {filing.get_id()} already exists in DB")
-    
+
             # For memory clearing: Swap old list with new
             old_length: int = len(sec_query.keyword_filings)
             sec_query.keyword_filings.clear()
             sec_query.keyword_filings = new_list
             new_length: int = len(sec_query.keyword_filings)
 
-            self.logger.info(f"\n\tNew size: {new_length} {'-'*3} Old size: {old_length}")
-                        
+            self.logger.info(f"\n\tNew size: {new_length} {'-' * 3} Old size: {old_length}")
+
         except ModuleNotFoundError as e:
             # For environments where SQLAlchemy or psycopg2 isn't strictly required
             self.logger.warning(f"ModuleNotFoundError: {e}")

@@ -2,14 +2,14 @@ import os
 import sys
 from pathlib import Path
 
+from nps_crawling.db.db_adapter import DbAdapter
+
 # Ensure the src directory is in the Python path so module imports work
 src_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(src_dir))
 
 if 'POSTGRES_ENGINE' not in os.environ:
     os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
-
-from nps_crawling.db.db_adapter import DbAdapter
 
 
 def test_scenarios() -> None:

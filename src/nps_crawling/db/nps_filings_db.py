@@ -51,7 +51,7 @@ class NpsFilingsDB:
         "TARGET_OUTLOOK",
         "NPS_SERVICE_PROVIDER",
         "OTHER",
-        #nps values
+        # nps values
         "has_numeric_nps",
         "nps_value_fix",
         "nps_trend_sentiment",

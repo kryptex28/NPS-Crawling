@@ -64,6 +64,7 @@ class Filing:
     def get_id(self) -> str:
         return self.id
 
+
 class FilingDateRange(Enum):
     """Enum class to abstract the filing date range."""
     CUSTOM = 'custom'
