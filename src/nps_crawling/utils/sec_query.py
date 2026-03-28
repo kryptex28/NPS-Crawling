@@ -136,15 +136,25 @@ class SecQuery:
 
         while True:
             response: dict = self.query_request(page=page)
-            queries.append(response)
             # Set total results of the query on first query
             if self.results == -1:
                 self.results = get_total_filings_count(response)
                 total = self.results
                 print(f'Total Results: {total}')
-            query = get_fetched_filings_count(response)
-            total -= query
+            #query = get_fetched_filings_count(response)
+            hits: list[str] = response['hits']['hits']
+            query = len(hits)
+
+            if limit < query:
+                response['hits']['hits'] = hits[:limit]
+                queries.append(response)
+                break
+            else:
+                queries.append(response)
+
             limit -= query
+            total -= query
+
             if total <= 0 or limit <= 0:
                 break
             page += 1
