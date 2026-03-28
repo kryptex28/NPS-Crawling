@@ -199,7 +199,15 @@ class SaveToJSONPipeline(Config):
             return
 
         ts = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
-        fname = f"chunk_{ts}_{uuid4().hex}.json"
+
+        # Extract filing_id from the single record (flush_every = 1)
+        filing_id = (
+            self.records[0]
+            .get("metadata", {})
+            .get("filing", {})
+            .get("id", uuid4().hex)  # fallback if missing
+        )
+        fname = f"{filing_id}.json"
 
         # Save raw json to file
         saved_path = self.json_root / fname
@@ -216,6 +224,7 @@ class SaveToJSONPipeline(Config):
                 if filing_id:
                     try:
                         self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))
+                        print(f"{filing_id} updated")
                     except Exception:
                         pass
 
