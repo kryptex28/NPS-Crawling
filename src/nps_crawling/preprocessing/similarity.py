@@ -61,7 +61,7 @@ class SimilarityPipeline:
             if "metadata" not in record:
                 record["metadata"] = {}
             
-            record["metadata"]["experiment"] = Config.EXPERIMENT_NAME
+            record["metadata"]["experiment"] = Config.PREPROCESSING_VERSION
             record["metadata"]["Context Windows total"] = len(contexts)
 
             if not contexts:

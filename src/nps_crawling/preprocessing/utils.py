@@ -99,7 +99,7 @@ class PreProcessingPipeline(Config):
         # Write experiment summary JSON
         summary = {
             "experiment_setup": {
-                "experiment_name": Config.EXPERIMENT_NAME,
+                "preprocessing_version": Config.PREPROCESSING_VERSION,
                 "filter_phrases": Config.LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR,
                 "context_sentences_before": Config.AMOUNT_SENTENCES_INCLUDED_BEFORE,
                 "context_sentences_after": Config.AMOUNT_SENTENCES_INCLUDED_AFTER,
@@ -120,7 +120,7 @@ class PreProcessingPipeline(Config):
             },
         }
 
-        summary_path = Config.EXPERIMENT_PATH / f"experiment_{Config.EXPERIMENT_NAME}.json"
+        summary_path = Config.PROCESSED_BASE_PATH / f"experiment_{Config.PREPROCESSING_VERSION}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
 
@@ -130,7 +130,7 @@ class PreProcessingPipeline(Config):
             "Filings: %d total, %d accepted (%d full, %d partial), "
             "%d rejected (%d full, %d partial). "
             "Context windows: %d accepted, %d rejected.",
-            Config.EXPERIMENT_NAME,
+            Config.PREPROCESSING_VERSION,
             filings_total,
             filings_accepted, filings_accepted_fully, filings_accepted - filings_accepted_fully,
             filings_rejected, filings_rejected_fully, filings_rejected - filings_rejected_fully,

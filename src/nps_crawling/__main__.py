@@ -34,7 +34,7 @@ def main(argv=None):
             processed_dir = Config.NPS_CONTEXT_JSON_PATH
             if processed_dir.exists() and any(processed_dir.glob("*.json")):
                 print(
-                    f"Experiment '{Config.EXPERIMENT_NAME}' already has processed "
+                    f"Experiment '{Config.PREPROCESSING_VERSION}' already has processed "
                     f"data at {processed_dir} — skipping preprocessing"
                 )
             else:
