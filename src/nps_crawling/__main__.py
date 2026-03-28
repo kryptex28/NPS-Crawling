@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+import shutil
 from nps_crawling.config import Config
 from . import __version__
 
@@ -40,8 +41,7 @@ def main(argv=None):
                 pre_processing = PreProcessingPipeline()
                 pre_processing.pre_processing_workflow()
         elif args.command == "classify":
-            import shutil
-            from nps_crawling.config import Config
+
             classified_dir = Config.NPS_CLASSIFIED_JSON / "files"
             
             if args.force and classified_dir.exists():
