@@ -10,7 +10,7 @@ from sqlalchemy import Engine, text
 class NpsFilingsDB:
     """Database access layer for NPS filings."""
     # Name of the target PostgreSQL table.
-    TABLE = "nps_filings"
+    TABLE = "nps_filings_new"
 
     # Columns stored as PostgreSQL text arrays (TEXT[]).
     _ARRAY_COLS = {"ciks", "display_names", "root_forms", "film_num", "keywords"}

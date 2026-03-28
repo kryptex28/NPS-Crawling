@@ -11,7 +11,7 @@ def create_table() -> None:
     # Connect to PostgreSQL using the environment variable
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
 
-    table_name = "nps_filings"
+    table_name = "nps_filings_new"
 
     # Drop table if exists for a clean slate, or just create if not exists
     create_stmt = text(f"""
