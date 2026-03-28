@@ -31,6 +31,12 @@ class PreProcessingPipeline(Config):
         """Initialize the PreProcessingPipeline."""
         self.json_raw_dir = Config.RAW_JSON_PATH_CRAWLER / "files"
 
+        # Create version-specific directories on demand
+        Config.NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
+        (Config.NPS_CONTEXT_JSON_PATH / "files").mkdir(parents=True, exist_ok=True)
+        Config.NPS_REJECTED_JSON_PATH.mkdir(parents=True, exist_ok=True)
+        (Config.NPS_REJECTED_JSON_PATH / "files").mkdir(parents=True, exist_ok=True)
+
         self.cleaner = CleanTextPipeline()
         self.filter = NpsMentionFilterPipeline()
         self.similarity = SimilarityPipeline()

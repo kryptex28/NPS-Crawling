@@ -15,6 +15,10 @@ class ClassificationPipeline(Config):
 
     def __init__(self):
         """Initialize the ClassificationPipeline."""
+        # Create version-specific directories on demand
+        Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
+        (Config.NPS_CLASSIFIED_JSON / "files").mkdir(parents=True, exist_ok=True)
+
         self.get_data = ClassificationDataProcessing()
         self.model_pipeline = ClassificationModelPipeline()
 

@@ -50,19 +50,15 @@ class Config:
     NPS_REJECTED_JSON_PATH = REJECTED_BASE_PATH / PREPROCESSING_VERSION
     NPS_CLASSIFIED_JSON = CLASSIFIED_BASE_PATH / CLASSIFICATION_VERSION
 
-    # Create directories
+    # Create base directories (always needed)
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
     (RAW_JSON_PATH_CRAWLER / "files").mkdir(parents=True, exist_ok=True)
     (RAW_JSON_PATH_CRAWLER / "crawl_reports").mkdir(parents=True, exist_ok=True)
     PROCESSED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     REJECTED_BASE_PATH.mkdir(parents=True, exist_ok=True)
-    NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
-    NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
-    NPS_REJECTED_JSON_PATH.mkdir(parents=True, exist_ok=True)
-    (NPS_CLASSIFIED_JSON / "files").mkdir(parents=True, exist_ok=True)
-    (NPS_CONTEXT_JSON_PATH / "files").mkdir(parents=True, exist_ok=True)
-    (NPS_REJECTED_JSON_PATH / "files").mkdir(parents=True, exist_ok=True)
+    # Note: Version-specific dirs (NPS_CONTEXT_JSON_PATH, NPS_REJECTED_JSON_PATH,
+    # NPS_CLASSIFIED_JSON) are created lazily by the respective pipeline constructors.
 
     """ PREPROCESSING CONFIG """
     # Define keywords here that will be searched for in the core_text
