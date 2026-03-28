@@ -3,7 +3,7 @@
 import argparse
 import logging
 import sys
-
+from nps_crawling.config import Config
 from . import __version__
 
 log = logging.getLogger(__package__)
@@ -30,7 +30,6 @@ def main(argv=None):
             crawler.crawler_workflow()
         elif args.command == "process":
             # need to do check here, since otherwise huggingface weights would still be loaded
-            from nps_crawling.config import Config
             processed_dir = Config.NPS_CONTEXT_JSON_PATH / "files"
             if processed_dir.exists() and any(processed_dir.glob("*.json")):
                 print(
@@ -41,8 +40,22 @@ def main(argv=None):
                 pre_processing = PreProcessingPipeline()
                 pre_processing.pre_processing_workflow()
         elif args.command == "classify":
-            classification = ClassificationPipeline()
-            classification.classification_workflow()
+            import shutil
+            from nps_crawling.config import Config
+            classified_dir = Config.NPS_CLASSIFIED_JSON / "files"
+            
+            if args.force and classified_dir.exists():
+                shutil.rmtree(classified_dir)
+                classified_dir.mkdir(parents=True, exist_ok=True)
+                
+            if classified_dir.exists() and any(classified_dir.glob("*.json")):
+                print(
+                    f"Experiment '{Config.CLASSIFICATION_VERSION}' already has classified "
+                    f"data at {classified_dir} — skipping classification",
+                )
+            else:
+                classification = ClassificationPipeline()
+                classification.classification_workflow()
         elif args.command == "display":
             results = ResultsPipeline()
             results.results_workflow()
@@ -102,10 +115,15 @@ def create_parser() -> argparse.ArgumentParser:
         parents=[parent],
         description="Process data.",
     )
-    subparsers.add_parser(
+    classify_parser = subparsers.add_parser(
         "classify",
         parents=[parent],
         description="Classification of data.",
+    )
+    classify_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force classification by deleting existing classified data",
     )
     subparsers.add_parser(
         "display",
