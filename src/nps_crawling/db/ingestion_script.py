@@ -17,7 +17,7 @@ def main() -> None:
         return
 
     from nps_crawling.config import Config
-    json_dir = Config.RAW_JSON_PATH_CRAWLER
+    json_dir = Config.RAW_JSON_PATH_CRAWLER / "files"
 
     if not json_dir.exists():
         print(f"Directory {json_dir} does not exist. Please check the path.")

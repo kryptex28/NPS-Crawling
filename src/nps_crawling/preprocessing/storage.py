@@ -10,8 +10,8 @@ class SaveToJSONPipeline(Config):
     """Storage pipeline to save processed records as JSON files."""
     def __init__(self):
         """Initialize the storage pipeline."""
-        self.json_root = Config.NPS_CONTEXT_JSON_PATH
-        self.json_reject_root = Config.NPS_REJECTED_JSON_PATH
+        self.json_root = Config.NPS_CONTEXT_JSON_PATH / "files"
+        self.json_reject_root = Config.NPS_REJECTED_JSON_PATH / "files"
 
         try:
             self.db = DbAdapter()

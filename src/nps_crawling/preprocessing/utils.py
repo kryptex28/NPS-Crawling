@@ -29,7 +29,7 @@ class PreProcessingPipeline(Config):
     """
     def __init__(self):
         """Initialize the PreProcessingPipeline."""
-        self.json_raw_dir = Config.RAW_JSON_PATH_CRAWLER
+        self.json_raw_dir = Config.RAW_JSON_PATH_CRAWLER / "files"
 
         self.cleaner = CleanTextPipeline()
         self.filter = NpsMentionFilterPipeline()
@@ -120,7 +120,7 @@ class PreProcessingPipeline(Config):
             },
         }
 
-        summary_path = Config.PROCESSED_BASE_PATH / f"experiment_{Config.PREPROCESSING_VERSION}.json"
+        summary_path = Config.PROCESSED_BASE_PATH / f"preprocessing_{Config.PREPROCESSING_VERSION}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
 

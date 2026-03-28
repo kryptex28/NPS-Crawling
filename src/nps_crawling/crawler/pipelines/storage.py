@@ -17,7 +17,7 @@ class SaveToJSONPipeline(Config):
 
     def __init__(self):
         """Initialize pipeline state."""
-        self.json_root = Config.RAW_JSON_PATH_CRAWLER
+        self.json_root = Config.RAW_JSON_PATH_CRAWLER / "files"
         self.records = []
         self.flush_every = 1
 
@@ -156,11 +156,11 @@ class SaveToJSONPipeline(Config):
         fmt_duration = f"{hrs:02d}h {mins:02d}m {secs:02d}s"
 
         # Generate and save crawl report
-        report_dir = self.json_root.parent / "crawl-report"
+        report_dir = Config.RAW_JSON_PATH_CRAWLER / "crawl_reports"
         report_dir.mkdir(parents=True, exist_ok=True)
 
         ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        report_path = report_dir / f"crawl-report-{ts}.json"
+        report_path = report_dir / f"crawl_report_{ts}.json"
         
         # Read query.json content
         query_json_path = Config.ROOT_DIR / "src" / "nps_crawling" / "queries" / "query.json"

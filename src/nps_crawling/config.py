@@ -34,6 +34,7 @@ class Config:
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
     PREPROCESSING_VERSION: str = "version_1"
+    CLASSIFICATION_VERSION: str = "version_1"
 
     # Base directories
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
@@ -44,16 +45,21 @@ class Config:
     # Experiment-specific directories
     NPS_CONTEXT_JSON_PATH = PROCESSED_BASE_PATH / PREPROCESSING_VERSION
     NPS_REJECTED_JSON_PATH = REJECTED_BASE_PATH / PREPROCESSING_VERSION
-    NPS_CLASSIFIED_JSON = CLASSIFIED_BASE_PATH
+    NPS_CLASSIFIED_JSON = CLASSIFIED_BASE_PATH / CLASSIFICATION_VERSION
 
     # Create directories
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
+    (RAW_JSON_PATH_CRAWLER / "files").mkdir(parents=True, exist_ok=True)
+    (RAW_JSON_PATH_CRAWLER / "crawl_reports").mkdir(parents=True, exist_ok=True)
     PROCESSED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     REJECTED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
     NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
     NPS_REJECTED_JSON_PATH.mkdir(parents=True, exist_ok=True)
+    (NPS_CLASSIFIED_JSON / "files").mkdir(parents=True, exist_ok=True)
+    (NPS_CONTEXT_JSON_PATH / "files").mkdir(parents=True, exist_ok=True)
+    (NPS_REJECTED_JSON_PATH / "files").mkdir(parents=True, exist_ok=True)
 
     """ PREPROCESSING CONFIG """
     # Define keywords here that will be searched for in the core_text

@@ -31,7 +31,7 @@ def main(argv=None):
         elif args.command == "process":
             # need to do check here, since otherwise huggingface weights would still be loaded
             from nps_crawling.config import Config
-            processed_dir = Config.NPS_CONTEXT_JSON_PATH
+            processed_dir = Config.NPS_CONTEXT_JSON_PATH / "files"
             if processed_dir.exists() and any(processed_dir.glob("*.json")):
                 print(
                     f"Experiment '{Config.PREPROCESSING_VERSION}' already has processed "
