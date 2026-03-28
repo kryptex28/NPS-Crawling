@@ -57,6 +57,7 @@ class Config:
     (RAW_JSON_PATH_CRAWLER / "crawl_reports").mkdir(parents=True, exist_ok=True)
     PROCESSED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     REJECTED_BASE_PATH.mkdir(parents=True, exist_ok=True)
+    CLASSIFIED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     # Note: Version-specific dirs (NPS_CONTEXT_JSON_PATH, NPS_REJECTED_JSON_PATH,
     # NPS_CLASSIFIED_JSON) are created lazily by the respective pipeline constructors.
 
