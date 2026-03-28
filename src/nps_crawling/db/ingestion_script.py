@@ -16,9 +16,8 @@ def main() -> None:
         print(f"Failed to initialize database connection: {e}")
         return
 
-    # Using the current working directory, adjusting for the project folder structure
-    # Based on Config.RAW_JSON_PATH_CRAWLER which is data/json_raw
-    json_dir = Path.cwd() / "data" / "json_raw"
+    from nps_crawling.config import Config
+    json_dir = Config.RAW_JSON_PATH_CRAWLER
 
     if not json_dir.exists():
         print(f"Directory {json_dir} does not exist. Please check the path.")

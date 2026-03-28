@@ -1,35 +1,58 @@
 """Configuration module for NPS Crawling project."""
 
 from pathlib import Path
+import subprocess
+
+
+def get_git_root() -> Path:
+    """Return the root directory of the current Git repository."""
+    try:
+        return Path(
+            subprocess.check_output(
+                ["git", "rev-parse", "--show-toplevel"],
+                text=True
+            ).strip()
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise RuntimeError(
+            "Git-Root konnte nicht ermittelt werden. "
+            "Stelle sicher, dass Git installiert ist und das Projekt "
+            "innerhalb eines Git-Repositories liegt."
+        ) from exc
 
 
 class Config:
     """PATHS."""
-    ROOT_DIR = Path.cwd()
+
+    ROOT_DIR = get_git_root()
     DATA_PATH = ROOT_DIR / "data"
 
-    # Define experiment name here.
+    # Define experiment name, preprocessing version and classification version.
     # For PREPROCESSING:
-    # Will check if data/<EXPERIMENT_NAME>/json_processed already exists.
+    # Will check if data/json_processed/<PREPROCESSING_VERSION> already exists.
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    EXPERIMENT_NAME: str = "A"
+    PREPROCESSING_VERSION: str = "version_1"
 
+    # Base directories
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
+    PROCESSED_BASE_PATH = DATA_PATH / "json_processed"
+    REJECTED_BASE_PATH = DATA_PATH / "json_rejected"
+    CLASSIFIED_BASE_PATH = DATA_PATH / "json_classified"
 
-    # Experiment-specific output directories
-    EXPERIMENT_PATH = DATA_PATH / EXPERIMENT_NAME
-    NPS_CONTEXT_JSON_PATH = EXPERIMENT_PATH / "json_processed"
-    NPS_REJECTED_JSON_PATH = EXPERIMENT_PATH / "json_reject"
+    # Experiment-specific directories
+    NPS_CONTEXT_JSON_PATH = PROCESSED_BASE_PATH / PREPROCESSING_VERSION
+    NPS_REJECTED_JSON_PATH = REJECTED_BASE_PATH / PREPROCESSING_VERSION
+    NPS_CLASSIFIED_JSON = CLASSIFIED_BASE_PATH
 
-    NPS_CLASSIFIED_JSON = DATA_PATH / "json_classified"
-    
+    # Create directories
     DATA_PATH.mkdir(parents=True, exist_ok=True)
     RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
-    EXPERIMENT_PATH.mkdir(parents=True, exist_ok=True)
-    NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
+    PROCESSED_BASE_PATH.mkdir(parents=True, exist_ok=True)
+    REJECTED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
+    NPS_CONTEXT_JSON_PATH.mkdir(parents=True, exist_ok=True)
     NPS_REJECTED_JSON_PATH.mkdir(parents=True, exist_ok=True)
 
     """ PREPROCESSING CONFIG """
