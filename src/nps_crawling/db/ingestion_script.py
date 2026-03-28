@@ -120,5 +120,6 @@ def main() -> None:
     print(f"Already existing (skipped/updated): {skipped_count}")
     print(f"Total processed: {added_count + skipped_count}")
 
+
 if __name__ == "__main__":
     main()

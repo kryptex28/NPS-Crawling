@@ -35,7 +35,7 @@ def main(argv=None):
             if processed_dir.exists() and any(processed_dir.glob("*.json")):
                 print(
                     f"Experiment '{Config.PREPROCESSING_VERSION}' already has processed "
-                    f"data at {processed_dir} — skipping preprocessing"
+                    f"data at {processed_dir} — skipping preprocessing",
                 )
             else:
                 pre_processing = PreProcessingPipeline()

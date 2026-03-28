@@ -1,7 +1,7 @@
 """Classification pipeline to process and classify company data."""
 
-import logging
 import json
+import logging
 
 from nps_crawling.classification.data_processing.preprocess_data import ClassificationDataProcessing
 from nps_crawling.classification.model.classification import ClassificationModelPipeline
@@ -20,7 +20,7 @@ class ClassificationPipeline(Config):
 
     def classification_workflow(self):
         """Classification workflow method."""
-        
+
         logger.info("Starting classification")
 
         json_files = self.get_data.get_all_json_files()
@@ -32,7 +32,7 @@ class ClassificationPipeline(Config):
         for i, json_file in enumerate(json_files, start=1):
             logger.info(f"[{i}/{total_files}] Processing {json_file.name}")
             records = self.get_data.load_file(json_file)
-            
+
             total_windows_classified += sum(len(record.get("context", [])) for record in records)
 
             self.model_pipeline.model_workflow(
@@ -52,7 +52,7 @@ class ClassificationPipeline(Config):
             "statistics": {
                 "total_files_classified": total_files,
                 "total_windows_classified": total_windows_classified,
-            }
+            },
         }
 
         summary_path = self.NPS_CLASSIFIED_JSON / f"classification_{self.CLASSIFICATION_VERSION}.json"

@@ -65,10 +65,10 @@ class PreProcessingPipeline(Config):
             accepted_records, rejected_records = self.similarity.similarity_workflow(records)
 
             self.storage.storage_workflow(
-                accepted_records, source_filename=json_file.stem, reject=False, update_db=True
+                accepted_records, source_filename=json_file.stem, reject=False, update_db=True,
             )
             self.storage.storage_workflow(
-                rejected_records, source_filename=json_file.stem, reject=True, update_db=False
+                rejected_records, source_filename=json_file.stem, reject=True, update_db=False,
             )
 
             # Collect per-record statistics from the metadata set by SimilarityPipeline

@@ -1,7 +1,7 @@
 """Configuration module for NPS Crawling project."""
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def get_git_root() -> Path:
@@ -10,14 +10,14 @@ def get_git_root() -> Path:
         return Path(
             subprocess.check_output(
                 ["git", "rev-parse", "--show-toplevel"],
-                text=True
-            ).strip()
+                text=True,
+            ).strip(),
         )
     except (subprocess.CalledProcessError, FileNotFoundError) as exc:
         raise RuntimeError(
             "Git-Root konnte nicht ermittelt werden. "
             "Stelle sicher, dass Git installiert ist und das Projekt "
-            "innerhalb eines Git-Repositories liegt."
+            "innerhalb eines Git-Repositories liegt.",
         ) from exc
 
 
@@ -26,6 +26,9 @@ class Config:
 
     ROOT_DIR = get_git_root()
     DATA_PATH = ROOT_DIR / "data"
+
+    # Database Settings
+    DATABASE_TABLE_NAME: str = "nps_filings_new"
 
     # Define experiment name, preprocessing version and classification version.
     # For PREPROCESSING:
@@ -86,7 +89,7 @@ class Config:
         "track NPS improvements, and benchmark NPS against competitors."
     )
     # Define Threshold for similarity search here. Context windows that fall below
-    # this value will be filtered out. This means the higher you set this value, the 
+    # this value will be filtered out. This means the higher you set this value, the
     # more strict the filtering will be, and more context windows will be rejected.
     SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
 

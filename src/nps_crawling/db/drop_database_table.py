@@ -13,7 +13,9 @@ def drop_table() -> None:
         os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
 
     engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
-    table_name = "nps_filings"
+
+    from nps_crawling.config import Config
+    table_name = Config.DATABASE_TABLE_NAME
 
     print(f"Attempting to drop table '{table_name}'...")
 

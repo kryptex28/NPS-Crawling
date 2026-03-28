@@ -25,7 +25,7 @@ class SaveToJSONPipeline(Config):
             "total_items_crawled": 0,
             "new_records_added_to_db": 0,
             "existing_records_updated": 0,
-            "keywords_found": set()
+            "keywords_found": set(),
         }
 
         # Initialize the database adapter for real-time upserts
@@ -161,7 +161,7 @@ class SaveToJSONPipeline(Config):
 
         ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         report_path = report_dir / f"crawl_report_{ts}.json"
-        
+
         # Read query.json content
         query_json_path = Config.ROOT_DIR / "src" / "nps_crawling" / "queries" / "query.json"
         query_content = {}
@@ -174,8 +174,8 @@ class SaveToJSONPipeline(Config):
 
         import nps_crawling.crawler.settings as crawler_settings
         custom_settings = {
-            k: getattr(crawler_settings, k) 
-            for k in dir(crawler_settings) 
+            k: getattr(crawler_settings, k)
+            for k in dir(crawler_settings)
             if k.isupper()
         }
 
@@ -187,8 +187,8 @@ class SaveToJSONPipeline(Config):
                 "new_records_added_to_db": self.stats["new_records_added_to_db"],
                 "existing_records_updated": self.stats["existing_records_updated"],
                 "unique_keywords_found": list(self.stats["keywords_found"]),
-                "crawl_duration": fmt_duration
-            }
+                "crawl_duration": fmt_duration,
+            },
         }
 
         with open(report_path, "w", encoding="utf-8") as f:

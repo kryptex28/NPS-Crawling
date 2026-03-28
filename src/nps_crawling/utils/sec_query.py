@@ -141,7 +141,7 @@ class SecQuery:
                 self.results = get_total_filings_count(response)
                 total = self.results
                 print(f'Total Results: {total}')
-            #query = get_fetched_filings_count(response)
+            # query = get_fetched_filings_count(response)
             hits: list[str] = response['hits']['hits']
             query = len(hits)
 

@@ -4,7 +4,8 @@ import copy
 import logging
 
 # silence errors
-import transformers 
+import transformers
+
 transformers.utils.logging.set_verbosity_error()
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 
@@ -60,7 +61,7 @@ class SimilarityPipeline:
             contexts = record.get("context", [])
             if "metadata" not in record:
                 record["metadata"] = {}
-            
+
             record["metadata"]["experiment"] = Config.PREPROCESSING_VERSION
             record["metadata"]["Context Windows total"] = len(contexts)
 
@@ -81,7 +82,7 @@ class SimilarityPipeline:
                     accepted_count += 1
                 else:
                     rejected_count += 1
-            
+
             record["metadata"]["Context Windows Accept"] = accepted_count
             record["metadata"]["Context Windows Reject"] = rejected_count
 
