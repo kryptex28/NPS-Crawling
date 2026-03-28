@@ -44,8 +44,9 @@ def main(argv=None):
 
             classified_dir = Config.NPS_CLASSIFIED_JSON / "files"
             
-            if args.force and classified_dir.exists():
-                shutil.rmtree(classified_dir)
+            if args.force and Config.NPS_CLASSIFIED_JSON.exists():
+                shutil.rmtree(Config.NPS_CLASSIFIED_JSON)
+                Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
                 classified_dir.mkdir(parents=True, exist_ok=True)
                 
             if classified_dir.exists() and any(classified_dir.glob("*.json")):
