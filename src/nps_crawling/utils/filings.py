@@ -26,7 +26,8 @@ class Filing:
                  file_type: str,
                  file_description: str,
                  inc_states: list[str],
-                 file_path_name: str):
+                 file_path_name: str,
+                 keyword: str):
         """Initialize the filing."""
         self.id: str = _id
         self._index: str = _index
@@ -49,6 +50,7 @@ class Filing:
         self.file_description: str = file_description
         self.inc_states: list[str] = inc_states
         self.file_path_name: str = file_path_name
+        self.keyword: str = keyword
 
         # Store file type of the document (htm, pdf, ...)
         self.file_container_type: str = self.file_path_name.split('.')[1]

@@ -9,18 +9,26 @@ from scrapy.utils.project import get_project_settings
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.filings import Filing
-from nps_crawling.utils.sec_params import create_params_from_config
-from nps_crawling.utils.sec_query import SecParams, SecQuery
+from nps_crawling.utils.sec_params import create_search_params_from_config
+from nps_crawling.utils.sec_query import SecQuery, SecSearchParams
 
 
 class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
     name = 'better_spider'
 
-    def __init__(self):
+    def __init__(self,
+                 filings: list[Filing] = [],
+                 *args,
+                 **kwargs):
         """Initializes spider."""
-        super(BetterSpider, self).__init__()
+
+        super().__init__(*args, **kwargs)
+
         self.logger.info("Initializes spider.")
+
+        self.filings: list[Filing] = filings
+
         # 'Hotkey' map for specific file types
         self.function_map: dict = {
             'pdf': self.extract_pdf_content,
@@ -34,47 +42,23 @@ class BetterSpider(scrapy.Spider):
         """Starts scrapy spider."""
         self.logger.info("Starting scrapy spider.")
 
-        settings = get_project_settings()
-        sec_query_limit_count: int = settings.get('SEC_QUERY_LIMIT_COUNT')
-        query_file_path = settings.get('SEC_QUERY_FILE_PATH')
-
-        # Create a list of parameters for all defined keywords in the config file
-        sec_params: list[SecParams] = create_params_from_config(query_file_path)
-
-        # Create a list of query to fetch all related documents
-        sec_queries: list[SecQuery] = []
-        for sec_param in sec_params:
-            query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
-            sec_queries.append(query)
-
-        # Fetch now all documents per query
-        for sec_query in sec_queries:
-            sec_query.fetch_filings()
-
-        # Check if filings are already present in the database, and if so => remove
-        for sec_query in sec_queries:
-            self.is_filing_present(sec_query)
-
-        # Iterate through all filings
-        for sec_query in sec_queries:
-            for i, filing in enumerate(sec_query.keyword_filings):
-                self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
-                url: str = filing.get_url()[0]
-                yield scrapy.Request(
-                    url=url,
-                    callback=self.parse,
-                    meta={'filing': filing,
-                          'keyword': sec_query.sec_params.keyword,
-                          'url': url,
-                          },
-                    dont_filter=True,
-                )
+        for i, filing in enumerate(self.filings):
+            self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
+            url: str = filing.get_url()[0]
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                meta={'filing': filing,
+                      'url': url,
+                      },
+                dont_filter=True,
+            )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""
         self.logger.info(f"Parsing {response.url}")
         filing: Filing = response.meta['filing']
-        keyword: str = response.meta['keyword']
+        keyword: str = filing.keyword
         url: str = response.meta['url']
 
         # Extract text from response content
@@ -113,32 +97,3 @@ class BetterSpider(scrapy.Spider):
         """Extracts content from HTML/XML file."""
         self.logger.info(f"Extracting content from {response.url} as XML/HTML.")
         return response.text
-
-    def is_filing_present(self, sec_query: SecQuery) -> None:
-        """Checks if filings are already present in the database."""
-        # Initialize the database adapter for real-time upserts
-        try:
-            db = DbAdapter()
-            new_list: list[Filing] = []
-            for filing in sec_query.keyword_filings:
-                # Add to new list if it is not present in DB
-                if not db.filing_exists(filing.get_id()):
-                    new_list.append(filing)
-                    self.logger.debug(f"Filing with ID {filing.get_id()} does not exists in DB")
-                else:
-                    self.logger.debug(f"Filing with ID {filing.get_id()} already exists in DB")
-
-            # For memory clearing: Swap old list with new
-            old_length: int = len(sec_query.keyword_filings)
-            sec_query.keyword_filings.clear()
-            sec_query.keyword_filings = new_list
-            new_length: int = len(sec_query.keyword_filings)
-
-            self.logger.info(f"\n\tNew size: {new_length} {'-' * 3} Old size: {old_length}")
-
-        except ModuleNotFoundError as e:
-            # For environments where SQLAlchemy or psycopg2 isn't strictly required
-            self.logger.warning(f"ModuleNotFoundError: {e}")
-        except ValueError as e:
-            # Fallback if connection string provides errors
-            self.logger.warning(f"ValueError: {e}")

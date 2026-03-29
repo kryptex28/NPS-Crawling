@@ -2,9 +2,11 @@
 
 import argparse
 import logging
-import sys
 import shutil
+import sys
+
 from nps_crawling.config import Config
+
 from . import __version__
 
 log = logging.getLogger(__package__)
@@ -43,12 +45,12 @@ def main(argv=None):
         elif args.command == "classify":
 
             classified_dir = Config.NPS_CLASSIFIED_JSON / "files"
-            
+
             if args.force and Config.NPS_CLASSIFIED_JSON.exists():
                 shutil.rmtree(Config.NPS_CLASSIFIED_JSON)
                 Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
                 classified_dir.mkdir(parents=True, exist_ok=True)
-                
+
             if classified_dir.exists() and any(classified_dir.glob("*.json")):
                 print(
                     f"Experiment '{Config.CLASSIFICATION_VERSION}' already has classified "

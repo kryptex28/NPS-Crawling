@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 import json
+from os import listdir
+from os.path import isfile, join
 
 from nps_crawling.utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
 
 
-def create_params_from_config(path: str) -> list[SecParams]:
+def create_search_params_from_config(path: str) -> list[SecSearchParams]:
     """Create params from config file."""
-    params: list[SecParams] = []
+    params: list[SecSearchParams] = []
 
     with open(path, 'r') as f:
         config: dict = json.load(f)
@@ -21,6 +23,8 @@ def create_params_from_config(path: str) -> list[SecParams]:
         from_date: str = query_data.get('from_date', '')
         to_date: str = query_data.get('to_date', '')
         date_range = query_data.get('date_range', 'N/A')
+        filing_limit = query_data.get('filing_limit', -1)
+        force_crawl: bool = query_data.get('force_crawl', False)
 
         individual_search_ticker: list[str] = query_data.get('individual_search_ticker', [])
         individual_search_cik: str = query_data.get('individual_search_cik', '')
@@ -40,7 +44,7 @@ def create_params_from_config(path: str) -> list[SecParams]:
         else:
             filing_categories: list[str] = FilingCategoryCollection.filing_categories[filing_category]
 
-        p = SecParams(query_base=query_base,
+        p = SecSearchParams(query_base=query_base,
                       individual_search=individual_search,
                       keyword=keyword,
                       from_date=from_date,
@@ -48,13 +52,26 @@ def create_params_from_config(path: str) -> list[SecParams]:
                       date_range=date_range,
                       filing_category=filing_category,
                       filing_categories=filing_categories,
+                      filing_limit=filing_limit,
+                      force_crawl=force_crawl,
                       )
 
         params.append(p)
     return params
 
 
-def create_config_from_params(params: list[SecParams]) -> dict:
+def create_search_params_from_config_dir(query_dir: str) -> list[SecSearchParams]:
+    queries: list = [join(query_dir, f) for f in listdir(query_dir) if isfile(join(query_dir, f))]
+    search_parameters: list[SecSearchParams] = []
+
+    for query in queries:
+        params: list[SecSearchParams] = create_search_params_from_config(query)
+        search_parameters.extend(params)
+
+    return search_parameters
+
+
+def create_config_from_search_params(params: list[SecSearchParams]) -> dict:
     """Create config data from parameter list."""
     data: dict = {
         "queries": {},
@@ -68,18 +85,20 @@ def create_config_from_params(params: list[SecParams]) -> dict:
     return data
 
 
-class SecParams:
+class SecSearchParams:
     """Class abstraction of sec.gov parameter based search."""
     def __init__(self,
-                 query_base: str,
+                 query_base: str = None,
                  keyword: str = None,
                  from_date: str = None,
                  to_date: str = None,
                  date_range: str = None,
                  individual_search: CompanyTicker = None,
                  filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.ALL,
-                 filing_categories: list[str] = None):
-        """Initialize SecParams class."""
+                 filing_categories: list[str] = [],
+                 filing_limit: int = -1,
+                 force_crawl: bool = False):
+        """Initialize SecSearchParams class."""
         self.query_base = query_base
         self.keyword = keyword
         self.from_date = from_date
@@ -89,6 +108,8 @@ class SecParams:
         self.filing_category = filing_category
         self.filing_categories = filing_categories
         self.last_query = ''
+        self.filing_limit: int = filing_limit
+        self.force_crawl: bool = force_crawl
 
     def create_query(self, page: int) -> str:
         """Create the query url with parameters."""
