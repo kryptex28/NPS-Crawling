@@ -61,6 +61,7 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
 
 
 def create_search_params_from_config_dir(query_dir: str) -> list[SecSearchParams]:
+    """Create params from config files inside directory."""
     queries: list = [join(query_dir, f) for f in listdir(query_dir) if isfile(join(query_dir, f))]
     search_parameters: list[SecSearchParams] = []
 

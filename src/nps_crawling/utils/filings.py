@@ -1,4 +1,5 @@
 """Filings and type abstraction module with utility functions."""
+import os
 from enum import Enum
 from typing import Optional
 
@@ -53,7 +54,7 @@ class Filing:
         self.keyword: str = keyword
 
         # Store file type of the document (htm, pdf, ...)
-        self.file_container_type: str = self.file_path_name.split('.')[1]
+        self.file_container_type: str = os.path.splitext(self.file_path_name)[1].lstrip('.')
 
     def get_url(self) -> list:
         """Returns a query list of the filing with all CIKS."""
