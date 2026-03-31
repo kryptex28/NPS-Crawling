@@ -75,9 +75,11 @@ class SimilarityPipeline:
 
             accepted_count = 0
             rejected_count = 0
+            scores = []
             for ctx, emb in zip(contexts, context_embeddings):
                 score = self._cosine_similarity(np.array(emb), self.reference_embedding)
                 ctx["similarity_score"] = round(float(score), 4)
+                scores.append(score)
                 if score >= self.threshold_context:
                     accepted_count += 1
                 else:
@@ -85,6 +87,11 @@ class SimilarityPipeline:
 
             record["metadata"]["Context Windows Accept"] = accepted_count
             record["metadata"]["Context Windows Reject"] = rejected_count
+
+            if scores:
+                record["filings_average"] = round(float(sum(scores) / len(scores)), 4)
+            else:
+                record["filings_average"] = 0.0
 
         accepted_records = copy.deepcopy(records)
         rejected_records = copy.deepcopy(records)
