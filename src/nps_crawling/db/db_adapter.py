@@ -30,7 +30,7 @@ class DbAdapter:
                 connection_string = os.environ.get('POSTGRES_ENGINE')
                 if not connection_string:
                     raise ValueError(
-                        "LOCAL_MODE=False und die Umgebungsvariable POSTGRES_ENGINE ist nicht gesetzt."
+                        "LOCAL_MODE=False und die Umgebungsvariable POSTGRES_ENGINE ist nicht gesetzt.",
                     )
 
         self.engine = create_engine(f"postgresql+psycopg2://{connection_string}")

@@ -2,11 +2,12 @@
 
 import argparse
 import logging
+import shutil
 import subprocess
 import sys
-import shutil
 
 from nps_crawling.config import Config
+
 from . import __version__
 
 log = logging.getLogger(__package__)
@@ -168,7 +169,7 @@ def _ensure_docker_db_running() -> None:
         already_running = bool(result.stdout.strip())
     except FileNotFoundError:
         raise RuntimeError(
-            "'docker' wurde nicht gefunden. Bitte Docker Desktop installieren und starten."
+            "'docker' wurde nicht gefunden. Bitte Docker Desktop installieren und starten.",
         ) from None
     except subprocess.CalledProcessError:
         already_running = False
@@ -187,7 +188,7 @@ def _ensure_docker_db_running() -> None:
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(
             f"'docker compose up -d' ist fehlgeschlagen (Exit-Code {exc.returncode}). "
-            "Bitte Docker Desktop starten und erneut versuchen."
+            "Bitte Docker Desktop starten und erneut versuchen.",
         ) from exc
 
     # Kurz warten, bis Postgres vollstaendig hochgefahren ist

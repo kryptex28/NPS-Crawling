@@ -12,7 +12,7 @@ def _get_connection_string() -> str:
     conn = os.environ.get('POSTGRES_ENGINE')
     if not conn:
         raise RuntimeError(
-            "LOCAL_MODE=False und die Umgebungsvariable POSTGRES_ENGINE ist nicht gesetzt."
+            "LOCAL_MODE=False und die Umgebungsvariable POSTGRES_ENGINE ist nicht gesetzt.",
         )
     return conn
 
