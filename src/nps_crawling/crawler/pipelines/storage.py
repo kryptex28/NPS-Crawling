@@ -207,7 +207,10 @@ class SaveToJSONPipeline(Config):
             .get("filing", {})
             .get("id", uuid4().hex)  # fallback if missing
         )
-        fname = f"{filing_id}.json"
+        # Windows erlaubt keine : * ? " < > | / \ in Dateinamen.
+        # SEC filing IDs enthalten oft ":" als Trenner (z.B. "0001234-23-007377:doc.htm")
+        safe_id = str(filing_id).translate(str.maketrans(':*?"<>|/\\', '_________'))
+        fname = f"{safe_id}.json"
 
         # Save raw json to file
         saved_path = self.json_root / fname
