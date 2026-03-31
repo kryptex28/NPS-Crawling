@@ -27,6 +27,18 @@ class Config:
     ROOT_DIR = get_git_root()
     DATA_PATH = ROOT_DIR / "data"
 
+    # ---------------------------------------------------------------------------
+    # Local Mode
+    # ---------------------------------------------------------------------------
+    # Wenn True: Die Docker-Postgres (docker/database/docker-compose.yml) wird
+    # beim Programmstart automatisch hochgefahren und als Datenbank verwendet.
+    # Wenn False: Die Umgebungsvariable POSTGRES_ENGINE muss gesetzt sein.
+    LOCAL_MODE: bool = False
+
+    # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
+    LOCAL_DB_CONNECTION: str = "crawler:crawler@localhost:5432/crawler"
+    # ---------------------------------------------------------------------------
+
     # Database Settings
     DATABASE_TABLE_NAME: str = "nps_filings_new"
 
