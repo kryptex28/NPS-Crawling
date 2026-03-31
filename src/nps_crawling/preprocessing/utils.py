@@ -3,6 +3,9 @@
 import json
 import logging
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from nps_crawling.config import Config
@@ -57,10 +60,15 @@ class PreProcessingPipeline(Config):
         filings_rejected_fully = 0    # ALL context windows rejected
         total_context_windows_accepted = 0
         total_context_windows_rejected = 0
+        all_similarity_scores = []
 
         for json_file in tqdm(json_files, desc="Pre-processing documents", unit="file"):
-            with open(json_file, "r", encoding="utf-8") as f:
-                records = json.load(f)
+            try:
+                with open(json_file, "r", encoding="utf-8") as f:
+                    records = json.load(f)
+            except json.JSONDecodeError as e:
+                logger.error("Skipping corrupted JSON file %s: %s", json_file.name, e)
+                continue
 
             if not records:
                 continue
@@ -100,6 +108,10 @@ class PreProcessingPipeline(Config):
                 if cw_reject == cw_total:
                     filings_rejected_fully += 1
 
+                for ctx in record.get("context", []):
+                    if "similarity_score" in ctx:
+                        all_similarity_scores.append(ctx["similarity_score"])
+
             logger.info("Processed %s (%d records) — SPLIT", json_file.name, len(records))
 
         # Write experiment summary JSON
@@ -129,6 +141,34 @@ class PreProcessingPipeline(Config):
         summary_path = Config.NPS_CONTEXT_JSON_PATH / f"preprocessing_{Config.PREPROCESSING_VERSION}.json"
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
+
+        if all_similarity_scores:
+            plt.figure(figsize=(10, 6))
+            N, bins, patches = plt.hist(all_similarity_scores, bins=50, edgecolor='black')
+            
+            # Color bars red if they are below the similarity threshold
+            for i in range(len(patches)):
+                bin_mid = (bins[i] + bins[i + 1]) / 2
+                if bin_mid < Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW:
+                    patches[i].set_facecolor('red')
+                else:
+                    patches[i].set_facecolor('skyblue')
+                    
+            title_main = f"Similarity Score Distribution (Experiment: {Config.PREPROCESSING_VERSION})"
+            title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
+            plt.title(f"{title_main}\n{title_sub}", fontsize=12)
+            
+            # Add a vertical dotted line pointing out the specific threshold
+            plt.axvline(Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW, color='darkred', linestyle='dashed', linewidth=2, label='Threshold')
+            plt.legend()
+            
+            plt.xlabel("Similarity Score")
+            plt.ylabel("Frequency")
+            plt.grid(axis='y', alpha=0.75)
+            plot_path = Config.NPS_CONTEXT_JSON_PATH / "similarity_score_distribution.png"
+            plt.savefig(plot_path)
+            plt.close()
+            logger.info("Saved similarity score distribution plot to %s", plot_path)
 
         logger.info("Experiment summary written to %s", summary_path)
         logger.info(
