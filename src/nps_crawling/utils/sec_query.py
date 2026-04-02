@@ -45,39 +45,45 @@ class SecQuery:
         queries: list = self.query_multi_request()
         filings: list[Filing] = self.create_filings(queries)
 
-        if not self.sec_params.force_crawl:
-            try:
-                db: DbAdapter = DbAdapter()
+        self.keyword_filings = self.are_filings_present_in_db(filings=filings, 
+                                                              bypass_filter=self.sec_params.force_crawl)
 
-                temp: list[Filing] = []
-                for filing in filings:
-                    if not db.filing_exists(filing.get_id()):
-                        temp.append(filing)
-                        logger.debug(f"Filing with ID {filing.get_id()} does not exists in DB")
-                    else:
-                        logger.debug(f"Filing with ID {filing.get_id()} does exists in DB")
-                        pass
+        return self.keyword_filings
+    
+    def are_filings_present_in_db(self, filings: list[Filing], bypass_filter: bool = False) -> list[Filing]:
+        temp: list[Filing] = []
+        try:
+            db: DbAdapter = DbAdapter()
 
-                old_length: int = len(filings)
-                filings.clear()
-                filings = temp
-                new_length: int = len(filings)
-                logger.info(f"\n\tNew size: {new_length} {'-' * 3} Old size: {old_length}")
+            for filing in filings:
+                if not db.filing_exists(filing.get_id()):
+                    temp.append(filing)
+                    logger.debug(f"Filing with ID {filing.get_id()} does not exists in DB")
+                elif bypass_filter:
+                    temp.append(filing)
+                else:
+                    db.add_keyword(filing.id, filing.keyword)
+                    logger.debug(f"Filing with ID {filing.get_id()} does exists in DB")
+                    pass
 
-            except ModuleNotFoundError as e:
-                logger.warning(f"ModuleNotFoundError: {e}")
-                pass
-            except ValueError as e:
-                logger.warning(f"ValueError: {e}")
-                pass
-
-        self.keyword_filings = filings
-        return filings
+            old_length: int = len(filings)
+            filings.clear()
+            filings = temp
+            new_length: int = len(filings)
+            logger.info(f"\n\tNew size: {new_length} {'-' * 3} Old size: {old_length}")
+            return temp
+        
+        except ModuleNotFoundError as e:
+            logger.warning(f"ModuleNotFoundError: {e}")
+            return filings
+        except ValueError as e:
+            logger.warning(f"ValueError: {e}")
+            return filings
 
     def query_multi_request(self) -> list:
         """Queries the requested filings across all pages."""
         total: int = -1
-        limit: int = self.sec_params.filing_limit if self.sec_params.filing_limit > 0 else sys.maxsize
+        limit: int = self.sec_params.filing_limit if self.sec_params.filing_limit >= 0 else sys.maxsize
         page: int = 1
         queries: list = []
 
