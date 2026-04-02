@@ -3,6 +3,7 @@ from typing import Any
 
 from sqlalchemy import create_engine, text
 
+from nps_crawling.config import Config
 from nps_crawling.db.nps_filings_db import NpsFilingsDB
 
 
@@ -16,16 +17,90 @@ class DbAdapter:
     def __init__(self, connection_string: str = None) -> None:
         """
         Initializes the database connection and the underlying DB wrapper.
-        If no connection string is provided, falls back to the POSTGRES_ENGINE env variable.
+
+        Priority for the connection string:
+        1. Explicit ``connection_string`` argument
+        2. ``Config.LOCAL_DB_CONNECTION`` when ``Config.LOCAL_MODE`` is True
+        3. ``POSTGRES_ENGINE`` environment variable
         """
         if not connection_string:
-            connection_string = os.environ.get('POSTGRES_ENGINE')
-            if not connection_string:
-                raise ValueError("No connection string provided and POSTGRES_ENGINE environment variable is not set.")
+            if Config.LOCAL_MODE:
+                connection_string = Config.LOCAL_DB_CONNECTION
+            else:
+                connection_string = os.environ.get('POSTGRES_ENGINE')
+                if not connection_string:
+                    raise ValueError(
+                        "LOCAL_MODE=False und die Umgebungsvariable POSTGRES_ENGINE ist nicht gesetzt.",
+                    )
 
         self.engine = create_engine(f"postgresql+psycopg2://{connection_string}")
         self._db = NpsFilingsDB(self.engine)
         self.table_name = self._db.TABLE
+
+    def ensure_table_exists(self) -> None:
+        """Erstellt die Tabelle falls sie noch nicht existiert (CREATE TABLE IF NOT EXISTS)."""
+        create_stmt = text(f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name} (
+            id VARCHAR PRIMARY KEY,
+
+            -- SEC Metadata
+            ciks TEXT[],
+            period_ending DATE,
+            display_names TEXT[],
+            root_forms TEXT[],
+            file_date DATE,
+            form VARCHAR,
+            adsh VARCHAR,
+            file_type VARCHAR,
+            file_description TEXT,
+            film_num TEXT[],
+
+            -- Extraction/Processing Metadata
+            keywords TEXT[],
+            blacklisted BOOLEAN DEFAULT FALSE,
+            nps_relevant BOOLEAN,
+
+            -- File Paths
+            path_to_raw VARCHAR,
+            path_to_preprocessed VARCHAR,
+            path_to_classified VARCHAR,
+            url VARCHAR,
+
+            -- Main Categories
+            "KPI_CURRENT_VALUE" BOOLEAN,
+            "KPI_TREND" BOOLEAN,
+            "KPI_HISTORICAL_COMPARISON" BOOLEAN,
+            "BENCHMARK_COMPARISON" BOOLEAN,
+            "TARGET_OUTLOOK" BOOLEAN,
+            "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN,
+            "CUSTOMER_CASE_EVIDENCE" BOOLEAN,
+            "NPS_SERVICE_PROVIDER" BOOLEAN,
+            "METHODOLOGY_DEFINITION" BOOLEAN,
+            "QUALITATIVE_ONLY" BOOLEAN,
+            "OTHER" BOOLEAN,
+
+            -- Category Helper Columns
+            has_numeric_nps BOOLEAN,
+            numeric_nps_count INTEGER,
+            nps_value_fix DOUBLE PRECISION,
+            nps_competition_industry BOOLEAN,
+            nps_value_over DOUBLE PRECISION,
+            nps_value_below DOUBLE PRECISION,
+            nps_goal_value DOUBLE PRECISION,
+            nps_goal_change DOUBLE PRECISION,
+            nps_goal_reached BOOLEAN,
+            nps_trend_detected BOOLEAN,
+            has_target_language BOOLEAN,
+            keywords_found VARCHAR,
+            matched_phrase VARCHAR,
+
+            -- Crawl Tracking
+            last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        """)
+        with self.engine.begin() as conn:
+            conn.execute(create_stmt)
+        print(f"Tabelle '{self.table_name}' gecheckt/erstellt.", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """

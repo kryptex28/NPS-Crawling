@@ -3,6 +3,7 @@
 import argparse
 import logging
 import shutil
+import subprocess
 import sys
 
 from nps_crawling.config import Config
@@ -26,6 +27,11 @@ def main(argv=None):
     from nps_crawling.crawler import CrawlerPipeline
     from nps_crawling.preprocessing import PreProcessingPipeline
     from nps_crawling.results import ResultsPipeline
+
+    if Config.LOCAL_MODE:
+        _ensure_docker_db_running()
+        from nps_crawling.db.db_adapter import DbAdapter
+        DbAdapter().ensure_table_exists()
 
     try:
         if args.command == "crawl":
@@ -139,3 +145,52 @@ def create_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     main()
+
+
+def _ensure_docker_db_running() -> None:
+    """Startet den Docker-Postgres-Container wenn er noch nicht laeuft.
+
+    Prueft zuerst via ``docker compose ps`` ob der Container bereits laeuft.
+    Falls ja: kein Start, kein Warten - sofort weiter.
+    Falls nein: ``docker compose up -d`` und kurz warten bis Postgres bereit ist.
+    """
+    import time
+
+    compose_file = Config.ROOT_DIR / "docker" / "database" / "docker-compose.yml"
+
+    # Pruefen ob der Container bereits laeuft
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "ps", "--services", "--filter", "status=running"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        already_running = bool(result.stdout.strip())
+    except FileNotFoundError:
+        raise RuntimeError(
+            "'docker' wurde nicht gefunden. Bitte Docker Desktop installieren und starten.",
+        ) from None
+    except subprocess.CalledProcessError:
+        already_running = False
+
+    if already_running:
+        print("Docker-Postgres laeuft bereits.", flush=True)
+        return
+
+    # Container starten
+    print("LOCAL_MODE aktiv - starte Docker-Postgres...", flush=True)
+    try:
+        subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "up", "-d"],
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"'docker compose up -d' ist fehlgeschlagen (Exit-Code {exc.returncode}). "
+            "Bitte Docker Desktop starten und erneut versuchen.",
+        ) from exc
+
+    # Kurz warten, bis Postgres vollstaendig hochgefahren ist
+    time.sleep(3)
+    print("Docker-Postgres laeuft.", flush=True)

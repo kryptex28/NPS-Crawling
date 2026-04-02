@@ -2,19 +2,28 @@ import os
 
 from sqlalchemy import create_engine, text
 
+from nps_crawling.config import Config
+
+
+def _get_connection_string() -> str:
+    """Gibt den Verbindungsstring basierend auf Config.LOCAL_MODE zurueck."""
+    if Config.LOCAL_MODE:
+        return Config.LOCAL_DB_CONNECTION
+    conn = os.environ.get('POSTGRES_ENGINE')
+    if not conn:
+        raise RuntimeError(
+            "LOCAL_MODE=False und die Umgebungsvariable POSTGRES_ENGINE ist nicht gesetzt.",
+        )
+    return conn
+
 
 def drop_table() -> None:
     """
     Drops the 'nps_filings' table in the PostgreSQL database if it exists.
-    Uses the connection string from the 'POSTGRES_ENGINE' environment variable.
+    Verbindung wird ueber Config.LOCAL_MODE oder die Umgebungsvariable POSTGRES_ENGINE bestimmt.
     """
-    if 'POSTGRES_ENGINE' not in os.environ:
-        # Fallback for local testing if the environment variable is not set
-        os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
+    engine = create_engine(f"postgresql+psycopg2://{_get_connection_string()}")
 
-    engine = create_engine(f"postgresql+psycopg2://{os.environ['POSTGRES_ENGINE']}")
-
-    from nps_crawling.config import Config
     table_name = Config.DATABASE_TABLE_NAME
 
     print(f"Attempting to drop table '{table_name}'...")
