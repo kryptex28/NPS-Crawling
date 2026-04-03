@@ -19,6 +19,8 @@ class NpsMentionFilterPipeline(Config):
 
         self.sentences_before = Config.AMOUNT_SENTENCES_INCLUDED_BEFORE
         self.sentences_after = Config.AMOUNT_SENTENCES_INCLUDED_AFTER
+        self.max_chars_before = Config.MAX_CONTEXT_CHARS_BEFORE_KEYWORD
+        self.max_chars_after = Config.MAX_CONTEXT_CHARS_AFTER_KEYWORD
 
     def filtering_workflow(self, records):
         """Filtering workflow method.
@@ -33,7 +35,13 @@ class NpsMentionFilterPipeline(Config):
                 "hit_sentence_index": int,
                 "context_start_index": int,
                 "context_end_index": int,
+                "char_cutoff_applied": bool,
             }
+        The context string is built from up to N sentences before/after the
+        hit sentence, then capped at MAX_CONTEXT_CHARS_BEFORE_KEYWORD /
+        MAX_CONTEXT_CHARS_AFTER_KEYWORD characters on each side of the
+        matched keyword. ``char_cutoff_applied`` is True when either side
+        was truncated.
         Records with no hits get an empty "context" list.
 
         Also adds "all_context_windows": a single string that merges all
@@ -62,15 +70,19 @@ class NpsMentionFilterPipeline(Config):
             if not matched_phrases:
                 continue
 
-            start, end, context = self._create_context_window(sentences, n, idx)
+            start, end = self._get_sentence_range(n, idx)
 
             for phrase in matched_phrases:
+                context, char_cutoff = self._create_context_window(
+                    sentences, start, end, idx, phrase,
+                )
                 hits.append({
                     "matched_phrase": phrase,
                     "context": context,
                     "hit_sentence_index": idx,
                     "context_start_index": start,
                     "context_end_index": end,
+                    "char_cutoff_applied": char_cutoff,
                 })
 
         return hits
@@ -123,10 +135,38 @@ class NpsMentionFilterPipeline(Config):
 
         return matches
 
-    def _create_context_window(self, sentences, n, idx):
+    def _get_sentence_range(self, n, idx):
         start = max(0, idx - self.sentences_before)
         end = min(n, idx + self.sentences_after + 1)
-        context = " ".join(sentences[start:end]).strip()
-        context = re.sub(r'\s+', ' ', context)
+        return start, end
 
-        return start, end, context
+    def _create_context_window(self, sentences, start, end, idx, phrase):
+        """Build a context window capped by character limits around the keyword.
+
+        Joins sentences[start:end] into a single string, locates the matched
+        phrase, then truncates to at most ``max_chars_before`` characters
+        before and ``max_chars_after`` characters after the keyword.
+
+        Returns (context_string, char_cutoff_applied).
+        """
+        full_context = " ".join(sentences[start:end])
+        full_context = re.sub(r'\s+', ' ', full_context).strip()
+
+        # Find the keyword position in the full context (case-insensitive)
+        kw_pos = full_context.lower().find(phrase.lower())
+        if kw_pos == -1:
+            return full_context, False
+
+        before_kw = full_context[:kw_pos]
+        after_kw = full_context[kw_pos + len(phrase):]
+
+        char_cutoff = False
+        if len(before_kw) > self.max_chars_before:
+            before_kw = before_kw[-self.max_chars_before:]
+            char_cutoff = True
+        if len(after_kw) > self.max_chars_after:
+            after_kw = after_kw[:self.max_chars_after]
+            char_cutoff = True
+
+        context = (before_kw + full_context[kw_pos:kw_pos + len(phrase)] + after_kw).strip()
+        return context, char_cutoff
