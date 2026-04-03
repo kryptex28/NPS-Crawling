@@ -40,6 +40,7 @@ def parse_display_name(name: str):
 
 def collect_rows():
     rows = []
+    seen_snippets = set()
     for json_path in sorted(DATA_DIR.glob("*.json")):
         with open(json_path, encoding="utf-8") as f:
             records = json.load(f)
@@ -66,6 +67,10 @@ def collect_rows():
             if contexts:
                 snippet = contexts[0].get("context", "")
                 snippet = ILLEGAL_CHARACTERS_RE.sub("", snippet)
+
+            if snippet in seen_snippets:
+                continue
+            seen_snippets.add(snippet)
 
             rows.append([
                 company_name,
