@@ -35,9 +35,17 @@ class NpsMentionFilterPipeline(Config):
                 "context_end_index": int,
             }
         Records with no hits get an empty "context" list.
+
+        Also adds "all_context_windows": a single string that merges all
+        context windows for the record, removing duplicate sentences from
+        overlapping windows.
         """
         for record in records:
-            record["context"] = self._extract_context_windows(record.get("core_text", ""))
+            text = record.get("core_text", "")
+            record["context"] = self._extract_context_windows(text)
+            record["all_context_windows"] = self._build_concatenated_context(
+                text, record["context"],
+            )
         return records
 
     def _extract_context_windows(self, text):
@@ -66,6 +74,32 @@ class NpsMentionFilterPipeline(Config):
                 })
 
         return hits
+
+    def _build_concatenated_context(self, text, context_windows):
+        """Merge all context windows into one string without duplicate sentences."""
+        if not context_windows or not text:
+            return ""
+
+        sentences = self._split_into_sentences(text)
+
+        # Collect all (start, end) ranges from context windows
+        ranges = []
+        for cw in context_windows:
+            ranges.append((cw["context_start_index"], cw["context_end_index"]))
+
+        # Merge overlapping/adjacent ranges
+        ranges.sort()
+        merged = [ranges[0]]
+        for start, end in ranges[1:]:
+            prev_start, prev_end = merged[-1]
+            if start <= prev_end:
+                merged[-1] = (prev_start, max(prev_end, end))
+            else:
+                merged.append((start, end))
+
+        # Join sentences from merged ranges, separating disjoint blocks
+        blocks = [" ".join(sentences[s:e]) for s, e in merged]
+        return " ".join(blocks)
 
     def _split_into_sentences(self, text):
 
