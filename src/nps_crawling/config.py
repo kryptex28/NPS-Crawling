@@ -33,6 +33,8 @@ class Config:
     # Wenn True: Die Docker-Postgres (docker/database/docker-compose.yml) wird
     # beim Programmstart automatisch hochgefahren und als Datenbank verwendet.
     # Wenn False: Die Umgebungsvariable POSTGRES_ENGINE muss gesetzt sein.
+
+    #TODO: might want to use a .env variable for this
     LOCAL_MODE: bool = False
 
     # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
