@@ -227,3 +227,7 @@ crawls/
 src/nps_crawling/classification/model/cache/bge-m3
 docs/database_confluence_report.md
 docs/preprocessing_confluence_report.md
+
+# Claude
+Claude.md
+.claude/
