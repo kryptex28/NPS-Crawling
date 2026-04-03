@@ -45,8 +45,10 @@ class CleanTextPipeline(Config):
             # Extract visible text while keeping spaces between elements
             text = soup.get_text(separator=" ", strip=True)
 
-            # Replace non-breaking spaces with normal spaces
+            # Replace non-breaking spaces and newlines with normal spaces
             text = text.replace("\xa0", " ")
+            text = text.replace("\n", " ")
+            text = text.replace("\r", " ")
 
             # Remove signature-like markers such as '/s/ Name'
             text = re.sub(r'By:\s*/s/\s*[A-Za-z .-]+', '', text, flags=re.IGNORECASE)  # By: /s/ Name Name2
