@@ -86,7 +86,6 @@ class NpsFilingsDB:
           :file_date, :form, :adsh,
           :file_type, :file_description,
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
-          COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
           :blacklisted, :nps_relevant,
           :path_to_raw, :path_to_preprocessed, :path_to_classified, :url
