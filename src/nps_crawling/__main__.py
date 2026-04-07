@@ -18,8 +18,12 @@ def main(argv=None):
     parser = create_parser()
     args = parser.parse_args(argv)
 
+    if not getattr(args, "command", None):
+        parser.print_help()
+        sys.exit(1)
+
     default_log_level = logging.WARNING
-    verbosity = default_log_level - ((args.verbose - args.quiet) * 10)
+    verbosity = default_log_level - ((getattr(args, "verbose", 0) - getattr(args, "quiet", 0)) * 10)
     log_level = min(logging.INFO, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
 
