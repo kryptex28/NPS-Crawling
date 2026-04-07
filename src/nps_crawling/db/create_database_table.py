@@ -54,6 +54,17 @@ def create_table() -> None:
         path_to_classified VARCHAR,
         url VARCHAR,
 
+        -- Crawl Tracking
+        last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+    """)
+
+    create_stmt_classifications = text(f"""
+    CREATE TABLE IF NOT EXISTS {table_name}_classifications (
+        id SERIAL PRIMARY KEY,
+        filing_id VARCHAR REFERENCES {table_name}(id) ON DELETE CASCADE,
+        experiment_version VARCHAR NOT NULL,
+        
         -- Main Categories
         "KPI_CURRENT_VALUE" BOOLEAN,
         "KPI_TREND" BOOLEAN,
@@ -78,14 +89,15 @@ def create_table() -> None:
         nps_goal_value DOUBLE PRECISION,
         nps_goal_change DOUBLE PRECISION,
 
-        -- Crawl Tracking
-        last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        classified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE (filing_id, experiment_version)
     );
     """)
 
     with engine.begin() as conn:
         conn.execute(create_stmt)
-        print(f"Table '{table_name}' checked/created successfully.")
+        conn.execute(create_stmt_classifications)
+        print(f"Tables '{table_name}' and '{table_name}_classifications' checked/created successfully.")
 
 
 if __name__ == "__main__":

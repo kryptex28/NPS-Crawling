@@ -82,29 +82,6 @@ def main() -> None:
                         nps_relevant=None,  # Now defaults to None initially
                         path_to_raw=str(json_file.absolute()),
                         url=url,
-
-                        # Main Categories
-                        KPI_CURRENT_VALUE=None,
-                        KPI_TREND=None,
-                        KPI_HISTORICAL_COMPARISON=None,
-                        BENCHMARK_COMPARISON_POSITIVE=None,
-                        BENCHMARK_COMPARISON_NEGATIVE=None,
-                        NPS_GOAL_REACHED=None,
-                        TARGET_OUTLOOK=None,
-                        MGMT_COMPENSATION_GOVERNANCE=None,
-                        CUSTOMER_CASE_EVIDENCE=None,
-                        NPS_SERVICE_PROVIDER=None,
-                        METHODOLOGY_DEFINITION=None,
-                        QUALITATIVE_ONLY=None,
-                        OTHER=None,
-                        # Category Helper Columns
-                        has_numeric_nps=None,
-                        nps_value_fix=None,
-                        nps_competition_industry=None,
-                        nps_value_over=None,
-                        nps_value_below=None,
-                        nps_goal_value=None,
-                        nps_goal_change=None,
                     )
                     added_count += 1
 

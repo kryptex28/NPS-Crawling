@@ -66,6 +66,17 @@ class DbAdapter:
             path_to_classified VARCHAR,
             url VARCHAR,
 
+            -- Crawl Tracking
+            last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        """)
+        
+        create_stmt_classifications = text(f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name}_classifications (
+            id SERIAL PRIMARY KEY,
+            filing_id VARCHAR REFERENCES {self.table_name}(id) ON DELETE CASCADE,
+            experiment_version VARCHAR NOT NULL,
+            
             -- Main Categories
             "KPI_CURRENT_VALUE" BOOLEAN,
             "KPI_TREND" BOOLEAN,
@@ -90,13 +101,14 @@ class DbAdapter:
             nps_goal_value DOUBLE PRECISION,
             nps_goal_change DOUBLE PRECISION,
 
-            -- Crawl Tracking
-            last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            classified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE (filing_id, experiment_version)
         );
         """)
         with self.engine.begin() as conn:
             conn.execute(create_stmt)
-        print(f"Tabelle '{self.table_name}' gecheckt/erstellt.", flush=True)
+            conn.execute(create_stmt_classifications)
+        print(f"Tabelle '{self.table_name}' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """
@@ -245,3 +257,20 @@ class DbAdapter:
             if row:
                 return dict(row)
             return None
+
+    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+        """
+        Upserts a classification result for a specific filing and experiment version.
+        
+        Args:
+            filing_id (str): The unique identifier for the filing.
+            version (str): The classification experiment version.
+            **kwargs: Classification category flags mapping to db columns.
+        """
+        self._db.upsert_classification(filing_id, version, **kwargs)
+
+    def get_classifications(self, filing_id: str) -> list[dict]:
+        """
+        Retrieves all classification results for a specific filing.
+        """
+        return self._db.get_classifications(filing_id)

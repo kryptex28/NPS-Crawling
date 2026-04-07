@@ -37,29 +37,6 @@ class NpsFilingsDB:
         "path_to_preprocessed",
         "path_to_classified",
         "url",
-        # Main Categories
-        "KPI_CURRENT_VALUE",
-        "KPI_TREND",
-        "KPI_HISTORICAL_COMPARISON",
-        "BENCHMARK_COMPARISON_POSITIVE",
-        "BENCHMARK_COMPARISON_NEGATIVE",
-        "NPS_GOAL_REACHED",
-        "TARGET_OUTLOOK",
-        "MGMT_COMPENSATION_GOVERNANCE",
-        "CUSTOMER_CASE_EVIDENCE",
-        "NPS_SERVICE_PROVIDER",
-        "METHODOLOGY_DEFINITION",
-        "QUALITATIVE_ONLY",
-        "OTHER",
-        # Category Helper Columns
-        # nps values
-        "has_numeric_nps",
-        "nps_value_fix",
-        "nps_competition_industry",
-        "nps_value_over",
-        "nps_value_below",
-        "nps_goal_value",
-        "nps_goal_change",
     }
 
     def __init__(self, engine: Engine) -> None:
@@ -89,41 +66,13 @@ class NpsFilingsDB:
         path_to_preprocessed: str | None = None,
         path_to_classified: str | None = None,
         url: str | None = None,
-        # Main Categories
-        KPI_CURRENT_VALUE: bool | None = None,
-        KPI_TREND: bool | None = None,
-        KPI_HISTORICAL_COMPARISON: bool | None = None,
-        BENCHMARK_COMPARISON_POSITIVE: bool | None = None,
-        BENCHMARK_COMPARISON_NEGATIVE: bool | None = None,
-        NPS_GOAL_REACHED: bool | None = None,
-        TARGET_OUTLOOK: bool | None = None,
-        MGMT_COMPENSATION_GOVERNANCE: bool | None = None,
-        CUSTOMER_CASE_EVIDENCE: bool | None = None,
-        NPS_SERVICE_PROVIDER: bool | None = None,
-        METHODOLOGY_DEFINITION: bool | None = None,
-        QUALITATIVE_ONLY: bool | None = None,
-        OTHER: bool | None = None,
-        # Category Helper Columns
-        has_numeric_nps: bool | None = None,
-        nps_value_fix: float | None = None,
-        nps_competition_industry: float | None = None,
-        nps_value_over: float | None = None,
-        nps_value_below: float | None = None,
-        nps_goal_value: float | None = None,
-        nps_goal_change: float | None = None,
     ) -> None:
 
         stmt = text(f"""
         INSERT INTO {self.TABLE} (
           id, ciks, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
-          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url,
-          "KPI_CURRENT_VALUE", "KPI_TREND", "KPI_HISTORICAL_COMPARISON",
-          "BENCHMARK_COMPARISON_POSITIVE", "BENCHMARK_COMPARISON_NEGATIVE", "NPS_GOAL_REACHED",
-          "TARGET_OUTLOOK", "MGMT_COMPENSATION_GOVERNANCE", "CUSTOMER_CASE_EVIDENCE",
-          "NPS_SERVICE_PROVIDER", "METHODOLOGY_DEFINITION", "QUALITATIVE_ONLY", "OTHER",
-          has_numeric_nps, nps_value_fix, nps_competition_industry,
-          nps_value_over, nps_value_below, nps_goal_value, nps_goal_change
+          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url
         )
         VALUES (
           :id,
@@ -134,15 +83,10 @@ class NpsFilingsDB:
           :file_date, :form, :adsh,
           :file_type, :file_description,
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
+          COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
           :blacklisted, :nps_relevant,
-          :path_to_raw, :path_to_preprocessed, :path_to_classified, :url,
-          :KPI_CURRENT_VALUE, :KPI_TREND, :KPI_HISTORICAL_COMPARISON,
-          :BENCHMARK_COMPARISON_POSITIVE, :BENCHMARK_COMPARISON_NEGATIVE, :NPS_GOAL_REACHED,
-          :TARGET_OUTLOOK, :MGMT_COMPENSATION_GOVERNANCE, :CUSTOMER_CASE_EVIDENCE,
-          :NPS_SERVICE_PROVIDER, :METHODOLOGY_DEFINITION, :QUALITATIVE_ONLY, :OTHER,
-          :has_numeric_nps, :nps_value_fix, :nps_competition_industry,
-          :nps_value_over, :nps_value_below, :nps_goal_value, :nps_goal_change
+          :path_to_raw, :path_to_preprocessed, :path_to_classified, :url
         )
         ON CONFLICT (id) DO UPDATE
         SET
@@ -171,29 +115,7 @@ class NpsFilingsDB:
           form             = COALESCE(EXCLUDED.form, {self.TABLE}.form),
           adsh             = COALESCE(EXCLUDED.adsh, {self.TABLE}.adsh),
           file_type        = COALESCE(EXCLUDED.file_type, {self.TABLE}.file_type),
-          file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description),
-
-          -- NPS Fields Update
-          "KPI_CURRENT_VALUE"              = COALESCE(EXCLUDED."KPI_CURRENT_VALUE", {self.TABLE}."KPI_CURRENT_VALUE"),
-          "KPI_TREND"                      = COALESCE(EXCLUDED."KPI_TREND", {self.TABLE}."KPI_TREND"),
-          "KPI_HISTORICAL_COMPARISON"      = COALESCE(EXCLUDED."KPI_HISTORICAL_COMPARISON", {self.TABLE}."KPI_HISTORICAL_COMPARISON"),
-          "BENCHMARK_COMPARISON_POSITIVE"  = COALESCE(EXCLUDED."BENCHMARK_COMPARISON_POSITIVE", {self.TABLE}."BENCHMARK_COMPARISON_POSITIVE"),
-          "BENCHMARK_COMPARISON_NEGATIVE"  = COALESCE(EXCLUDED."BENCHMARK_COMPARISON_NEGATIVE", {self.TABLE}."BENCHMARK_COMPARISON_NEGATIVE"),
-          "NPS_GOAL_REACHED"               = COALESCE(EXCLUDED."NPS_GOAL_REACHED", {self.TABLE}."NPS_GOAL_REACHED"),
-          "TARGET_OUTLOOK"                 = COALESCE(EXCLUDED."TARGET_OUTLOOK", {self.TABLE}."TARGET_OUTLOOK"),
-          "MGMT_COMPENSATION_GOVERNANCE"   = COALESCE(EXCLUDED."MGMT_COMPENSATION_GOVERNANCE", {self.TABLE}."MGMT_COMPENSATION_GOVERNANCE"),
-          "CUSTOMER_CASE_EVIDENCE"         = COALESCE(EXCLUDED."CUSTOMER_CASE_EVIDENCE", {self.TABLE}."CUSTOMER_CASE_EVIDENCE"),
-          "NPS_SERVICE_PROVIDER"           = COALESCE(EXCLUDED."NPS_SERVICE_PROVIDER", {self.TABLE}."NPS_SERVICE_PROVIDER"),
-          "METHODOLOGY_DEFINITION"         = COALESCE(EXCLUDED."METHODOLOGY_DEFINITION", {self.TABLE}."METHODOLOGY_DEFINITION"),
-          "QUALITATIVE_ONLY"               = COALESCE(EXCLUDED."QUALITATIVE_ONLY", {self.TABLE}."QUALITATIVE_ONLY"),
-          "OTHER"                          = COALESCE(EXCLUDED."OTHER", {self.TABLE}."OTHER"),
-          has_numeric_nps              = COALESCE(EXCLUDED.has_numeric_nps, {self.TABLE}.has_numeric_nps),
-          nps_value_fix                = COALESCE(EXCLUDED.nps_value_fix, {self.TABLE}.nps_value_fix),
-          nps_competition_industry     = COALESCE(EXCLUDED.nps_competition_industry, {self.TABLE}.nps_competition_industry),
-          nps_value_over               = COALESCE(EXCLUDED.nps_value_over, {self.TABLE}.nps_value_over),
-          nps_value_below              = COALESCE(EXCLUDED.nps_value_below, {self.TABLE}.nps_value_below),
-          nps_goal_value               = COALESCE(EXCLUDED.nps_goal_value, {self.TABLE}.nps_goal_value),
-          nps_goal_change              = COALESCE(EXCLUDED.nps_goal_change, {self.TABLE}.nps_goal_change);
+          file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description);
         """)
 
         with self.engine.begin() as conn:
@@ -218,26 +140,6 @@ class NpsFilingsDB:
                     "path_to_preprocessed": path_to_preprocessed,
                     "path_to_classified": path_to_classified,
                     "url": url,
-                    "KPI_CURRENT_VALUE": KPI_CURRENT_VALUE,
-                    "KPI_TREND": KPI_TREND,
-                    "KPI_HISTORICAL_COMPARISON": KPI_HISTORICAL_COMPARISON,
-                    "BENCHMARK_COMPARISON_POSITIVE": BENCHMARK_COMPARISON_POSITIVE,
-                    "BENCHMARK_COMPARISON_NEGATIVE": BENCHMARK_COMPARISON_NEGATIVE,
-                    "NPS_GOAL_REACHED": NPS_GOAL_REACHED,
-                    "TARGET_OUTLOOK": TARGET_OUTLOOK,
-                    "MGMT_COMPENSATION_GOVERNANCE": MGMT_COMPENSATION_GOVERNANCE,
-                    "CUSTOMER_CASE_EVIDENCE": CUSTOMER_CASE_EVIDENCE,
-                    "NPS_SERVICE_PROVIDER": NPS_SERVICE_PROVIDER,
-                    "METHODOLOGY_DEFINITION": METHODOLOGY_DEFINITION,
-                    "QUALITATIVE_ONLY": QUALITATIVE_ONLY,
-                    "OTHER": OTHER,
-                    "has_numeric_nps": has_numeric_nps,
-                    "nps_value_fix": nps_value_fix,
-                    "nps_competition_industry": nps_competition_industry,
-                    "nps_value_over": nps_value_over,
-                    "nps_value_below": nps_value_below,
-                    "nps_goal_value": nps_goal_value,
-                    "nps_goal_change": nps_goal_change,
                 },
             )
 
@@ -393,3 +295,63 @@ class NpsFilingsDB:
         stmt = text(f"SELECT {col_name} FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             return conn.execute(stmt, {"id": id}).scalar_one_or_none()
+
+    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+        """
+        Upserts classification results for a filing into nps_classification_results.
+        Only fields present in the table are allowed.
+        """
+        allowed_cols = {
+            "KPI_CURRENT_VALUE", "KPI_TREND", "KPI_HISTORICAL_COMPARISON",
+            "BENCHMARK_COMPARISON_POSITIVE", "BENCHMARK_COMPARISON_NEGATIVE", "NPS_GOAL_REACHED",
+            "TARGET_OUTLOOK", "MGMT_COMPENSATION_GOVERNANCE", "CUSTOMER_CASE_EVIDENCE",
+            "NPS_SERVICE_PROVIDER", "METHODOLOGY_DEFINITION", "QUALITATIVE_ONLY", "OTHER",
+            "has_numeric_nps", "nps_value_fix", "nps_competition_industry",
+            "nps_value_over", "nps_value_below", "nps_goal_value", "nps_goal_change"
+        }
+        
+        # Filter kwargs to only allowed columns
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_cols}
+        
+        col_names = ["filing_id", "experiment_version"]
+        placeholders = [":filing_id", ":experiment_version"]
+        params = {"filing_id": filing_id, "experiment_version": version}
+        
+        for k, v in filtered_kwargs.items():
+            if k.isupper():
+                col_names.append(f'"{k}"')
+            else:
+                col_names.append(k)
+            placeholders.append(f":{k}")
+            params[k] = v
+            
+        update_clauses = []
+        for k in filtered_kwargs:
+            if k.isupper():
+                update_clauses.append(f'"{k}" = EXCLUDED."{k}"')
+            else:
+                update_clauses.append(f'{k} = EXCLUDED.{k}')
+        update_clauses.append("classified_at = now()")
+        
+        cols_str = ", ".join(col_names)
+        vals_str = ", ".join(placeholders)
+        update_str = ", ".join(update_clauses)
+        
+        stmt = text(f"""
+        INSERT INTO {self.TABLE}_classifications ({cols_str})
+        VALUES ({vals_str})
+        ON CONFLICT (filing_id, experiment_version) DO UPDATE
+        SET {update_str};
+        """)
+        
+        with self.engine.begin() as conn:
+            conn.execute(stmt, params)
+
+    def get_classifications(self, filing_id: str) -> list[dict]:
+        """
+        Retrieves all classification results for a given filing.
+        """
+        stmt = text(f"SELECT * FROM {self.TABLE}_classifications WHERE filing_id = :filing_id;")
+        with self.engine.connect() as conn:
+            rows = conn.execute(stmt, {"filing_id": filing_id}).mappings().all()
+            return [dict(row) for row in rows]
