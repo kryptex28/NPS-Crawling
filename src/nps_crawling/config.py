@@ -33,6 +33,8 @@ class Config:
     # Wenn True: Die Docker-Postgres (docker/database/docker-compose.yml) wird
     # beim Programmstart automatisch hochgefahren und als Datenbank verwendet.
     # Wenn False: Die Umgebungsvariable POSTGRES_ENGINE muss gesetzt sein.
+
+    #TODO: might want to use a .env variable for this
     LOCAL_MODE: bool = False
 
     # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
@@ -83,6 +85,8 @@ class Config:
     # to include before and after the keyword
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2
     AMOUNT_SENTENCES_INCLUDED_AFTER: int = 2
+    MAX_CONTEXT_CHARS_BEFORE_KEYWORD: int = 600
+    MAX_CONTEXT_CHARS_AFTER_KEYWORD: int = 600
 
     # Similarity Search Model
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
