@@ -68,6 +68,7 @@ def main() -> None:
                     db.add_filing(
                         filing_id=filing_id,
                         ciks=filing.get("ciks", []),
+                        ticker=filing.get("ticker", []),
                         period_ending=filing.get("period_ending"),
                         display_names=filing.get("display_names", []),
                         root_forms=filing.get("root_forms", []),
@@ -82,33 +83,6 @@ def main() -> None:
                         nps_relevant=None,  # Now defaults to None initially
                         path_to_raw=str(json_file.absolute()),
                         url=url,
-
-                        # Main Categories
-                        KPI_CURRENT_VALUE=None,
-                        KPI_TREND=None,
-                        KPI_HISTORICAL_COMPARISON=None,
-                        BENCHMARK_COMPARISON=None,
-                        TARGET_OUTLOOK=None,
-                        MGMT_COMPENSATION_GOVERNANCE=None,
-                        CUSTOMER_CASE_EVIDENCE=None,
-                        NPS_SERVICE_PROVIDER=None,
-                        METHODOLOGY_DEFINITION=None,
-                        QUALITATIVE_ONLY=None,
-                        OTHER=None,
-                        # Category Helper Columns
-                        has_numeric_nps=None,
-                        numeric_nps_count=None,
-                        nps_value_fix=None,
-                        nps_competition_industry=None,
-                        nps_value_over=None,
-                        nps_value_below=None,
-                        nps_goal_value=None,
-                        nps_goal_change=None,
-                        nps_goal_reached=None,
-                        nps_trend_detected=None,
-                        has_target_language=None,
-                        keywords_found=None,
-                        matched_phrase=None,
                     )
                     added_count += 1
 

@@ -45,6 +45,7 @@ class DbAdapter:
 
             -- SEC Metadata
             ciks TEXT[],
+            ticker TEXT[],
             period_ending DATE,
             display_names TEXT[],
             root_forms TEXT[],
@@ -66,11 +67,24 @@ class DbAdapter:
             path_to_classified VARCHAR,
             url VARCHAR,
 
+            -- Crawl Tracking
+            last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+        """)
+        
+        create_stmt_classifications = text(f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name}_classifications (
+            id SERIAL PRIMARY KEY,
+            filing_id VARCHAR REFERENCES {self.table_name}(id) ON DELETE CASCADE,
+            experiment_version VARCHAR NOT NULL,
+            
             -- Main Categories
             "KPI_CURRENT_VALUE" BOOLEAN,
             "KPI_TREND" BOOLEAN,
             "KPI_HISTORICAL_COMPARISON" BOOLEAN,
-            "BENCHMARK_COMPARISON" BOOLEAN,
+            "BENCHMARK_COMPARISON_POSITIVE" BOOLEAN,
+            "BENCHMARK_COMPARISON_NEGATIVE" BOOLEAN,
+            "NPS_GOAL_REACHED" BOOLEAN,
             "TARGET_OUTLOOK" BOOLEAN,
             "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN,
             "CUSTOMER_CASE_EVIDENCE" BOOLEAN,
@@ -81,26 +95,21 @@ class DbAdapter:
 
             -- Category Helper Columns
             has_numeric_nps BOOLEAN,
-            numeric_nps_count INTEGER,
             nps_value_fix DOUBLE PRECISION,
-            nps_competition_industry BOOLEAN,
+            nps_competition_industry DOUBLE PRECISION,
             nps_value_over DOUBLE PRECISION,
             nps_value_below DOUBLE PRECISION,
             nps_goal_value DOUBLE PRECISION,
             nps_goal_change DOUBLE PRECISION,
-            nps_goal_reached BOOLEAN,
-            nps_trend_detected BOOLEAN,
-            has_target_language BOOLEAN,
-            keywords_found VARCHAR,
-            matched_phrase VARCHAR,
 
-            -- Crawl Tracking
-            last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            classified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE (filing_id, experiment_version)
         );
         """)
         with self.engine.begin() as conn:
             conn.execute(create_stmt)
-        print(f"Tabelle '{self.table_name}' gecheckt/erstellt.", flush=True)
+            conn.execute(create_stmt_classifications)
+        print(f"Tabelle '{self.table_name}' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """
@@ -182,7 +191,7 @@ class DbAdapter:
             filing_id (str): The unique identifier for the filing.
             touch_last_crawled (bool): If True, updates the `last_crawled` timestamp. Defaults to True.
             **kwargs: Arbitrary fields to update matching the database schema
-                      (e.g., nps_goal_reached=True, nps_value_fix=8.5)
+                      (e.g., NPS_GOAL_REACHED=True, nps_value_fix=8.5)
 
         Returns:
             bool: True if the filing was found and updated, False otherwise.
@@ -249,3 +258,20 @@ class DbAdapter:
             if row:
                 return dict(row)
             return None
+
+    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+        """
+        Upserts a classification result for a specific filing and experiment version.
+        
+        Args:
+            filing_id (str): The unique identifier for the filing.
+            version (str): The classification experiment version.
+            **kwargs: Classification category flags mapping to db columns.
+        """
+        self._db.upsert_classification(filing_id, version, **kwargs)
+
+    def get_classifications(self, filing_id: str) -> list[dict]:
+        """
+        Retrieves all classification results for a specific filing.
+        """
+        return self._db.get_classifications(filing_id)

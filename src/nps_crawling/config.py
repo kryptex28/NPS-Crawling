@@ -35,7 +35,7 @@ class Config:
     # Wenn False: Die Umgebungsvariable POSTGRES_ENGINE muss gesetzt sein.
 
     #TODO: might want to use a .env variable for this
-    LOCAL_MODE: bool = False
+    LOCAL_MODE: bool = True
 
     # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
     LOCAL_DB_CONNECTION: str = "crawler:crawler@localhost:5432/crawler"

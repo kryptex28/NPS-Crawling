@@ -58,11 +58,22 @@ def test_adapter() -> None:
     print("\n4. Testing generic update_filing method...")
     updated_fields = adapter.update_filing(
         filing_id=test_id,
-        nps_goal_reached=True,
-        nps_value_fix=10.5,
-        keywords_found="test keyword",
+        url="https://example.com/test",
     )
     print(f"update_filing successful: {updated_fields}")
+
+    # 4b. Test Classification Upsert
+    print("\n4b. Testing upsert_classification method...")
+    adapter.upsert_classification(
+        filing_id=test_id,
+        version="test_version_1",
+        NPS_GOAL_REACHED=True,
+        nps_value_fix=10.5,
+    )
+    print("upsert_classification successful.")
+
+    classifs = adapter.get_classifications(filing_id=test_id)
+    print(f"Found classifications: {classifs}")
 
     # 5. Add keyword (Test array appending without overwriting)
     print("\n5. Testing add_keyword...")
