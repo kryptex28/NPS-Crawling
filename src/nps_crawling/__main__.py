@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 from nps_crawling.config import Config
-
+from nps_crawling.db.db_adapter import DbAdapter
 from . import __version__
 
 log = logging.getLogger(__package__)
@@ -30,8 +30,8 @@ def main(argv=None):
 
     if Config.LOCAL_MODE:
         _ensure_docker_db_running()
-        from nps_crawling.db.db_adapter import DbAdapter
-        DbAdapter().ensure_table_exists()
+
+    DbAdapter().ensure_table_exists()
 
     try:
         if args.command == "crawl":
