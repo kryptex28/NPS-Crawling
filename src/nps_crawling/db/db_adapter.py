@@ -70,7 +70,9 @@ class DbAdapter:
             "KPI_CURRENT_VALUE" BOOLEAN,
             "KPI_TREND" BOOLEAN,
             "KPI_HISTORICAL_COMPARISON" BOOLEAN,
-            "BENCHMARK_COMPARISON" BOOLEAN,
+            "BENCHMARK_COMPARISON_POSITIVE" BOOLEAN,
+            "BENCHMARK_COMPARISON_NEGATIVE" BOOLEAN,
+            "NPS_GOAL_REACHED" BOOLEAN,
             "TARGET_OUTLOOK" BOOLEAN,
             "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN,
             "CUSTOMER_CASE_EVIDENCE" BOOLEAN,
@@ -81,18 +83,12 @@ class DbAdapter:
 
             -- Category Helper Columns
             has_numeric_nps BOOLEAN,
-            numeric_nps_count INTEGER,
             nps_value_fix DOUBLE PRECISION,
-            nps_competition_industry BOOLEAN,
+            nps_competition_industry DOUBLE PRECISION,
             nps_value_over DOUBLE PRECISION,
             nps_value_below DOUBLE PRECISION,
             nps_goal_value DOUBLE PRECISION,
             nps_goal_change DOUBLE PRECISION,
-            nps_goal_reached BOOLEAN,
-            nps_trend_detected BOOLEAN,
-            has_target_language BOOLEAN,
-            keywords_found VARCHAR,
-            matched_phrase VARCHAR,
 
             -- Crawl Tracking
             last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -182,7 +178,7 @@ class DbAdapter:
             filing_id (str): The unique identifier for the filing.
             touch_last_crawled (bool): If True, updates the `last_crawled` timestamp. Defaults to True.
             **kwargs: Arbitrary fields to update matching the database schema
-                      (e.g., nps_goal_reached=True, nps_value_fix=8.5)
+                      (e.g., NPS_GOAL_REACHED=True, nps_value_fix=8.5)
 
         Returns:
             bool: True if the filing was found and updated, False otherwise.

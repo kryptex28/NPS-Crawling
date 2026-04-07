@@ -58,9 +58,8 @@ def test_adapter() -> None:
     print("\n4. Testing generic update_filing method...")
     updated_fields = adapter.update_filing(
         filing_id=test_id,
-        nps_goal_reached=True,
+        NPS_GOAL_REACHED=True,
         nps_value_fix=10.5,
-        keywords_found="test keyword",
     )
     print(f"update_filing successful: {updated_fields}")
 

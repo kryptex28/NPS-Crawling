@@ -58,7 +58,9 @@ def create_table() -> None:
         "KPI_CURRENT_VALUE" BOOLEAN,
         "KPI_TREND" BOOLEAN,
         "KPI_HISTORICAL_COMPARISON" BOOLEAN,
-        "BENCHMARK_COMPARISON" BOOLEAN,
+        "BENCHMARK_COMPARISON_POSITIVE" BOOLEAN,
+        "BENCHMARK_COMPARISON_NEGATIVE" BOOLEAN,
+        "NPS_GOAL_REACHED" BOOLEAN,
         "TARGET_OUTLOOK" BOOLEAN,
         "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN,
         "CUSTOMER_CASE_EVIDENCE" BOOLEAN,
@@ -69,18 +71,12 @@ def create_table() -> None:
 
         -- Category Helper Columns
         has_numeric_nps BOOLEAN,
-        numeric_nps_count INTEGER,
         nps_value_fix DOUBLE PRECISION,
-        nps_competition_industry BOOLEAN,
+        nps_competition_industry DOUBLE PRECISION,
         nps_value_over DOUBLE PRECISION,
         nps_value_below DOUBLE PRECISION,
         nps_goal_value DOUBLE PRECISION,
         nps_goal_change DOUBLE PRECISION,
-        nps_goal_reached BOOLEAN,
-        nps_trend_detected BOOLEAN,
-        has_target_language BOOLEAN,
-        keywords_found VARCHAR,
-        matched_phrase VARCHAR,
 
         -- Crawl Tracking
         last_crawled TIMESTAMP WITH TIME ZONE DEFAULT NOW()

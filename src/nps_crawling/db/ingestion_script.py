@@ -87,7 +87,9 @@ def main() -> None:
                         KPI_CURRENT_VALUE=None,
                         KPI_TREND=None,
                         KPI_HISTORICAL_COMPARISON=None,
-                        BENCHMARK_COMPARISON=None,
+                        BENCHMARK_COMPARISON_POSITIVE=None,
+                        BENCHMARK_COMPARISON_NEGATIVE=None,
+                        NPS_GOAL_REACHED=None,
                         TARGET_OUTLOOK=None,
                         MGMT_COMPENSATION_GOVERNANCE=None,
                         CUSTOMER_CASE_EVIDENCE=None,
@@ -97,18 +99,12 @@ def main() -> None:
                         OTHER=None,
                         # Category Helper Columns
                         has_numeric_nps=None,
-                        numeric_nps_count=None,
                         nps_value_fix=None,
                         nps_competition_industry=None,
                         nps_value_over=None,
                         nps_value_below=None,
                         nps_goal_value=None,
                         nps_goal_change=None,
-                        nps_goal_reached=None,
-                        nps_trend_detected=None,
-                        has_target_language=None,
-                        keywords_found=None,
-                        matched_phrase=None,
                     )
                     added_count += 1
 
