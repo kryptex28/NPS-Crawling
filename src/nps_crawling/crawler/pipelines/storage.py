@@ -90,6 +90,7 @@ class SaveToJSONPipeline(Config):
                         self.db.add_filing(
                             filing_id=filing_id,
                             ciks=filing.get("ciks", []),
+                            ticker=filing.get("ticker", []),
                             period_ending=filing.get("period_ending"),
                             display_names=filing.get("display_names", []),
                             root_forms=filing.get("root_forms", []),
@@ -228,7 +229,8 @@ class SaveToJSONPipeline(Config):
                     try:
                         self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))
                         print(f"{filing_id} updated")
-                    except Exception:
+                    except Exception as e:
+                        print(e)
                         pass
 
         self.records = []

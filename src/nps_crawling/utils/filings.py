@@ -11,6 +11,7 @@ class Filing:
                  _id: str,
                  _index: str,
                  ciks: list[str],
+                 ticker: list[str],
                  period_ending: str,
                  file_num: list[str],
                  display_names: list[str],
@@ -34,6 +35,7 @@ class Filing:
         self._index: str = _index
 
         self.ciks: list[str] = ciks
+        self.ticker: list[str] = ticker
         self.period_ending: str = period_ending
         self.file_num: list[str] = file_num
         self.display_names: list[str] = display_names

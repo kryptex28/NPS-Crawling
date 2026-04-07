@@ -7,6 +7,7 @@ import requests
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.filings import Filing
 from nps_crawling.utils.sec_params import SecSearchParams
+from nps_crawling.utils.sec_ticker_map import SecTickerMap
 
 logger = logging.getLogger(__name__)
 
@@ -166,9 +167,14 @@ class SecQuery:
         # Get file name from path
         file_name_path = _id.split(':', 1)[1]
 
+        # Get ticker
+        mapper = SecTickerMap()
+        ticker: list[str] = mapper.get_tickers_from_strings(display_names)
+
         filing = Filing(_id=_id,
                         _index=_index,
                         ciks=ciks,
+                        ticker=ticker,
                         period_ending=period_ending,
                         file_num=file_num,
                         display_names=display_names,
