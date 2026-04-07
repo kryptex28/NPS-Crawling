@@ -15,11 +15,12 @@ class NpsFilingsDB:
     TABLE = Config.DATABASE_TABLE_NAME
 
     # Columns stored as PostgreSQL text arrays (TEXT[]).
-    _ARRAY_COLS = {"ciks", "display_names", "root_forms", "film_num", "keywords"}
+    _ARRAY_COLS = {"ciks", "ticker", "display_names", "root_forms", "film_num", "keywords"}
 
     # Columns that are allowed to be updated via update_fields().
     _UPDATABLE_COLS = {
         "ciks",
+        "ticker",
         "period_ending",
         "display_names",
         "root_forms",
@@ -49,6 +50,7 @@ class NpsFilingsDB:
         id: str,
         *,
         ciks: list[str] | None = None,
+        ticker: list[str] | None = None,
         period_ending=None,  # datetime.date | None
         display_names: list[str] | None = None,
         root_forms: list[str] | None = None,
@@ -70,13 +72,14 @@ class NpsFilingsDB:
 
         stmt = text(f"""
         INSERT INTO {self.TABLE} (
-          id, ciks, period_ending, display_names, root_forms, file_date, form, adsh,
+          id, ciks, ticker, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
           blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url
         )
         VALUES (
           :id,
           COALESCE(CAST(:ciks AS text[]), CAST(ARRAY[] AS text[])),
+          COALESCE(CAST(:ticker AS text[]), CAST(ARRAY[] AS text[])),
           :period_ending,
           COALESCE(CAST(:display_names AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:root_forms AS text[]), CAST(ARRAY[] AS text[])),
@@ -104,6 +107,7 @@ class NpsFilingsDB:
 
           -- Array fields
           ciks             = CASE WHEN :ciks IS NULL THEN {self.TABLE}.ciks ELSE EXCLUDED.ciks END,
+          ticker           = CASE WHEN :ticker IS NULL THEN {self.TABLE}.ticker ELSE EXCLUDED.ticker END,
           display_names    = CASE WHEN :display_names IS NULL THEN {self.TABLE}.display_names ELSE EXCLUDED.display_names END,
           root_forms       = CASE WHEN :root_forms IS NULL THEN {self.TABLE}.root_forms ELSE EXCLUDED.root_forms END,
           film_num         = CASE WHEN :film_num IS NULL THEN {self.TABLE}.film_num ELSE EXCLUDED.film_num END,
@@ -124,6 +128,7 @@ class NpsFilingsDB:
                 {
                     "id": id,
                     "ciks": ciks,
+                    "ticker": ticker,
                     "period_ending": period_ending,
                     "display_names": display_names,
                     "root_forms": root_forms,

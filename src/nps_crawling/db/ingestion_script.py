@@ -68,6 +68,7 @@ def main() -> None:
                     db.add_filing(
                         filing_id=filing_id,
                         ciks=filing.get("ciks", []),
+                        ticker=filing.get("ticker", []),
                         period_ending=filing.get("period_ending"),
                         display_names=filing.get("display_names", []),
                         root_forms=filing.get("root_forms", []),

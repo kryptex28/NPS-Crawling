@@ -45,6 +45,7 @@ class DbAdapter:
 
             -- SEC Metadata
             ciks TEXT[],
+            ticker TEXT[],
             period_ending DATE,
             display_names TEXT[],
             root_forms TEXT[],

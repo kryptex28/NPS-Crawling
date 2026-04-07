@@ -33,6 +33,7 @@ def create_table() -> None:
 
         -- SEC Metadata
         ciks TEXT[],
+        ticker TEXT[],
         period_ending DATE,
         display_names TEXT[],
         root_forms TEXT[],
