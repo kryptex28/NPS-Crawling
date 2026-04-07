@@ -155,7 +155,9 @@ class PreProcessingPipeline(Config):
                     patches[i].set_facecolor('skyblue')
                     
             title_main = f"Similarity Score Distribution (Experiment: {Config.PREPROCESSING_VERSION})"
-            title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
+            total_context_windows = total_context_windows_accepted + total_context_windows_rejected
+            rejected_pct = (total_context_windows_rejected / total_context_windows * 100) if total_context_windows > 0 else 0
+            title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected} ({rejected_pct:.1f}% rejected)"
             plt.title(f"{title_main}\n{title_sub}", fontsize=12)
             
             # Add a vertical dotted line pointing out the specific threshold
