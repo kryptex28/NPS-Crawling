@@ -32,12 +32,26 @@ class CrawlerPipeline(Config):
             sec_queries.append(query)
 
         # Fetch all filings per query
-        filings: list[Filing] = []
+        filings_dict: dict[str, Filing] = {}
+        duplicates: dict[str, list[Filing]] = {}
+
         for query in sec_queries:
             temp: list[Filing] = query.fetch_filings()
             print(len(temp))
-            filings.extend(temp)
+            for filing in temp:
+                if filing.id in filings_dict:
+                    # Collect duplicates for analysis
+                    if filing.id not in duplicates:
+                        duplicates[filing.id] = [filings_dict[filing.id]]
+                    duplicates[filing.id].append(filing)
+                else:
+                    filings_dict[filing.id] = filing
 
+        filings = list(filings_dict.values())
+
+        for _id, dupes in duplicates.items():
+            logger.info(f"Found for ID {_id} {len(dupes)} duplicates.")
+            
         return filings
 
     def crawler_workflow(self):
