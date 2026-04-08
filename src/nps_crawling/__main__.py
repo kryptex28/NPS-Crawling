@@ -11,7 +11,10 @@ from nps_crawling.db.db_adapter import DbAdapter
 from . import __version__
 
 log = logging.getLogger(__package__)
-
+file_handler = logging.FileHandler('errors.log')
+file_handler.setLevel(logging.ERROR)
+file_handler.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+log.addHandler(file_handler)
 
 def main(argv=None):
     """Parse arguments and execute commands."""
@@ -32,12 +35,12 @@ def main(argv=None):
     from nps_crawling.preprocessing import PreProcessingPipeline
     from nps_crawling.results import ResultsPipeline
 
-    if Config.LOCAL_MODE:
-        _ensure_docker_db_running()
-
-    DbAdapter().ensure_table_exists()
-
     try:
+        if Config.LOCAL_MODE:
+            _ensure_docker_db_running()
+
+        DbAdapter().ensure_table_exists()
+
         if args.command == "crawl":
             crawler = CrawlerPipeline()
             crawler.crawler_workflow()
@@ -75,9 +78,9 @@ def main(argv=None):
 
     except Exception as error:
         if verbosity < default_log_level or default_log_level <= logging.DEBUG:
-            log.exception(error)
+            log.exception(error, exc_info=True)
         else:
-            log.error(error)
+            log.error(error, exc_info=True)
             log.warning("Hint: Rerun with '--verbose' to show exception traceback.")
         sys.exit(1)
     except KeyboardInterrupt:
