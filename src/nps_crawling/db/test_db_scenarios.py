@@ -55,6 +55,16 @@ def test_scenarios() -> None:
     print(f"Verification - Keywords: {filing.get('keywords')}")
     print(f"Verification - Form string retained: {filing.get('form')}")
 
+    # --- SCENARIO 1.5: Testing return_keywords method ---
+    print("\n--- Scenario 1.5: Testing return_keywords method ---")
+    retrieved_kws = adapter.return_keywords(test_id)
+    print(f"Verification - return_keywords returned type: {type(retrieved_kws).__name__}")
+    print(f"Verification - return_keywords returned: {retrieved_kws}")
+    expected_kws = ["Initial Keyword", "Second Keyword"]
+    print(f"Verification - Expected keywords: {expected_kws}")
+    all_present = all(kw in retrieved_kws for kw in expected_kws)
+    print(f"Verification - Expected keywords present: {all_present}")
+
 
     # --- SCENARIO 2: Classification Version 1 (Insert) ---
     print("\n--- Scenario 2: First Classification Run (Version: ollama_v1) ---")
