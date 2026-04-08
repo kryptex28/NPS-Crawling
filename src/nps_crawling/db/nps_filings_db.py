@@ -96,7 +96,9 @@ class NpsFilingsDB:
           last_crawled     = now(),
           -- "Sticky" booleans: once TRUE, remain TRUE.
           blacklisted      = {self.TABLE}.blacklisted OR EXCLUDED.blacklisted,
-          nps_relevant     = {self.TABLE}.nps_relevant OR EXCLUDED.nps_relevant,
+          
+          -- nps_relevant is no longer sticky
+          nps_relevant     = COALESCE(EXCLUDED.nps_relevant, {self.TABLE}.nps_relevant),
 
           -- Only overwrite paths when a new non-NULL value is provided.
           path_to_raw              = COALESCE(EXCLUDED.path_to_raw, {self.TABLE}.path_to_raw),

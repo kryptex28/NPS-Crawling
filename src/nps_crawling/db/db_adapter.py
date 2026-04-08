@@ -152,6 +152,19 @@ class DbAdapter:
         """
         return self._db.add_keyword(id=filing_id, kw=keyword)
 
+    def return_keywords(self, filing_id: str) -> list[str]:
+        """
+        Retrieves all keywords for a specific filing.
+
+        Args:
+            filing_id (str): The unique identifier for the filing.
+
+        Returns:
+            list[str]: A list of keywords associated with the filing.
+        """
+        keywords = self.get_filing_field(filing_id, "keywords")
+        return keywords if keywords is not None else []
+
     def get_filing(self, filing_id: str) -> dict | None:
         """
         Retrieves all data for a specific filing and returns it as a dictionary.

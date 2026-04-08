@@ -14,31 +14,23 @@ def main() -> None:
     except Exception as e:
         print(f"Fehler bei DB Verbindung: {e}")
         return
-    # Hol die letzten 50 Einträge
-    filings1 = db.get_all_filings(limit=220)
-
-    print(f"Gefundene Einträge: {len(filings1)}\n")
-    for f in filings1:
-        print(f"--- ID: {f['id']} ---")
-        print(f"Form: {f['form']} | Datum: {f['file_date']}")
-        print(f"Rohdaten-Pfad: {f['path_to_raw']}")
-        print(f"Keyword Array: {f['keywords']}")
-        print("-" * 40)
-    print(f"Gefundene Einträge für diese Ansicht: {len(filings1)}\n")
-
-    # Hol die letzten 5 Einträge
-    filings = db.get_all_filings(limit=5)
-
-    for f in filings:
-        print(f"\n==================================================")
-        print(f"       ALLE DATEN FÜR ID: {f.get('id')}")
-        print(f"==================================================")
-
-        # Gehe durch alle Spalten des Dictionaries und zeige *alles* an
-        for col_name, col_value in f.items():
-            print(f"{col_name:<30}: {col_value}")
-
-    print(f"\nFertig. Das waren die Daten für {len(filings)} Einträge.")
+    try:
+        from sqlalchemy import text
+        with db.engine.connect() as conn:
+            total_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name}")).scalar()
+            true_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant = TRUE")).scalar()
+            false_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant = FALSE")).scalar()
+            null_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant IS NULL")).scalar()
+            
+        print("=" * 50)
+        print(f"Statistiken zur Datenbank-Tabelle '{db.table_name}':")
+        print(f"  - Gesamte Filings: {total_count}")
+        print(f"  - nps_relevant = True:  {true_count}")
+        print(f"  - nps_relevant = False: {false_count}")
+        print(f"  - nps_relevant = Null:  {null_count}")
+        print("=" * 50 + "\n")
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Statistiken: {e}")
 
 
 if __name__ == "__main__":
