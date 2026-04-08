@@ -32,6 +32,9 @@ class CrawlerPipeline(Config):
         # Create queries
         sec_queries: list[SecQuery] = []
         for parameter in search_parameters:
+            if parameter.filing_limit == -1:
+                parameter.filing_limit = get_project_settings()["SEC_QUERY_LIMIT_COUNT"]
+
             query: SecQuery = SecQuery(sec_params=parameter)
             sec_queries.append(query)
 
