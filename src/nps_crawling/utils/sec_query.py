@@ -15,20 +15,12 @@ logger = logging.getLogger(__name__)
 
 def get_total_filings_count(data: dict) -> int:
     """Get total number of queried filings."""
-    try:
-        return int(data['hits']['total']['value'])
-    except Exception as e:
-        print(e)
-        sys.exit(-1)
+    return int(data['hits']['total']['value'])
 
 
 def get_fetched_filings_count(data: dict) -> int:
     """Get total number of queried filings of the requested page."""
-    try:
-        return int(data['query']['size'])
-    except Exception as e:
-        print(e)
-        sys.exit(-1)
+    return int(data['query']['size'])
 
 
 class SecQuery:
