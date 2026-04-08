@@ -1,0 +1,64 @@
+{
+  "queries": {
+    "1": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"nps\"",
+      "from_date": "2021-01-01",
+      "to_date": "2026-03-01",
+      "date_range": "custom",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "",
+      "filing_categories": []
+    },
+    "2": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"nps\"",
+      "from_date": "2015-01-01",
+      "to_date": "2020-12-31",
+      "date_range": "custom",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "",
+      "filing_categories": []
+    },
+    "3": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"nps\"",
+      "from_date": "2010-01-01",
+      "to_date": "2014-12-31",
+      "date_range": "custom",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "",
+      "filing_categories": []
+    },
+    "4": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"nps\"",
+      "from_date": "2006-01-01",
+      "to_date": "2009-12-31",
+      "date_range": "custom",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "",
+      "filing_categories": []
+    },
+    "5": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"nps\"",
+      "from_date": "2003-01-01",
+      "to_date": "2005-12-31",
+      "date_range": "custom",
+      "individual_search_ticker": [],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "",
+      "filing_categories": []
+    }
+  }
+}
