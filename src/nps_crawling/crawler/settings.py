@@ -9,6 +9,8 @@ import os
 BOT_NAME = "crawler"
 SPIDER_MODULES = ["nps_crawling.crawler.spiders"]
 NEWSPIDER_MODULE = "nps_crawling.crawler.spiders"
+SPIDER_LOADER_CLASS = 'scrapy.spiderloader.SpiderLoader'
+
 
 USER_AGENT = os.getenv("NPS_CRAWLER_USER_AGENT", "NPSCrawler/1.0 (contact: please-set-contact@example.com)")
 DEFAULT_REQUEST_HEADERS = {
