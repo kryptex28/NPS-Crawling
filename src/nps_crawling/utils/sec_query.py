@@ -1,6 +1,7 @@
 """SEC Query abstraction module with utility functions."""
 import logging
 import sys
+import time
 
 import requests
 
@@ -14,12 +15,20 @@ logger = logging.getLogger(__name__)
 
 def get_total_filings_count(data: dict) -> int:
     """Get total number of queried filings."""
-    return int(data['hits']['total']['value'])
+    try:
+        return int(data['hits']['total']['value'])
+    except Exception as e:
+        print(e)
+        sys.exit(-1)
 
 
 def get_fetched_filings_count(data: dict) -> int:
     """Get total number of queried filings of the requested page."""
-    return int(data['query']['size'])
+    try:
+        return int(data['query']['size'])
+    except Exception as e:
+        print(e)
+        sys.exit(-1)
 
 
 class SecQuery:
@@ -88,14 +97,39 @@ class SecQuery:
         page: int = 1
         queries: list = []
 
+        timeout: int = 5
+        maximum_retries: int = 10
+        retries: int = 0
+
         while True:
+            if retries > maximum_retries:
+                logger.error(f"Unable to fetch filings after {retries} retries!")
+                exit(-1)
+
             response: dict = self.query_request(page=page)
             # Set total results of the query on first query
             if self.results == -1:
                 self.results = get_total_filings_count(response)
                 total = self.results
                 print(f'Total Results: {total}')
-            hits: list[str] = response['hits']['hits']
+
+            # Catch any bad response from server and retry again for 10 times until it either works.
+            # If after 10 tries it does not work, maybe your internet is the issue.
+            try:
+                hits: list[str] = response['hits']['hits']
+            except Exception as e:
+                logger.error(e)
+                logger.error(f"Received faulty response: {response}.")
+                logger.info(f"Restarting fetch in {timeout} seconds.")
+                retries += 1
+                time.sleep(timeout)
+                continue
+
+            # Give info about retries
+            if retries > 0:
+                logger.info(f"Filings took {retries} to get processed.")
+            
+            retries = 0
             query = len(hits)
 
             logger.info(f'Iterating through page: {page}')
