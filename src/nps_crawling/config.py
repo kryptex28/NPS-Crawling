@@ -2,7 +2,10 @@
 
 import subprocess
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def get_git_root() -> Path:
     """Return the root directory of the current Git repository."""
@@ -34,8 +37,9 @@ class Config:
     # beim Programmstart automatisch hochgefahren und als Datenbank verwendet.
     # Wenn False: Die Umgebungsvariable POSTGRES_ENGINE muss gesetzt sein.
 
-    #TODO: might want to use a .env variable for this
-    LOCAL_MODE: bool = False
+    # .env LOCAL_MODE=1 to enable local mode, .env LOCAL_MODE=0 to disable local mode
+    # defaults to False if not set to not interfere with existing server setup
+    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "0") == "1"
 
     # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
     LOCAL_DB_CONNECTION: str = "crawler:crawler@localhost:5432/crawler"
