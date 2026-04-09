@@ -62,7 +62,12 @@ class BetterSpider(scrapy.Spider):
         url: str = response.meta['url']
 
         # Extract text from response content
-        text: str = self.function_map[filing.file_container_type](response)
+        try:
+            text: str = self.function_map[filing.file_container_type](response)
+        except Exception as e:
+            self.logger.error(f"Error occurred while extracting content from {response.url}: {str(e)}", exc_info=True)
+            text: str = ""
+            return
 
         item: FilingItem = FilingItem()
         item['filing'] = filing

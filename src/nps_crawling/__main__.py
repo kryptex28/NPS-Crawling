@@ -25,7 +25,7 @@ def main(argv=None):
         parser.print_help()
         sys.exit(1)
 
-    default_log_level = logging.WARNING
+    default_log_level = logging.INFO
     verbosity = default_log_level - ((getattr(args, "verbose", 0) - getattr(args, "quiet", 0)) * 10)
     log_level = min(logging.INFO, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
