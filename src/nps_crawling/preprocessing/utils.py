@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 
 import matplotlib
 matplotlib.use('Agg')
@@ -51,6 +52,8 @@ class PreProcessingPipeline(Config):
 
     def pre_processing_workflow(self):
         """Run the full pre-processing workflow over all raw JSON files."""
+        start_time = time.time()
+
         json_files = sorted(self.json_raw_dir.glob("*.json"))
         if not json_files:
             logger.info("No raw JSON files found to process")
@@ -139,8 +142,11 @@ class PreProcessingPipeline(Config):
 
             logger.info("Processed %s (%d records) — SPLIT", json_file.name, len(records))
 
+        elapsed_seconds = round(time.time() - start_time, 2)
+
         # Write experiment summary JSON
         summary = {
+            "preprocessing_duration_seconds": elapsed_seconds,
             "experiment_setup": {
                 "preprocessing_version": Config.PREPROCESSING_VERSION,
                 "filter_phrases": Config.LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR,
