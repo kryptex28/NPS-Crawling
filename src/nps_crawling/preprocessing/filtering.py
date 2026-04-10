@@ -50,18 +50,18 @@ class NpsMentionFilterPipeline(Config):
         """
         for record in records:
             text = record.get("core_text", "")
-            record["context"] = self._extract_context_windows(text)
+            sentences = self._split_into_sentences(text)
+            record["context"] = self._extract_context_windows_from_sentences(sentences)
             record["all_context_windows"] = self._build_concatenated_context(
-                text, record["context"],
+                sentences, record["context"],
             )
         return records
 
-    def _extract_context_windows(self, text):
-        """Extract all context windows from a text string."""
-        if not text:
+    def _extract_context_windows_from_sentences(self, sentences):
+        """Extract all context windows from a list of sentences."""
+        if not sentences:
             return []
 
-        sentences = self._split_into_sentences(text)
         n = len(sentences)
         hits = []
 
@@ -87,12 +87,10 @@ class NpsMentionFilterPipeline(Config):
 
         return hits
 
-    def _build_concatenated_context(self, text, context_windows):
+    def _build_concatenated_context(self, sentences, context_windows):
         """Merge all context windows into one string without duplicate sentences."""
-        if not context_windows or not text:
+        if not context_windows or not sentences:
             return ""
-
-        sentences = self._split_into_sentences(text)
 
         # Collect all (start, end) ranges from context windows
         ranges = []

@@ -35,7 +35,7 @@ class CleanTextPipeline(Config):
         """
         if "core_text" in item and isinstance(item["core_text"], str):
             # Parse HTML content into plain text
-            soup = BeautifulSoup(item["core_text"], "html.parser")
+            soup = BeautifulSoup(item["core_text"], "lxml")
 
             # Collapse tables with keyword matches before extracting text.
             # Matching rows become a single compact sentence; all other rows
