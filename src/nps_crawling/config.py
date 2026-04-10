@@ -54,7 +54,7 @@ class Config:
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    PREPROCESSING_VERSION: str = "version_1"
+    PREPROCESSING_VERSION: str = "nps_only"
     CLASSIFICATION_VERSION: str = "version_1"
 
     # Base directories
@@ -83,7 +83,7 @@ class Config:
     # When set, only filings whose db keywords list is exactly [SINGLE_KEYWORD_FILTER]
     # are preprocessed. Filings with additional keywords are skipped.
     # Set to None to disable this filter and process all filings.
-    SINGLE_KEYWORD_FILTER: str | None = None
+    SINGLE_KEYWORD_FILTER: str | None = "nps"
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
