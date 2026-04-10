@@ -80,11 +80,15 @@ class Config:
     # NPS_CLASSIFIED_JSON) are created lazily by the respective pipeline constructors.
 
     """ PREPROCESSING CONFIG """
+    # When set, only filings whose db keywords list is exactly [SINGLE_KEYWORD_FILTER]
+    # are preprocessed. Filings with additional keywords are skipped.
+    # Set to None to disable this filter and process all filings.
+    SINGLE_KEYWORD_FILTER: str | None = None
+
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
-                                                   "customer satisfaction score", "customer loyalty metric",
-                                                   "likelihood to recommend"]
+                                                   "net promoter"]
     # If any of the above keywords are found, define here the number of sentences
     # to include before and after the keyword
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2
@@ -100,15 +104,17 @@ class Config:
     # the closer this value is to 1, the closer the text meaning of the context
     # windows is to this text.
     SIMILARITY_REFERENCE_TEXT: str = (
-        "Net Promoter Score (NPS) is a customer satisfaction and loyalty metric "
-        "that measures how likely customers are to recommend a company's products "
-        "or services to others on a scale from 0 to 10. Companies report NPS scores, "
-        "track NPS improvements, and benchmark NPS against competitors."
+        "Net Promoter Score (NPS) is a key performance indicator (KPI) and customer "
+        "loyalty metric used by management to measure customer satisfaction, brand "
+        "health, and the likelihood of customers to recommend a company's products "
+        "or services. Companies track NPS scores to predict customer retention and "
+        "churn, report NPS improvements to investors as an indicator of future organic "
+        "growth, and benchmark NPS against competitors to evaluate market position."
     )
     # Define Threshold for similarity search here. Context windows that fall below
     # this value will be filtered out. This means the higher you set this value, the
     # more strict the filtering will be, and more context windows will be rejected.
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.1
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
 
     """ Classification CONFIG """
     # OLLAMA
