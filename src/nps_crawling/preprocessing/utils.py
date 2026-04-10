@@ -65,6 +65,7 @@ class PreProcessingPipeline(Config):
         total_context_windows_accepted = 0
         total_context_windows_rejected = 0
         all_similarity_scores = []
+        all_filings_averages = []
 
         for json_file in tqdm(json_files, desc="Pre-processing documents", unit="file"):
             try:
@@ -133,6 +134,9 @@ class PreProcessingPipeline(Config):
                     if "similarity_score" in ctx:
                         all_similarity_scores.append(ctx["similarity_score"])
 
+                if "filings_average" in record:
+                    all_filings_averages.append(record["filings_average"])
+
             logger.info("Processed %s (%d records) — SPLIT", json_file.name, len(records))
 
         # Write experiment summary JSON
@@ -157,6 +161,12 @@ class PreProcessingPipeline(Config):
                 "filings_rejected_partial": filings_rejected - filings_rejected_fully,
                 "context_windows_accepted": total_context_windows_accepted,
                 "context_windows_rejected": total_context_windows_rejected,
+                "lowest_similarity_context": round(min(all_similarity_scores), 4) if all_similarity_scores else None,
+                "highest_similarity_context": round(max(all_similarity_scores), 4) if all_similarity_scores else None,
+                "average_similarity_context": round(sum(all_similarity_scores) / len(all_similarity_scores), 4) if all_similarity_scores else None,
+                "lowest_similarity_filing": round(min(all_filings_averages), 4) if all_filings_averages else None,
+                "highest_similarity_filing": round(max(all_filings_averages), 4) if all_filings_averages else None,
+                "average_similarity_filing": round(sum(all_filings_averages) / len(all_filings_averages), 4) if all_filings_averages else None,
             },
         }
 
