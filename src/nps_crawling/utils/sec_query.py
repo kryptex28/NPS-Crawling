@@ -45,9 +45,9 @@ class SecQuery:
     def fetch_filings(self) -> list[Filing]:
         """Starts the fetching process."""
         queries: list = self.query_multi_request()
-        filings: list[Filing] = self.create_filings(queries)
+        self.keyword_filings: list[Filing] = self.create_filings(queries)
 
-        self.keyword_filings = self.are_filings_present_in_db(filings=filings, 
+        self.keyword_filings = self.are_filings_present_in_db(filings=self.keyword_filings, 
                                                               bypass_filter=self.sec_params.force_crawl)
 
         return self.keyword_filings

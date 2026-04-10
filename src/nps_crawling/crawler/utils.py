@@ -25,7 +25,9 @@ class CrawlerPipeline(Config):
         """Initialize the CrawlerPipeline."""
         pass
 
-    def prefetch_data(self, query_path: str) -> list[Filing]:
+    def prefetch_data(self, 
+                      query_path: str,
+                      ignore_lookup: bool = False) -> list[Filing]:
         # Create search parameters based on queries
         search_parameters: list[SecSearchParams] = create_search_params_from_config(query_path)
 
@@ -44,15 +46,20 @@ class CrawlerPipeline(Config):
 
         for query in sec_queries:
             temp: list[Filing] = query.fetch_filings()
-            print(len(temp))
-            for filing in temp:
-                if filing.id in filings_dict:
-                    # Collect duplicates for analysis
-                    if filing.id not in duplicates:
-                        duplicates[filing.id] = [filings_dict[filing.id]]
-                    duplicates[filing.id].append(filing)
-                else:
-                    filings_dict[filing.id] = filing
+
+            if ignore_lookup:
+                pass
+            else:
+                temp = query.are_filings_present_in_db(filings=temp.copy())
+                print(len(temp))
+                for filing in temp:
+                    if filing.id in filings_dict:
+                        # Collect duplicates for analysis
+                        if filing.id not in duplicates:
+                            duplicates[filing.id] = [filings_dict[filing.id]]
+                        duplicates[filing.id].append(filing)
+                    else:
+                        filings_dict[filing.id] = filing
 
         filings = list(filings_dict.values())
 
@@ -61,7 +68,8 @@ class CrawlerPipeline(Config):
             
         return filings
 
-    def crawler_workflow(self):
+    def crawler_workflow(self,
+                         dry_run: bool = False):
         """Run the NPS Crawling spider with specified settings."""
         os.environ['SCRAPY_SETTINGS_MODULE'] = 'nps_crawling.crawler.settings'
 
@@ -84,29 +92,33 @@ class CrawlerPipeline(Config):
             if os.path.isfile(os.path.join(SEC_QUERY_DIR_PATH, f))
         ]
 
-        runner = CrawlerRunner(settings=settings)
+        if dry_run:
+            total_size: int = 0
+            for query_file in query_files:
+                filings = self.prefetch_data(query_path=query_file, ignore_lookup=True)
+                for filing in filings:
+                    logger.info(filing)
+                total_size += len(filings)
+            
+            logger.info(f"Total crawled filings from {len(query_files)} queries: {total_size}")
 
-        @defer.inlineCallbacks
-        def crawl_sequentially():
-            try:
-                for query_file in query_files:
-                    filings = self.prefetch_data(query_path=query_file)
-                    logger.info(f"Running spider for {query_file} with {len(filings)} filings")
-                    yield runner.crawl(BetterSpider, filings=filings)
-                    logger.info(f"Finished: {query_file}")
-            except Exception as e:
-                logger.error(f"Crawl error: {e}", exc_info=True)
-            finally:
-                reactor.stop()  # type: ignore[attr-defined]
+        else:
+            runner = CrawlerRunner(settings=settings)
 
-        crawl_sequentially()
-        reactor.run()
+            @defer.inlineCallbacks
+            def crawl_sequentially():
+                try:
+                    for query_file in query_files:
+                        filings = self.prefetch_data(query_path=query_file)
+                        logger.info(f"Running spider for {query_file} with {len(filings)} filings")
+                        yield runner.crawl(BetterSpider, filings=filings)
+                        logger.info(f"Finished: {query_file}")
+                except Exception as e:
+                    logger.error(f"Crawl error: {e}", exc_info=True)
+                finally:
+                    reactor.stop()  # type: ignore[attr-defined]
 
-        # Run spider
-        #process = CrawlerProcess(settings)
-
-        #process.crawl(BetterSpider,
-         #             filings=filings)
-        #process.start()
-
+            crawl_sequentially()
+            reactor.run()
+            
         return None
