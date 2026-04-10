@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from nps_crawling.config import Config
+from nps_crawling.db.db_adapter import DbAdapter
 
 from .cleaning import CleanTextPipeline
 from .filtering import NpsMentionFilterPipeline
@@ -45,6 +46,9 @@ class PreProcessingPipeline(Config):
         self.similarity = SimilarityPipeline()
         self.storage = SaveToJSONPipeline()
 
+        self._keyword_filter = Config.SINGLE_KEYWORD_FILTER
+        self._db = DbAdapter() if self._keyword_filter else None
+
     def pre_processing_workflow(self):
         """Run the full pre-processing workflow over all raw JSON files."""
         json_files = sorted(self.json_raw_dir.glob("*.json"))
@@ -72,6 +76,23 @@ class PreProcessingPipeline(Config):
 
             if not records:
                 continue
+
+            # Skip filings that don't match the single-keyword filter
+            if self._keyword_filter and self._db:
+                filing_id = records[0].get("metadata", {}).get("filing", {}).get("id")
+                if not filing_id:
+                    logger.warning("No filing id in %s — skipping", json_file.name)
+                    continue
+                raw_keywords = self._db.return_keywords(filing_id)
+                # Strip literal double (and single) quotes from each keyword
+                cleaned_keywords = [k.strip("\"'") for k in raw_keywords]
+                
+                if cleaned_keywords != [self._keyword_filter]:
+                    logger.debug(
+                        "Skipping %s — keywords %s don't match single-keyword filter '%s'",
+                        json_file.name, cleaned_keywords, self._keyword_filter,
+                    )
+                    continue
 
             records = self.cleaner.cleaning_workflow(records)
             records = self.filter.filtering_workflow(records)
@@ -124,6 +145,7 @@ class PreProcessingPipeline(Config):
                 "embedding_model": Config.SIMILARITY_EMBEDDING_MODEL,
                 "similarity_reference_text": Config.SIMILARITY_REFERENCE_TEXT,
                 "similarity_threshold": Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW,
+                "single_keyword_filter": Config.SINGLE_KEYWORD_FILTER,
             },
             "processed_filings": {
                 "filings_processed_total": filings_total,
