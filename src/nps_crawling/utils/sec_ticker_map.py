@@ -1,5 +1,7 @@
-import requests
 import re
+
+import requests
+
 
 class SecTickerMap:
     _instance = None
@@ -13,11 +15,11 @@ class SecTickerMap:
 
     def _load(self):
         headers = {
-            "User-Agent": "your-app-name contact@youremail.com"
+            "User-Agent": "your-app-name contact@youremail.com",
         }
         response = requests.get(
             "https://www.sec.gov/files/company_tickers.json",
-            headers=headers
+            headers=headers,
         )
         response.raise_for_status()
         self._data = {

@@ -47,11 +47,11 @@ class SecQuery:
         queries: list = self.query_multi_request()
         self.keyword_filings: list[Filing] = self.create_filings(queries)
 
-        self.keyword_filings = self.are_filings_present_in_db(filings=self.keyword_filings, 
+        self.keyword_filings = self.are_filings_present_in_db(filings=self.keyword_filings,
                                                               bypass_filter=self.sec_params.force_crawl)
 
         return self.keyword_filings
-    
+
     def are_filings_present_in_db(self, filings: list[Filing], bypass_filter: bool = False) -> list[Filing]:
         temp: list[Filing] = []
         try:
@@ -74,7 +74,7 @@ class SecQuery:
             new_length: int = len(filings)
             logger.info(f"\n\tNew size: {new_length} {'-' * 3} Old size: {old_length}")
             return temp
-        
+
         except ModuleNotFoundError as e:
             logger.warning(f"ModuleNotFoundError: {e}")
             return filings
@@ -120,7 +120,7 @@ class SecQuery:
             # Give info about retries
             if retries > 0:
                 logger.info(f"Filings took {retries} to get processed.")
-            
+
             retries = 0
             query = len(hits)
 
