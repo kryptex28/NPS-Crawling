@@ -1,9 +1,9 @@
 """Sample context windows per 0.1 similarity bucket and export to Excel.
 
-For each experiment folder in ``data/json_processed/``, reads the preprocessing
-summary to derive the similarity range, builds 0.1-wide buckets, picks up to 2
-context windows per bucket, and writes one Excel file per experiment into
-``scripts/context_windows_similarity/``.
+For each experiment folder, reads context windows from both
+``data/json_processed/`` and ``data/json_rejected/``, builds 0.1-wide buckets
+covering the full similarity range, picks up to 2 context windows per bucket,
+and writes one combined Excel file into ``scripts/context_windows_similarity/``.
 """
 
 import json
@@ -15,9 +15,10 @@ from openpyxl import Workbook
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = REPO_ROOT / "data" / "json_processed"
+REJECTED_DIR = REPO_ROOT / "data" / "json_rejected"
 OUTPUT_DIR = Path(__file__).resolve().parent / "context_windows_similarity"
 
-SAMPLES_PER_BUCKET = 2
+SAMPLES_PER_BUCKET = 5
 
 
 def _load_summary(experiment_dir: Path) -> dict | None:
@@ -29,9 +30,9 @@ def _load_summary(experiment_dir: Path) -> dict | None:
         return json.load(f)
 
 
-def _collect_context_windows(experiment_dir: Path) -> list[dict]:
+def _collect_context_windows(data_dir: Path) -> list[dict]:
     """Return a flat list of {context, similarity_score} from all filing files."""
-    files_dir = experiment_dir / "files"
+    files_dir = data_dir / "files"
     if not files_dir.is_dir():
         return []
 
@@ -46,6 +47,7 @@ def _collect_context_windows(experiment_dir: Path) -> list[dict]:
                         {
                             "context": ctx["context"],
                             "similarity_score": ctx["similarity_score"],
+                            "matched_phrase": ctx.get("matched_phrase", ""),
                         }
                     )
     return windows
@@ -78,9 +80,9 @@ def _sample_windows(
         for w in chosen:
             samples.append(
                 {
-                    "bucket": f"{low:.1f}-{high:.1f}",
                     "context": w["context"],
                     "similarity_score": w["similarity_score"],
+                    "matched_phrase": w["matched_phrase"],
                 }
             )
     return samples
@@ -94,9 +96,9 @@ def _write_excel(
     wb = Workbook()
     ws = wb.active
     ws.title = "Context Window Samples"
-    ws.append(["experiment", "context", "similarity_score"])
+    ws.append(["crawler_keyword", "context", "similarity_score", "matched_phrase"])
     for row in rows:
-        ws.append([experiment_name, row["context"], row["similarity_score"]])
+        ws.append([experiment_name, row["context"], row["similarity_score"], row["matched_phrase"]])
     path = output_dir / f"{experiment_name}.xlsx"
     wb.save(path)
     return path
@@ -119,15 +121,22 @@ def main():
             print(f"  No preprocessing summary found — skipping")
             continue
 
-        pf = summary.get("processed_filings", {})
-        low = pf.get("lowest_similarity_context")
-        high = pf.get("highest_similarity_context")
-        if low is None or high is None:
-            print(f"  Missing similarity bounds in summary — skipping")
+        # Collect windows from both processed and rejected directories
+        processed_windows = _collect_context_windows(experiment_dir)
+        rejected_dir = REJECTED_DIR / experiment_name
+        rejected_windows = _collect_context_windows(rejected_dir) if rejected_dir.is_dir() else []
+        windows = processed_windows + rejected_windows
+        print(f"  Found {len(processed_windows)} accepted + {len(rejected_windows)} rejected = {len(windows)} total context windows")
+
+        if not windows:
+            print("  No context windows found — skipping")
             continue
 
-        windows = _collect_context_windows(experiment_dir)
-        print(f"  Found {len(windows)} context windows (range {low}–{high})")
+        # Derive similarity range from the actual data
+        scores = [w["similarity_score"] for w in windows]
+        low = min(scores)
+        high = max(scores)
+        print(f"  Similarity range: {low:.4f} – {high:.4f}")
 
         buckets = _build_buckets(low, high)
         print(f"  Buckets: {[f'{lo:.1f}-{hi:.1f}' for lo, hi in buckets]}")
