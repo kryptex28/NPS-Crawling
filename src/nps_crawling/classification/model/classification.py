@@ -34,7 +34,7 @@ class ClassificationModelPipeline(Config):
                 done += 1
                 print(f"{source_filename}: {done}/{total_windows}")
 
-        out_path = self.NPS_CLASSIFIED_JSON / f"{source_filename}.json"
+        out_path = self.NPS_CLASSIFIED_JSON / "files" / f"{source_filename}.json"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
 

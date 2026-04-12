@@ -5,24 +5,32 @@ from pathlib import Path
 from nps_crawling.db.db_adapter import DbAdapter
 
 
-def main():
+def main() -> None:
+    """
+    Reads all raw JSON files from the data/json_raw directory and inserts them into the database.
+    If a filing already exists, only the new keyword is added to the existing record.
+    """
     try:
         db = DbAdapter()
     except Exception as e:
         print(f"Failed to initialize database connection: {e}")
         return
 
-    # Using the current working directory, adjusting for the project folder structure
-    # Based on Config.RAW_JSON_PATH_CRAWLER which is data/json_raw
-    json_dir = Path.cwd() / "data" / "json_raw"
+    from nps_crawling.config import Config
+    json_dir = Config.RAW_JSON_PATH_CRAWLER / "files"
 
     if not json_dir.exists():
         print(f"Directory {json_dir} does not exist. Please check the path.")
         return
 
     # Process all JSON files
-    inserted_count = 0
+    added_count = 0
+    skipped_count = 0
+    files_processed = 0
+    keywords_processed = set()
+
     for json_file in json_dir.glob("*.json"):
+        files_processed += 1
         print(f"Processing {json_file.name}...")
 
         try:
@@ -34,10 +42,20 @@ def main():
 
                     filing = metadata.get("filing", {})
                     keyword = metadata.get("keyword")
+                    url = record.get("url")
+
+                    if keyword:
+                        keywords_processed.add(keyword)
 
                     filing_id = filing.get("id")
                     if not filing_id:
                         print("Skipping record with no id")
+                        continue
+
+                    if db.filing_exists(filing_id):
+                        if keyword:
+                            db.add_keyword(filing_id, keyword)
+                        skipped_count += 1
                         continue
 
                     # Store keywords in an array
@@ -48,8 +66,9 @@ def main():
 
                     # Call adapter add_filing with data mapped from the JSON and None/False for new fields automatically
                     db.add_filing(
-                        id=filing_id,
+                        filing_id=filing_id,
                         ciks=filing.get("ciks", []),
+                        ticker=filing.get("ticker", []),
                         period_ending=filing.get("period_ending"),
                         display_names=filing.get("display_names", []),
                         root_forms=filing.get("root_forms", []),
@@ -61,37 +80,19 @@ def main():
                         film_num=filing.get("film_num", []),
                         keywords=keywords,
                         blacklisted=False,
-                        nps_relevant=False,  # Now defaults to False initially
+                        nps_relevant=None,  # Now defaults to None initially
                         path_to_raw=str(json_file.absolute()),
-
-                        # New NPS fields set to default values explicitly
-                        nps_competition_industry=False,
-                        nps_value_over=False,
-                        nps_value_below=False,
-                        nps_goal_value=None,
-                        nps_goal_reached=False,
-                        KPI_CURRENT_VALUE=False,
-                        KPI_HISTORICAL_COMPARISON=False,
-                        BENCHMARK_COMPARISON=False,
-                        CUSTOMER_CASE_EVIDENCE=False,
-                        METHODOLOGY_DEFINITION=False,
-                        MGMT_COMPENSATION_GOVERNANCE=False,
-                        QUALITATIVE_ONLY=False,
-                        TARGET_OUTLOOK=False,
-                        NPS_SERVICE_PROVIDER=False,
-                        OTHER=False,
-                        has_numeric_nps=False,
-                        nps_value_fix=None,
-                        nps_trend_sentiment=None,
-                        nps_scope=None,
-                        nps_formal_role=None,
+                        url=url,
                     )
-                    inserted_count += 1
+                    added_count += 1
 
         except Exception as e:
             print(f"Error processing {json_file.name}: {e}")
 
-    print(f"Total records processed and inserted/updated: {inserted_count}")
+    print("\n--- Ingestion Summary ---")
+    print(f"Newly added filings: {added_count}")
+    print(f"Already existing (skipped/updated): {skipped_count}")
+    print(f"Total processed: {added_count + skipped_count}")
 
 
 if __name__ == "__main__":

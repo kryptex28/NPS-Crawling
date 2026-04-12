@@ -1,13 +1,20 @@
 """Utility functions for the NPS Crawling spider."""
+from scrapy.utils.reactor import install_reactor
+install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
 
 import logging
 import os
 
 from scrapy.crawler import CrawlerProcess
+from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
+from twisted.internet import defer, reactor
 
 from nps_crawling.config import Config
 from nps_crawling.crawler.spiders.better_spider import BetterSpider
+from nps_crawling.utils.filings import Filing
+from nps_crawling.utils.sec_params import SecSearchParams, create_search_params_from_config
+from nps_crawling.utils.sec_query import SecQuery
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +24,42 @@ class CrawlerPipeline(Config):
     def __init__(self):
         """Initialize the CrawlerPipeline."""
         pass
+
+    def prefetch_data(self, query_path: str) -> list[Filing]:
+        # Create search parameters based on queries
+        search_parameters: list[SecSearchParams] = create_search_params_from_config(query_path)
+
+        # Create queries
+        sec_queries: list[SecQuery] = []
+        for parameter in search_parameters:
+            if parameter.filing_limit == -1:
+                parameter.filing_limit = get_project_settings()["SEC_QUERY_LIMIT_COUNT"]
+
+            query: SecQuery = SecQuery(sec_params=parameter)
+            sec_queries.append(query)
+
+        # Fetch all filings per query
+        filings_dict: dict[str, Filing] = {}
+        duplicates: dict[str, list[Filing]] = {}
+
+        for query in sec_queries:
+            temp: list[Filing] = query.fetch_filings()
+            print(len(temp))
+            for filing in temp:
+                if filing.id in filings_dict:
+                    # Collect duplicates for analysis
+                    if filing.id not in duplicates:
+                        duplicates[filing.id] = [filings_dict[filing.id]]
+                    duplicates[filing.id].append(filing)
+                else:
+                    filings_dict[filing.id] = filing
+
+        filings = list(filings_dict.values())
+
+        for _id, dupes in duplicates.items():
+            logger.info(f"Found for ID {_id} {len(dupes)} duplicates.")
+            
+        return filings
 
     def crawler_workflow(self):
         """Run the NPS Crawling spider with specified settings."""
@@ -30,97 +73,40 @@ class CrawlerPipeline(Config):
         for name, value in settings.items():
             print(f"{name}: {value}")
         print("=== End of Settings ===\n")
+                
+        # TODO: Abstract logic
+        PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        SEC_QUERY_DIR_PATH = os.path.join(PROJECT_ROOT, 'queries')
+
+        query_files = [
+            os.path.join(SEC_QUERY_DIR_PATH, f)
+            for f in os.listdir(SEC_QUERY_DIR_PATH)
+            if os.path.isfile(os.path.join(SEC_QUERY_DIR_PATH, f))
+        ]
+
+        runner = CrawlerRunner(settings=settings)
+
+        @defer.inlineCallbacks
+        def crawl_sequentially():
+            try:
+                for query_file in query_files:
+                    filings = self.prefetch_data(query_path=query_file)
+                    logger.info(f"Running spider for {query_file} with {len(filings)} filings")
+                    yield runner.crawl(BetterSpider, filings=filings)
+                    logger.info(f"Finished: {query_file}")
+            except Exception as e:
+                logger.error(f"Crawl error: {e}", exc_info=True)
+            finally:
+                reactor.stop()  # type: ignore[attr-defined]
+
+        crawl_sequentially()
+        reactor.run()
 
         # Run spider
-        process = CrawlerProcess(settings)
+        #process = CrawlerProcess(settings)
 
-        # ============================================
-        # OPTION 1: Crawl ALL companies (SLOW!)
-        # ============================================
-        # WARNING: This will take DAYS and download GIGABYTES of data
-        # Uncomment to use:
-        """
-        process.crawl(
-            SECNpsSpider,
-            crawler_name='sec_nps_all_companies',
-            form_types=["S-1", "S-1/A", "DEF 14A", "424B4"],
-            keywords=[
-                "net promoter score",
-                "nps score",
-                "nps of",
-                "customer satisfaction score",
-            ],
-            context_window=500,
-            use_all_companies=True,  # Crawl everything!
-            max_companies=100,  # Limit to first 100 companies for testing
-            allowed_domains=["sec.gov"],
-            output_format='json',
-            output_path='./data',
-        )
-        """
-
-        # ============================================
-        # OPTION 2: Crawl specific tickers
-        # ============================================
-        # This is more practical - specify companies you're interested in
-        """
-        process.crawl(
-            SECNpsSpider,
-            crawler_name='sec_nps_specific',
-            form_types=["S-1", "S-1/A", "DEF 14A", "424B4", "10-K"],
-            keywords=[
-                "net promoter score",
-                "nps score",
-                "nps of",
-                "customer satisfaction score",
-                "customer loyalty metric",
-                "likelihood to recommend",
-            ],
-            context_window=500,
-            ticker_list=[
-                "crm",      # Salesforce
-                "snow",     # Snowflake
-                "hubs",     # HubSpot
-                "zm",       # Zoom
-                "now",      # ServiceNow
-                "team",     # Atlassian
-                "twlo",     # Twilio
-                "ddog",     # Datadog
-                "okta",     # Okta
-                "zs",       # Zscaler
-                "docu",     # DocuSign
-                "wday",     # Workday
-                "crwd",     # CrowdStrike
-                "net",      # Cloudflare
-                "s",        # SentinelOne
-            ],
-            allowed_domains=["sec.gov"],
-            output_format='json',
-            output_path='./data',
-        )
-        """
-        # ============================================
-        # OPTION 3: Crawl specific CIKs (if you already know them)
-        # ============================================
-        """
-        process.crawl(
-            SECNpsSpider,
-            crawler_name='sec_nps_ciks',
-            form_types=["S-1", "S-1/A", "DEF 14A"],
-            keywords=["net promoter score", "nps score"],
-            context_window=500,
-            cik_list=[
-                "0001467623",  # Salesforce
-                "0001534675",  # HubSpot
-                "0001588717",  # Zoom
-            ],
-            allowed_domains=["sec.gov"],
-            output_format='json',
-            output_path='./data',
-        )
-        """
-
-        process.crawl(BetterSpider)
-        process.start()
+        #process.crawl(BetterSpider,
+         #             filings=filings)
+        #process.start()
 
         return None

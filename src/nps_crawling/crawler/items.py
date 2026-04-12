@@ -10,3 +10,4 @@ class FilingItem(scrapy.Item):
     filing: Filing = scrapy.Field()
     core_text: str = scrapy.Field()
     keyword: str = scrapy.Field()
+    url: str = scrapy.Field()

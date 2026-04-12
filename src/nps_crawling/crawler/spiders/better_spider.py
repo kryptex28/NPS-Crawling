@@ -7,19 +7,28 @@ import scrapy
 from scrapy.utils.project import get_project_settings
 
 from nps_crawling.crawler.items import FilingItem
+from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.filings import Filing
-from nps_crawling.utils.sec_params import create_params_from_config
-from nps_crawling.utils.sec_query import SecParams, SecQuery
+from nps_crawling.utils.sec_params import create_search_params_from_config
+from nps_crawling.utils.sec_query import SecQuery, SecSearchParams
 
 
 class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
     name = 'better_spider'
 
-    def __init__(self):
+    def __init__(self,
+                 filings: list[Filing] = [],
+                 *args,
+                 **kwargs):
         """Initializes spider."""
-        super(BetterSpider, self).__init__()
+
+        super().__init__(*args, **kwargs)
+
         self.logger.info("Initializes spider.")
+
+        self.filings: list[Filing] = filings
+
         # 'Hotkey' map for specific file types
         self.function_map: dict = {
             'pdf': self.extract_pdf_content,
@@ -33,42 +42,24 @@ class BetterSpider(scrapy.Spider):
         """Starts scrapy spider."""
         self.logger.info("Starting scrapy spider.")
 
-        settings = get_project_settings()
-        sec_query_limit_count: int = settings.get('SEC_QUERY_LIMIT_COUNT')
-        query_file_path = settings.get('SEC_QUERY_FILE_PATH')
-
-        # Create a list of parameters for all defined keywords in the config file
-        sec_params: list[SecParams] = create_params_from_config(query_file_path)
-
-        # Create a list of query to fetch all related documents
-        sec_queries: list[SecQuery] = []
-        for sec_param in sec_params:
-            query: SecQuery = SecQuery(sec_params=sec_param, limit=sec_query_limit_count)
-            sec_queries.append(query)
-
-        # Fetch now all documents per query
-        for sec_query in sec_queries:
-            sec_query.fetch_filings()
-
-        # Iterate through all filings
-        for sec_query in sec_queries:
-            for i, filing in enumerate(sec_query.keyword_filings):
-                self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
-                url: str = filing.get_url()[0]
-                yield scrapy.Request(
-                    url=url,
-                    callback=self.parse,
-                    meta={'filing': filing,
-                          'keyword': sec_query.sec_params.keyword,
-                          },
-                    dont_filter=True
-                )
+        for i, filing in enumerate(self.filings):
+            self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
+            url: str = filing.get_url()[0]
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse,
+                meta={'filing': filing,
+                      'url': url,
+                      },
+                dont_filter=True,
+            )
 
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""
         self.logger.info(f"Parsing {response.url}")
         filing: Filing = response.meta['filing']
-        keyword: str = response.meta['keyword']
+        keyword: str = filing.keyword
+        url: str = response.meta['url']
 
         # Extract text from response content
         text: str = self.function_map[filing.file_container_type](response)
@@ -77,6 +68,7 @@ class BetterSpider(scrapy.Spider):
         item['filing'] = filing
         item['core_text'] = text
         item['keyword'] = keyword
+        item['url'] = url
 
         # Dispatch into pipeline
         yield item

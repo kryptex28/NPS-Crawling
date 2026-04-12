@@ -1,4 +1,5 @@
 """Filings and type abstraction module with utility functions."""
+import os
 from enum import Enum
 from typing import Optional
 
@@ -10,6 +11,7 @@ class Filing:
                  _id: str,
                  _index: str,
                  ciks: list[str],
+                 ticker: list[str],
                  period_ending: str,
                  file_num: list[str],
                  display_names: list[str],
@@ -26,12 +28,14 @@ class Filing:
                  file_type: str,
                  file_description: str,
                  inc_states: list[str],
-                 file_path_name: str):
+                 file_path_name: str,
+                 keyword: str):
         """Initialize the filing."""
         self.id: str = _id
         self._index: str = _index
 
         self.ciks: list[str] = ciks
+        self.ticker: list[str] = ticker
         self.period_ending: str = period_ending
         self.file_num: list[str] = file_num
         self.display_names: list[str] = display_names
@@ -49,9 +53,10 @@ class Filing:
         self.file_description: str = file_description
         self.inc_states: list[str] = inc_states
         self.file_path_name: str = file_path_name
+        self.keyword: str = keyword
 
         # Store file type of the document (htm, pdf, ...)
-        self.file_container_type: str = self.file_path_name.split('.')[1]
+        self.file_container_type: str = os.path.splitext(self.file_path_name)[1].lstrip('.')
 
     def get_url(self) -> list:
         """Returns a query list of the filing with all CIKS."""
@@ -60,6 +65,9 @@ class Filing:
             urls.append(f'https://sec.gov/Archives/edgar/data/{cik}/{self.adsh.replace("-", "")}/{self.file_path_name}')
 
         return urls
+
+    def get_id(self) -> str:
+        return self.id
 
 
 class FilingDateRange(Enum):

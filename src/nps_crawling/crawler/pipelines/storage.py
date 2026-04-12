@@ -17,9 +17,16 @@ class SaveToJSONPipeline(Config):
 
     def __init__(self):
         """Initialize pipeline state."""
-        self.json_root = Config.RAW_JSON_PATH_CRAWLER
+        self.json_root = Config.RAW_JSON_PATH_CRAWLER / "files"
         self.records = []
         self.flush_every = 1
+
+        self.stats = {
+            "total_items_crawled": 0,
+            "new_records_added_to_db": 0,
+            "existing_records_updated": 0,
+            "keywords_found": set(),
+        }
 
         # Initialize the database adapter for real-time upserts
         try:
@@ -34,6 +41,7 @@ class SaveToJSONPipeline(Config):
     def open_spider(self, spider):
         """Reset the in-memory buffer when the spider starts."""
         self.records = []
+        self.start_timestamp = datetime.now()
 
     def _to_serializable(self, val):
         """Recursively convert a value to a JSON-serializable type."""
@@ -53,6 +61,7 @@ class SaveToJSONPipeline(Config):
         """Buffer a single scraped item, store in DB immediately, and flush buffer when full."""
         record = dict(item)
 
+        url = self._to_serializable(record.pop("url"))
         core_text = self._to_serializable(record.pop("core_text", None))
         metadata = {k: self._to_serializable(v) for k, v in record.items()}
 
@@ -64,55 +73,45 @@ class SaveToJSONPipeline(Config):
             filing_id = filing.get("id")
 
             if filing_id:
-                keywords_list = [keyword] if keyword else []
-                # path_to_raw will be set later during the flush, so we set it to None initially
+                self.stats["total_items_crawled"] += 1
+                if keyword:
+                    self.stats["keywords_found"].add(keyword)
 
-                try:
-                    self.db.add_filing(
-                        filing_id=filing_id,
-                        ciks=filing.get("ciks", []),
-                        period_ending=filing.get("period_ending"),
-                        display_names=filing.get("display_names", []),
-                        root_forms=filing.get("root_forms", []),
-                        file_date=filing.get("file_date"),
-                        form=filing.get("form"),
-                        adsh=filing.get("adsh"),
-                        file_type=filing.get("file_type"),
-                        file_description=filing.get("file_description"),
-                        film_num=filing.get("film_num", []),
-                        keywords=keywords_list,
-                        blacklisted=False,
-                        nps_relevant=False,
-                        path_to_raw=None,  # Will be set once batched to disk
+                if self.db.filing_exists(filing_id):
+                    self.stats["existing_records_updated"] += 1
+                    if keyword:
+                        self.db.add_keyword(filing_id, keyword)
+                else:
+                    self.stats["new_records_added_to_db"] += 1
+                    keywords_list = [keyword] if keyword else []
+                    # path_to_raw will be set later during the flush, so we set it to None initially
 
-                        # New NPS fields
-                        nps_competition_industry=False,
-                        nps_value_over=False,
-                        nps_value_below=False,
-                        nps_goal_value=None,
-                        nps_goal_reached=False,
-                        KPI_CURRENT_VALUE=None,
-                        KPI_HISTORICAL_COMPARISON=False,
-                        BENCHMARK_COMPARISON=False,
-                        CUSTOMER_CASE_EVIDENCE=False,
-                        METHODOLOGY_DEFINITION=False,
-                        MGMT_COMPENSATION_GOVERNANCE=False,
-                        QUALITATIVE_ONLY=False,
-                        TARGET_OUTLOOK=False,
-                        NPS_SERVICE_PROVIDER=False,
-                        OTHER=False,
-                        has_numeric_nps=False,
-                        nps_value_fix=None,
-                        nps_trend_sentiment=None,
-                        nps_scope=None,
-                        nps_formal_role=None,
-                    )
-                except Exception as e:
-                    # Log silently or configure scrapy logger and skip
-                    pass
+                    try:
+                        self.db.add_filing(
+                            filing_id=filing_id,
+                            ciks=filing.get("ciks", []),
+                            ticker=filing.get("ticker", []),
+                            period_ending=filing.get("period_ending"),
+                            display_names=filing.get("display_names", []),
+                            root_forms=filing.get("root_forms", []),
+                            file_date=filing.get("file_date"),
+                            form=filing.get("form"),
+                            adsh=filing.get("adsh"),
+                            file_type=filing.get("file_type"),
+                            file_description=filing.get("file_description"),
+                            film_num=filing.get("film_num", []),
+                            keywords=keywords_list,
+                            blacklisted=False,
+                            nps_relevant=None,
+                            path_to_raw=None,  # Will be set once batched to disk
+                            url=url,
+                        )
+                    except Exception as e:
+                        # Log silently or configure scrapy logger and skip
+                        pass
 
         # 2. Add to Memory buffer for JSON export
-        self.records.append({"metadata": metadata, "core_text": core_text})
+        self.records.append({"metadata": metadata, "core_text": core_text, "url": url})
 
         if len(self.records) >= self.flush_every:
             self._flush_buffer()
@@ -123,12 +122,69 @@ class SaveToJSONPipeline(Config):
         if self.records:
             self._flush_buffer()
 
+        end_timestamp = datetime.now()
+        duration = end_timestamp - getattr(self, "start_timestamp", end_timestamp)
+        tot_sec = int(duration.total_seconds())
+        hrs, rem = divmod(tot_sec, 3600)
+        mins, secs = divmod(rem, 60)
+        fmt_duration = f"{hrs:02d}h {mins:02d}m {secs:02d}s"
+
+        # Generate and save crawl report
+        report_dir = Config.RAW_JSON_PATH_CRAWLER / "crawl_reports"
+        report_dir.mkdir(parents=True, exist_ok=True)
+
+        ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        report_path = report_dir / f"crawl_report_{ts}.json"
+
+        # Read query.json content
+        query_json_path = Config.ROOT_DIR / "src" / "nps_crawling" / "queries" / "query.json"
+        query_content = {}
+        if query_json_path.exists():
+            try:
+                with open(query_json_path, "r", encoding="utf-8") as qf:
+                    query_content = json.load(qf)
+            except Exception as e:
+                pass
+
+        import nps_crawling.crawler.settings as crawler_settings
+        custom_settings = {
+            k: getattr(crawler_settings, k)
+            for k in dir(crawler_settings)
+            if k.isupper()
+        }
+
+        report_data = {
+            "query": query_content,
+            "crawler_settings": self._to_serializable(custom_settings),
+            "statistics": {
+                "total_items_crawled": self.stats["total_items_crawled"],
+                "new_records_added_to_db": self.stats["new_records_added_to_db"],
+                "existing_records_updated": self.stats["existing_records_updated"],
+                "unique_keywords_found": list(self.stats["keywords_found"]),
+                "crawl_duration": fmt_duration,
+            },
+        }
+
+        with open(report_path, "w", encoding="utf-8") as f:
+            json.dump(report_data, f, indent=4, ensure_ascii=False)
+
     def _flush_buffer(self):
         if not self.records:
             return
 
         ts = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
-        fname = f"chunk_{ts}_{uuid4().hex}.json"
+
+        # Extract filing_id from the single record (flush_every = 1)
+        filing_id = (
+            self.records[0]
+            .get("metadata", {})
+            .get("filing", {})
+            .get("id", uuid4().hex)  # fallback if missing
+        )
+        # Windows erlaubt keine : * ? " < > | / \ in Dateinamen.
+        # SEC filing IDs enthalten oft ":" als Trenner (z.B. "0001234-23-007377:doc.htm")
+        safe_id = str(filing_id).translate(str.maketrans(':*?"<>|/\\', '_________'))
+        fname = f"{safe_id}.json"
 
         # Save raw json to file
         saved_path = self.json_root / fname
@@ -145,7 +201,9 @@ class SaveToJSONPipeline(Config):
                 if filing_id:
                     try:
                         self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))
-                    except Exception:
+                        print(f"{filing_id} updated")
+                    except Exception as e:
+                        print(e)
                         pass
 
         self.records = []

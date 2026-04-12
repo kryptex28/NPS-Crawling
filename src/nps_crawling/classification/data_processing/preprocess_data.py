@@ -9,8 +9,8 @@ from nps_crawling.config import Config
 class ClassificationDataProcessing(Config):
     """Data processing class for classification tasks."""
     def __init__(self):
-        """Initialize with path to json_processed/."""
-        self.json_processed_root = Config.NPS_CONTEXT_JSON_PATH
+        """Initialize with path to json_processed/files."""
+        self.json_processed_root = Config.NPS_CONTEXT_JSON_PATH / "files"
 
     def _parse_display_name(self, display_names):
         """Extract company name and ticker from a display_names list.

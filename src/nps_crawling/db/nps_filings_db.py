@@ -6,18 +6,21 @@ from typing import Any, Literal
 
 from sqlalchemy import Engine, text
 
+from nps_crawling.config import Config
+
 
 class NpsFilingsDB:
     """Database access layer for NPS filings."""
     # Name of the target PostgreSQL table.
-    TABLE = "nps_filings"
+    TABLE = Config.DATABASE_TABLE_NAME
 
     # Columns stored as PostgreSQL text arrays (TEXT[]).
-    _ARRAY_COLS = {"ciks", "display_names", "root_forms", "film_num", "keywords"}
+    _ARRAY_COLS = {"ciks", "ticker", "display_names", "root_forms", "film_num", "keywords"}
 
     # Columns that are allowed to be updated via update_fields().
     _UPDATABLE_COLS = {
         "ciks",
+        "ticker",
         "period_ending",
         "display_names",
         "root_forms",
@@ -34,30 +37,10 @@ class NpsFilingsDB:
         "path_to_raw",
         "path_to_preprocessed",
         "path_to_classified",
-        # New NPS Fields
-        "nps_competition_industry",
-        "nps_value_over",
-        "nps_value_below",
-        "nps_goal_value",
-        "nps_goal_reached",
-        "KPI_CURRENT_VALUE",
-        "KPI_HISTORICAL_COMPARISON",
-        "BENCHMARK_COMPARISON",
-        "CUSTOMER_CASE_EVIDENCE",
-        "METHODOLOGY_DEFINITION",
-        "MGMT_COMPENSATION_GOVERNANCE",
-        "QUALITATIVE_ONLY",
-        "TARGET_OUTLOOK",
-        "NPS_SERVICE_PROVIDER",
-        "OTHER",
-        "has_numeric_nps",
-        "nps_value_fix",
-        "nps_trend_sentiment",
-        "nps_scope",
-        "nps_formal_role",
+        "url",
     }
 
-    def __init__(self, engine: Engine):
+    def __init__(self, engine: Engine) -> None:
         """Initialize NpsFilingsDB with a SQLAlchemy Engine."""
         # Store the SQLAlchemy Engine used for all DB operations.
         self.engine = engine
@@ -67,6 +50,7 @@ class NpsFilingsDB:
         id: str,
         *,
         ciks: list[str] | None = None,
+        ticker: list[str] | None = None,
         period_ending=None,  # datetime.date | None
         display_names: list[str] | None = None,
         root_forms: list[str] | None = None,
@@ -78,48 +62,24 @@ class NpsFilingsDB:
         film_num: list[str] | None = None,
         keywords: list[str] | None = None,
         blacklisted: bool = False,
-        nps_relevant: bool = False,
+        nps_relevant: bool | None = None,
         meta: dict[str, Any] | None = None,
         path_to_raw: str | None = None,
         path_to_preprocessed: str | None = None,
         path_to_classified: str | None = None,
-        # New NPS Fields
-        nps_competition_industry: bool | None = None,
-        nps_value_over: bool | None = None,
-        nps_value_below: bool | None = None,
-        nps_goal_value: float | None = None,
-        nps_goal_reached: bool | None = None,
-        KPI_CURRENT_VALUE: bool | None = None,
-        KPI_HISTORICAL_COMPARISON: bool | None = None,
-        BENCHMARK_COMPARISON: bool | None = None,
-        CUSTOMER_CASE_EVIDENCE: bool | None = None,
-        METHODOLOGY_DEFINITION: bool | None = None,
-        MGMT_COMPENSATION_GOVERNANCE: bool | None = None,
-        QUALITATIVE_ONLY: bool | None = None,
-        TARGET_OUTLOOK: bool | None = None,
-        NPS_SERVICE_PROVIDER: bool | None = None,
-        OTHER: bool | None = None,
-        has_numeric_nps: bool | None = None,
-        nps_value_fix: float | None = None,
-        nps_trend_sentiment: str | None = None,
-        nps_scope: str | None = None,
-        nps_formal_role: str | None = None,
+        url: str | None = None,
     ) -> None:
 
         stmt = text(f"""
         INSERT INTO {self.TABLE} (
-          id, ciks, period_ending, display_names, root_forms, file_date, form, adsh,
+          id, ciks, ticker, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
-          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified,
-          nps_competition_industry, nps_value_over, nps_value_below, nps_goal_value, nps_goal_reached,
-          "KPI_CURRENT_VALUE", "KPI_HISTORICAL_COMPARISON", "BENCHMARK_COMPARISON",
-          "CUSTOMER_CASE_EVIDENCE", "METHODOLOGY_DEFINITION", "MGMT_COMPENSATION_GOVERNANCE",
-          "QUALITATIVE_ONLY", "TARGET_OUTLOOK", "NPS_SERVICE_PROVIDER", "OTHER",
-          has_numeric_nps, nps_value_fix, nps_trend_sentiment, nps_scope, nps_formal_role
+          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url
         )
         VALUES (
           :id,
           COALESCE(CAST(:ciks AS text[]), CAST(ARRAY[] AS text[])),
+          COALESCE(CAST(:ticker AS text[]), CAST(ARRAY[] AS text[])),
           :period_ending,
           COALESCE(CAST(:display_names AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:root_forms AS text[]), CAST(ARRAY[] AS text[])),
@@ -128,12 +88,7 @@ class NpsFilingsDB:
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
           :blacklisted, :nps_relevant,
-          :path_to_raw, :path_to_preprocessed, :path_to_classified,
-          :nps_competition_industry, :nps_value_over, :nps_value_below, :nps_goal_value, :nps_goal_reached,
-          :KPI_CURRENT_VALUE, :KPI_HISTORICAL_COMPARISON, :BENCHMARK_COMPARISON,
-          :CUSTOMER_CASE_EVIDENCE, :METHODOLOGY_DEFINITION, :MGMT_COMPENSATION_GOVERNANCE,
-          :QUALITATIVE_ONLY, :TARGET_OUTLOOK, :NPS_SERVICE_PROVIDER, :OTHER,
-          :has_numeric_nps, :nps_value_fix, :nps_trend_sentiment, :nps_scope, :nps_formal_role
+          :path_to_raw, :path_to_preprocessed, :path_to_classified, :url
         )
         ON CONFLICT (id) DO UPDATE
         SET
@@ -141,15 +96,19 @@ class NpsFilingsDB:
           last_crawled     = now(),
           -- "Sticky" booleans: once TRUE, remain TRUE.
           blacklisted      = {self.TABLE}.blacklisted OR EXCLUDED.blacklisted,
-          nps_relevant     = {self.TABLE}.nps_relevant OR EXCLUDED.nps_relevant,
+          
+          -- nps_relevant is no longer sticky
+          nps_relevant     = COALESCE(EXCLUDED.nps_relevant, {self.TABLE}.nps_relevant),
 
           -- Only overwrite paths when a new non-NULL value is provided.
           path_to_raw              = COALESCE(EXCLUDED.path_to_raw, {self.TABLE}.path_to_raw),
           path_to_preprocessed     = COALESCE(EXCLUDED.path_to_preprocessed, {self.TABLE}.path_to_preprocessed),
           path_to_classified       = COALESCE(EXCLUDED.path_to_classified, {self.TABLE}.path_to_classified),
+          url                      = COALESCE(EXCLUDED.url, {self.TABLE}.url),
 
           -- Array fields
           ciks             = CASE WHEN :ciks IS NULL THEN {self.TABLE}.ciks ELSE EXCLUDED.ciks END,
+          ticker           = CASE WHEN :ticker IS NULL THEN {self.TABLE}.ticker ELSE EXCLUDED.ticker END,
           display_names    = CASE WHEN :display_names IS NULL THEN {self.TABLE}.display_names ELSE EXCLUDED.display_names END,
           root_forms       = CASE WHEN :root_forms IS NULL THEN {self.TABLE}.root_forms ELSE EXCLUDED.root_forms END,
           film_num         = CASE WHEN :film_num IS NULL THEN {self.TABLE}.film_num ELSE EXCLUDED.film_num END,
@@ -161,29 +120,7 @@ class NpsFilingsDB:
           form             = COALESCE(EXCLUDED.form, {self.TABLE}.form),
           adsh             = COALESCE(EXCLUDED.adsh, {self.TABLE}.adsh),
           file_type        = COALESCE(EXCLUDED.file_type, {self.TABLE}.file_type),
-          file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description),
-
-          -- NPS Fields Update
-          nps_competition_industry     = COALESCE(EXCLUDED.nps_competition_industry, {self.TABLE}.nps_competition_industry),
-          nps_value_over               = COALESCE(EXCLUDED.nps_value_over, {self.TABLE}.nps_value_over),
-          nps_value_below              = COALESCE(EXCLUDED.nps_value_below, {self.TABLE}.nps_value_below),
-          nps_goal_value               = COALESCE(EXCLUDED.nps_goal_value, {self.TABLE}.nps_goal_value),
-          nps_goal_reached             = COALESCE(EXCLUDED.nps_goal_reached, {self.TABLE}.nps_goal_reached),
-          "KPI_CURRENT_VALUE"            = COALESCE(EXCLUDED."KPI_CURRENT_VALUE", {self.TABLE}."KPI_CURRENT_VALUE"),
-          "KPI_HISTORICAL_COMPARISON"    = COALESCE(EXCLUDED."KPI_HISTORICAL_COMPARISON", {self.TABLE}."KPI_HISTORICAL_COMPARISON"),
-          "BENCHMARK_COMPARISON"         = COALESCE(EXCLUDED."BENCHMARK_COMPARISON", {self.TABLE}."BENCHMARK_COMPARISON"),
-          "CUSTOMER_CASE_EVIDENCE"       = COALESCE(EXCLUDED."CUSTOMER_CASE_EVIDENCE", {self.TABLE}."CUSTOMER_CASE_EVIDENCE"),
-          "METHODOLOGY_DEFINITION"       = COALESCE(EXCLUDED."METHODOLOGY_DEFINITION", {self.TABLE}."METHODOLOGY_DEFINITION"),
-          "MGMT_COMPENSATION_GOVERNANCE" = COALESCE(EXCLUDED."MGMT_COMPENSATION_GOVERNANCE", {self.TABLE}."MGMT_COMPENSATION_GOVERNANCE"),
-          "QUALITATIVE_ONLY"             = COALESCE(EXCLUDED."QUALITATIVE_ONLY", {self.TABLE}."QUALITATIVE_ONLY"),
-          "TARGET_OUTLOOK"               = COALESCE(EXCLUDED."TARGET_OUTLOOK", {self.TABLE}."TARGET_OUTLOOK"),
-          "NPS_SERVICE_PROVIDER"         = COALESCE(EXCLUDED."NPS_SERVICE_PROVIDER", {self.TABLE}."NPS_SERVICE_PROVIDER"),
-          "OTHER"                        = COALESCE(EXCLUDED."OTHER", {self.TABLE}."OTHER"),
-          has_numeric_nps              = COALESCE(EXCLUDED.has_numeric_nps, {self.TABLE}.has_numeric_nps),
-          nps_value_fix                = COALESCE(EXCLUDED.nps_value_fix, {self.TABLE}.nps_value_fix),
-          nps_trend_sentiment          = COALESCE(EXCLUDED.nps_trend_sentiment, {self.TABLE}.nps_trend_sentiment),
-          nps_scope                    = COALESCE(EXCLUDED.nps_scope, {self.TABLE}.nps_scope),
-          nps_formal_role              = COALESCE(EXCLUDED.nps_formal_role, {self.TABLE}.nps_formal_role);
+          file_description = COALESCE(EXCLUDED.file_description, {self.TABLE}.file_description);
         """)
 
         with self.engine.begin() as conn:
@@ -192,6 +129,7 @@ class NpsFilingsDB:
                 {
                     "id": id,
                     "ciks": ciks,
+                    "ticker": ticker,
                     "period_ending": period_ending,
                     "display_names": display_names,
                     "root_forms": root_forms,
@@ -207,26 +145,7 @@ class NpsFilingsDB:
                     "path_to_raw": path_to_raw,
                     "path_to_preprocessed": path_to_preprocessed,
                     "path_to_classified": path_to_classified,
-                    "nps_competition_industry": nps_competition_industry,
-                    "nps_value_over": nps_value_over,
-                    "nps_value_below": nps_value_below,
-                    "nps_goal_value": nps_goal_value,
-                    "nps_goal_reached": nps_goal_reached,
-                    "KPI_CURRENT_VALUE": KPI_CURRENT_VALUE,
-                    "KPI_HISTORICAL_COMPARISON": KPI_HISTORICAL_COMPARISON,
-                    "BENCHMARK_COMPARISON": BENCHMARK_COMPARISON,
-                    "CUSTOMER_CASE_EVIDENCE": CUSTOMER_CASE_EVIDENCE,
-                    "METHODOLOGY_DEFINITION": METHODOLOGY_DEFINITION,
-                    "MGMT_COMPENSATION_GOVERNANCE": MGMT_COMPENSATION_GOVERNANCE,
-                    "QUALITATIVE_ONLY": QUALITATIVE_ONLY,
-                    "TARGET_OUTLOOK": TARGET_OUTLOOK,
-                    "NPS_SERVICE_PROVIDER": NPS_SERVICE_PROVIDER,
-                    "OTHER": OTHER,
-                    "has_numeric_nps": has_numeric_nps,
-                    "nps_value_fix": nps_value_fix,
-                    "nps_trend_sentiment": nps_trend_sentiment,
-                    "nps_scope": nps_scope,
-                    "nps_formal_role": nps_formal_role,
+                    "url": url,
                 },
             )
 
@@ -291,24 +210,28 @@ class NpsFilingsDB:
             return int(res.rowcount or 0)
 
     def delete_filing(self, id: str) -> bool:
+        """Deletes a filing from the database by its ID."""
         stmt = text(f"DELETE FROM {self.TABLE} WHERE id = :id;")
         with self.engine.begin() as conn:
             res = conn.execute(stmt, {"id": id})
             return (res.rowcount or 0) > 0
 
     def is_blacklisted(self, id: str) -> bool:
+        """Checks if a filing is marked as blacklisted."""
         stmt = text(f"SELECT blacklisted FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
     def nps_relevant(self, id: str) -> bool:
+        """Checks if a filing is marked as relevant for NPS calculations."""
         stmt = text(f"SELECT nps_relevant FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
     def classified_exists(self, id: str) -> bool:
+        """Checks whether the filing has a classified file path."""
         stmt = text(f"""
         SELECT (path_to_classified IS NOT NULL AND path_to_classified <> '')
         FROM {self.TABLE}
@@ -319,6 +242,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def preprocessed_exists(self, id: str) -> bool:
+        """Checks whether the filing has a preprocessed file path."""
         stmt = text(f"""
         SELECT (path_to_preprocessed IS NOT NULL AND path_to_preprocessed <> '')
         FROM {self.TABLE}
@@ -329,6 +253,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def raw_exists(self, id: str) -> bool:
+        """Checks whether the filing has a raw file path."""
         stmt = text(f"""
         SELECT (path_to_raw IS NOT NULL AND path_to_raw <> '')
         FROM {self.TABLE}
@@ -339,6 +264,7 @@ class NpsFilingsDB:
             return bool(val) if val is not None else False
 
     def blacklist(self, id: str) -> None:
+        """Marks a filing as blacklisted, inserting a new record if it does not exist."""
         stmt = text(f"""
         INSERT INTO {self.TABLE} (id, blacklisted)
         VALUES (:id, TRUE)
@@ -349,6 +275,7 @@ class NpsFilingsDB:
             conn.execute(stmt, {"id": id})
 
     def add_keyword(self, id: str, kw: str) -> bool:
+        """Appends a new keyword to the keywords array for a filing. Returns True if successfully added."""
         stmt = text(f"""
         UPDATE {self.TABLE}
         SET
@@ -364,3 +291,73 @@ class NpsFilingsDB:
             # scalar() returns 1 if row was updated (meaning the keyword was successfully added),
             # or None if row doesn't exist or keyword was already in the array.
             return bool(conn.execute(stmt, {"id": id, "kw": kw}).scalar())
+
+    def get_field(self, id: str, field: str) -> Any:
+        """Retrieve a specific field for a given filing."""
+        if field not in self._UPDATABLE_COLS and field != "id":
+            raise ValueError(f"Unknown column: {field}")
+
+        col_name = f'"{field}"' if field.isupper() else field
+        stmt = text(f"SELECT {col_name} FROM {self.TABLE} WHERE id = :id;")
+        with self.engine.connect() as conn:
+            return conn.execute(stmt, {"id": id}).scalar_one_or_none()
+
+    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+        """
+        Upserts classification results for a filing into nps_classification_results.
+        Only fields present in the table are allowed.
+        """
+        allowed_cols = {
+            "KPI_CURRENT_VALUE", "KPI_TREND", "KPI_HISTORICAL_COMPARISON",
+            "BENCHMARK_COMPARISON_POSITIVE", "BENCHMARK_COMPARISON_NEGATIVE", "NPS_GOAL_REACHED",
+            "TARGET_OUTLOOK", "MGMT_COMPENSATION_GOVERNANCE", "CUSTOMER_CASE_EVIDENCE",
+            "NPS_SERVICE_PROVIDER", "METHODOLOGY_DEFINITION", "QUALITATIVE_ONLY", "OTHER",
+            "has_numeric_nps", "nps_value_fix", "nps_competition_industry",
+            "nps_value_over", "nps_value_below", "nps_goal_value", "nps_goal_change"
+        }
+        
+        # Filter kwargs to only allowed columns
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_cols}
+        
+        col_names = ["filing_id", "experiment_version"]
+        placeholders = [":filing_id", ":experiment_version"]
+        params = {"filing_id": filing_id, "experiment_version": version}
+        
+        for k, v in filtered_kwargs.items():
+            if k.isupper():
+                col_names.append(f'"{k}"')
+            else:
+                col_names.append(k)
+            placeholders.append(f":{k}")
+            params[k] = v
+            
+        update_clauses = []
+        for k in filtered_kwargs:
+            if k.isupper():
+                update_clauses.append(f'"{k}" = EXCLUDED."{k}"')
+            else:
+                update_clauses.append(f'{k} = EXCLUDED.{k}')
+        update_clauses.append("classified_at = now()")
+        
+        cols_str = ", ".join(col_names)
+        vals_str = ", ".join(placeholders)
+        update_str = ", ".join(update_clauses)
+        
+        stmt = text(f"""
+        INSERT INTO {self.TABLE}_classifications ({cols_str})
+        VALUES ({vals_str})
+        ON CONFLICT (filing_id, experiment_version) DO UPDATE
+        SET {update_str};
+        """)
+        
+        with self.engine.begin() as conn:
+            conn.execute(stmt, params)
+
+    def get_classifications(self, filing_id: str) -> list[dict]:
+        """
+        Retrieves all classification results for a given filing.
+        """
+        stmt = text(f"SELECT * FROM {self.TABLE}_classifications WHERE filing_id = :filing_id;")
+        with self.engine.connect() as conn:
+            rows = conn.execute(stmt, {"filing_id": filing_id}).mappings().all()
+            return [dict(row) for row in rows]

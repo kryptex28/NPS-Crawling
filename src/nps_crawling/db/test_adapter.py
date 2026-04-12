@@ -2,6 +2,8 @@ import os
 import sys
 from pathlib import Path
 
+from nps_crawling.db.db_adapter import DbAdapter
+
 # Ensure the src directory is in the Python path so module imports work
 src_dir = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(src_dir))
@@ -11,10 +13,12 @@ sys.path.insert(0, str(src_dir))
 if 'POSTGRES_ENGINE' not in os.environ:
     os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
 
-from nps_crawling.db.db_adapter import DbAdapter
 
-
-def test_adapter():
+def test_adapter() -> None:
+    """
+    Runs basic tests to verify that the DbAdapter can insert filings,
+    update fields and file paths, and retrieve rows from the database.
+    """
     print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
     try:
         adapter = DbAdapter()
@@ -54,11 +58,22 @@ def test_adapter():
     print("\n4. Testing generic update_filing method...")
     updated_fields = adapter.update_filing(
         filing_id=test_id,
-        nps_goal_reached=True,
-        nps_value_fix=10.5,
-        nps_trend_sentiment="Super Positive",
+        url="https://example.com/test",
     )
     print(f"update_filing successful: {updated_fields}")
+
+    # 4b. Test Classification Upsert
+    print("\n4b. Testing upsert_classification method...")
+    adapter.upsert_classification(
+        filing_id=test_id,
+        version="test_version_1",
+        NPS_GOAL_REACHED=True,
+        nps_value_fix=10.5,
+    )
+    print("upsert_classification successful.")
+
+    classifs = adapter.get_classifications(filing_id=test_id)
+    print(f"Found classifications: {classifs}")
 
     # 5. Add keyword (Test array appending without overwriting)
     print("\n5. Testing add_keyword...")
