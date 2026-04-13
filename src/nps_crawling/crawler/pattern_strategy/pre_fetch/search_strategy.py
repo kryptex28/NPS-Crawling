@@ -1,4 +1,4 @@
-from nps_crawling.crawler.data_prefetch.strategy.fetch_strategy import FetchStrategy
+from nps_crawling.crawler.pattern_strategy.pre_fetch.fetch_strategy import FetchStrategy
 from nps_crawling.utils.filings import Filing
 from nps_crawling.utils.sec_params import SecSearchParams, create_search_params_from_config
 from nps_crawling.utils.sec_query import SecQuery
