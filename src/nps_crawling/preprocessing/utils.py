@@ -95,6 +95,7 @@ class PreProcessingPipeline(Config):
         self.storage = SaveToJSONPipeline()
 
         self._keyword_filter = Config.SINGLE_KEYWORD_FILTER
+        self._keyword_filter_exclude = Config.SINGLE_KEYWORD_FILTER_EXCLUDE
         self._db = DbAdapter() if self._keyword_filter else None
 
     def pre_processing_workflow(self):
@@ -252,6 +253,7 @@ class PreProcessingPipeline(Config):
                 "similarity_reference_text": Config.SIMILARITY_REFERENCE_TEXT,
                 "similarity_threshold": Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW,
                 "single_keyword_filter": Config.SINGLE_KEYWORD_FILTER,
+                "single_keyword_filter_exclude": Config.SINGLE_KEYWORD_FILTER_EXCLUDE,
             },
             "processed_filings": {
                 "filings_processed_total": filings_total,
@@ -341,13 +343,18 @@ class PreProcessingPipeline(Config):
                 logger.warning("No filing id in %s — skipping", json_file.name)
                 continue
             raw_keywords = self._db.return_keywords(filing_id)
-            cleaned_keywords = [k.strip("\"'") for k in raw_keywords]
-            if cleaned_keywords == [self._keyword_filter]:
+            cleaned_keywords = [k.strip("\"'").lower() for k in raw_keywords]
+            matches = cleaned_keywords == [self._keyword_filter.lower()]
+            if self._keyword_filter_exclude:
+                matches = not matches
+            if matches:
                 filtered.append(json_file)
             else:
                 logger.debug(
-                    "Skipping %s — keywords %s don't match single-keyword filter '%s'",
-                    json_file.name, cleaned_keywords, self._keyword_filter,
+                    "Skipping %s — keywords %s %s single-keyword filter '%s'",
+                    json_file.name, cleaned_keywords,
+                    "match excluded keyword" if self._keyword_filter_exclude else "don't match",
+                    self._keyword_filter,
                 )
         logger.info(
             "Keyword filter: %d / %d files passed", len(filtered), len(json_files),
