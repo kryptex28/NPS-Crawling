@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 class SearchStrategy(FetchStrategy):
 
-
     def __init__(self) -> None:
         super().__init__()
 
@@ -42,8 +41,10 @@ class SearchStrategy(FetchStrategy):
             temp: list[Filing] = query.fetch_filings()
 
             if ignore_lookup:
+                logger.info("Ignoring database.")
                 pass
             else:
+                logger.info("Using database for duplicate-check.")
                 temp = query.are_filings_present_in_db(filings=temp.copy())
                 print(len(temp))
                 for filing in temp:
@@ -51,6 +52,7 @@ class SearchStrategy(FetchStrategy):
                         # Collect duplicates for analysis
                         if filing.id not in duplicates:
                             duplicates[filing.id] = [filings_dict[filing.id]]
+                            logger.debug(f"Found duplicate: {filing.id}")
                         duplicates[filing.id].append(filing)
                     else:
                         filings_dict[filing.id] = filing
