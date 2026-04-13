@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 
 from nps_crawling.crawler.utils import CrawlerPipeline
-from nps_crawling.utils.filings import Filing
+from nps_crawling.crawler.pre_fetch_utils.filings import Filing
 
 SEC_QUERY_DIR_PATH = os.path.join("/home/leonv/Projects/NPS-Crawling/src/nps_crawling/", 'queries')
 

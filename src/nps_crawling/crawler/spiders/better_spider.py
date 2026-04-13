@@ -5,7 +5,7 @@ import scrapy
 
 from nps_crawling.crawler.pattern_factory.processing_factory import ProcessingFactory
 from nps_crawling.crawler.items import FilingItem
-from nps_crawling.utils.filings import Filing
+from nps_crawling.crawler.pre_fetch_utils.filings import Filing
 
 
 class BetterSpider(scrapy.Spider):

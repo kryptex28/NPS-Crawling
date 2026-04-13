@@ -1,7 +1,7 @@
 from nps_crawling.crawler.pattern_strategy.pre_fetch.fetch_strategy import FetchStrategy
-from nps_crawling.utils.filings import Filing
-from nps_crawling.utils.sec_params import SecSearchParams, create_search_params_from_config
-from nps_crawling.utils.sec_query import SecQuery
+from nps_crawling.crawler.pre_fetch_utils.filings import Filing
+from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams, create_search_params_from_config
+from nps_crawling.crawler.pre_fetch_utils.sec_query import SecQuery
 
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
