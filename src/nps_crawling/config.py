@@ -29,6 +29,7 @@ class Config:
 
     ROOT_DIR = get_git_root()
     DATA_PATH = ROOT_DIR / "data"
+    QUERY_PATH = ROOT_DIR / "query"
 
     # ---------------------------------------------------------------------------
     # Local Mode

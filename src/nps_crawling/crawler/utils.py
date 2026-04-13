@@ -41,10 +41,7 @@ class CrawlerPipeline(Config):
             print(f"{name}: {value}")
         print("=== End of Settings ===\n")
 
-        # TODO: Abstract logic
-        PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        SEC_QUERY_DIR_PATH = os.path.join(PROJECT_ROOT, 'queries')
-
+        SEC_QUERY_DIR_PATH = Config.QUERY_PATH
         fetch_strategy: FetchStrategy = SearchStrategy()
 
         query_files = [
