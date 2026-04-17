@@ -6,6 +6,8 @@ from uuid import uuid4
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
 
+import logging
+logger = logging.getLogger(__name__)    
 
 class SaveToJSONPipeline(Config):
     """Collect scraped items during a crawl and persist them as JSON files.
@@ -206,9 +208,9 @@ class SaveToJSONPipeline(Config):
                 if filing_id:
                     try:
                         self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))
-                        print(f"{filing_id} updated")
+                        logger.info(f"{filing_id} updated")
                     except Exception as e:
-                        print(e)
+                        logger.warn(f"Failed to update path_to_raw for {filing_id}: {e}")
                         pass
 
         self.records = []

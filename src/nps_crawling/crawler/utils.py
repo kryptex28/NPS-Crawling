@@ -6,13 +6,12 @@ install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
 import logging
 import os
 
-from scrapy.crawler import CrawlerProcess, CrawlerRunner
+from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from twisted.internet import defer, reactor
 
 from nps_crawling.config import Config
 from nps_crawling.crawler.spiders.better_spider import BetterSpider
-from nps_crawling.crawler.pre_fetch_utils.filings import Filing
 
 from nps_crawling.crawler.pattern_strategy.pre_fetch.fetch_strategy import FetchStrategy
 from nps_crawling.crawler.pattern_strategy.pre_fetch.crawl_strategy import CrawlStrategy
