@@ -85,6 +85,9 @@ class Config:
     # are preprocessed. Filings with additional keywords are skipped.
     # Set to None to disable this filter and process all filings.
     SINGLE_KEYWORD_FILTER: str | None = None
+    # If below variable is set to True, it will exclude filings that contain the SINGLE_KEYWORD_FILTER.
+    # If set to False, it will include filings that contain the SINGLE_KEYWORD_FILTER and skip all others.
+    SINGLE_KEYWORD_FILTER_EXCLUDE: bool = False
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
