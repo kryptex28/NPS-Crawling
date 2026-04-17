@@ -28,11 +28,20 @@ class CrawlerPipeline(Config):
         pass
 
     def crawler_workflow(self,
-                         dry_run: bool = False):
+                         dry_run: bool = False,
+                         db_only: bool = False,
+                         prefetch_only: bool = False,
+                         ignore_lookup: bool = False,
+                         limit: int = -1) -> None:
         """Run the NPS Crawling spider with specified settings."""
         os.environ['SCRAPY_SETTINGS_MODULE'] = 'nps_crawling.crawler.settings'
 
         settings = get_project_settings()
+        settings.update({'CRAWL_DRY_RUN': dry_run})
+        settings.update({'CRAWL_DB_ONLY': db_only})
+        settings.update({'CRAWL_IGNORE_LOOKUP': ignore_lookup})
+        if settings.get("SEC_QUERY_LIMIT_COUNT", None) is not None:
+            settings.update({'SEC_QUERY_LIMIT_COUNT': limit})
 
         settings.update({'LOG_LEVEL': logger.getEffectiveLevel()})
 
@@ -50,10 +59,10 @@ class CrawlerPipeline(Config):
             if os.path.isfile(os.path.join(SEC_QUERY_DIR_PATH, f))
         ]
 
-        if dry_run:
+        if prefetch_only:
             total_size: int = 0
             for query_file in query_files:
-                filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=True)
+                filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
                 for filing in filings:
                     logger.info(filing)
                 total_size += len(filings)
@@ -67,7 +76,7 @@ class CrawlerPipeline(Config):
             def crawl_sequentially():
                 try:
                     for query_file in query_files:
-                        filings = fetch_strategy.fetch(query_path=query_file)
+                        filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
                         logger.info(f"Running spider for {query_file} with {len(filings)} filings")
                         yield runner.crawl(BetterSpider, filings=filings)
                         logger.info(f"Finished: {query_file}")

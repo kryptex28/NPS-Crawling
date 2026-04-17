@@ -99,7 +99,11 @@ def main(argv=None):
         
         if args.command == "crawl":
             crawler = CrawlerPipeline()
-            crawler.crawler_workflow(dry_run=args.dry_run)
+            crawler.crawler_workflow(dry_run=args.dry_run, 
+                                     db_only=args.db_only, 
+                                     prefetch_only=args.prefetch_only,
+                                     ignore_lookup=args.ignore_lookup,
+                                     limit=args.limit)
         elif args.command == "process":
             # need to do check here, since otherwise huggingface weights would still be loaded
             processed_dir = Config.NPS_CONTEXT_JSON_PATH / "files"
@@ -191,6 +195,22 @@ def create_parser() -> argparse.ArgumentParser:
         "--db-only",
         action="store_true",
         help="Crawls data and only stores information in database",
+    )
+    crawl_parser.add_argument(
+        "--prefetch-only",
+        action="store_true",
+        help="Crawls data but does not crawl any content",
+    )
+    crawl_parser.add_argument(
+        "--ignore-lookup",
+        action="store_true",
+        help="Ignore lookup and crawl all filings regardless of existing database entries",
+    )
+    crawl_parser.add_argument(
+        "--limit",
+        action="store",
+        type=int,
+        help="Limit the number of filings to crawl (for testing purposes)",
     )
 
     subparsers.add_parser(

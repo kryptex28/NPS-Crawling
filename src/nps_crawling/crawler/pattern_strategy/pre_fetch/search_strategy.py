@@ -42,7 +42,7 @@ class SearchStrategy(FetchStrategy):
 
             if ignore_lookup:
                 logger.info("Ignoring database.")
-                pass
+                filings = temp
             else:
                 logger.info("Using database for duplicate-check.")
                 temp = query.are_filings_present_in_db(filings=temp.copy())
@@ -57,9 +57,9 @@ class SearchStrategy(FetchStrategy):
                     else:
                         filings_dict[filing.id] = filing
 
-        filings = list(filings_dict.values())
+                filings = list(filings_dict.values())
 
-        for _id, dupes in duplicates.items():
-            logger.info(f"Found for ID {_id} {len(dupes)} duplicates.")
+                for _id, dupes in duplicates.items():
+                    logger.info(f"Found for ID {_id} {len(dupes)} duplicates.")
 
         return filings

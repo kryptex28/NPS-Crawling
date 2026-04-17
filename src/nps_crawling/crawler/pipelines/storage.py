@@ -42,6 +42,8 @@ class SaveToJSONPipeline(Config):
         """Reset the in-memory buffer when the spider starts."""
         self.records = []
         self.start_timestamp = datetime.now()
+        self.dry_run = spider.settings.get("CRAWL_DB_ONLY", False)
+        self.db_only = spider.settings.get("CRAWL_DB_ONLY", False)
 
     def _to_serializable(self, val):
         """Recursively convert a value to a JSON-serializable type."""
@@ -187,9 +189,12 @@ class SaveToJSONPipeline(Config):
         fname = f"{safe_id}.json"
 
         # Save raw json to file
-        saved_path = self.json_root / fname
-        with open(saved_path, "w", encoding="utf-8") as f:
-            json.dump(self.records, f, ensure_ascii=False, indent=2)
+        if not self.db_only:
+            saved_path = self.json_root / fname
+            with open(saved_path, "w", encoding="utf-8") as f:
+                json.dump(self.records, f, ensure_ascii=False, indent=2)
+        else:
+            saved_path = "DRY_RUN - no file saved"
 
         # Update the path_to_raw in the database since the file is now saved
         if hasattr(self, 'db') and self.db is not None:
