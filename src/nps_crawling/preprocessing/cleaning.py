@@ -162,7 +162,7 @@ class CleanTextPipeline(Config):
                 continue
 
             replacement = " ".join(sentences)
-            table.replace_with(NavigableString(f" {replacement} "))
+            table.replace_with(NavigableString(f" [TABLE] {replacement} [/TABLE] "))
 
     @staticmethod
     def _is_noise_cell(text: str) -> bool:
