@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from nps_crawling.classification.model import ClassificationClass
 
 load_dotenv()
 
@@ -117,9 +118,7 @@ class Config:
     SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
 
     """ Classification CONFIG """
-    # OLLAMA
-    OLLAMA_PERSONA: str = (
-            "You are a corporate-disclosure text classifier.\n"
+    PERSONA: str = ("You are a corporate-disclosure text classifier.\n"
             "Task: Given an input context window, assign exactly ONE category describing how NPS is referenced:\n"
             "1) BENCHMARK_COMPARISON: The text compares the company’s Net Promoter Score with external or industry benchmarks.\n"
             "2) CUSTOMER_CASE_EVIDENCE: The text uses the Net Promoter Score as evidence in customer examples or use cases..\n"
@@ -130,5 +129,12 @@ class Config:
             "7) TARGET_OUTLOOK: The text discusses targets, goals, or future expectations for the Net Promoter Score.\n"
             "Output: The chosen category label and nothing else."
         )
+    model='mistralai/Mistral-7B-Instruct-v0.3'
+    temperature=0.0,
+    top_p=1.0,
+    top_k=1,
+    num_predict=128,
+    seed=42,
+    repeat_penalty=1.0,    
 
-    MODEL = "SVM"  # Options: "SVM", "Ollama"
+    CLASSIFICATION_CLASS = ClassificationClass.SVM

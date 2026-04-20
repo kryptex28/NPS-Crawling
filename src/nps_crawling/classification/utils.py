@@ -51,7 +51,7 @@ class ClassificationPipeline(Config):
                 "classification_version": self.CLASSIFICATION_VERSION,
                 "preprocessing_version": self.PREPROCESSING_VERSION,
                 "classification_model": self.MODEL,
-                "ollama_persona": self.OLLAMA_PERSONA if self.MODEL == "Ollama" else None,
+                "ollama_persona": self.LLM_PERSONA if self.MODEL == "Ollama" else None,
             },
             "statistics": {
                 "total_files_classified": total_files,

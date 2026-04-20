@@ -39,7 +39,7 @@ class OllamaModel(ClassificationModel, Config):
                 {
                     "role": "system",
                     "content": (
-                        f"{self.OLLAMA_PERSONA}\n"
+                        f"{self.LLM_PERSONA}\n"
                         "Gib nur das Klassenlabel zurück und nichts anderes."
                     ),
                 },

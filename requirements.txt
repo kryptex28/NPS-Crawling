@@ -17,3 +17,4 @@ matplotlib
 # psycopg2 comment in when using local postgres, not needed for server
 python-dotenv
 openpyxl
+pathvalidate

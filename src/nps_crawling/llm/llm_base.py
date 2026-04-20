@@ -7,6 +7,7 @@ class LLMBase(ABC):
     @abstractmethod
     def __init__(self,
                  persona,
+                 model,
                  temperature=0.0,
                  top_p=1.0,
                  top_k=1,
