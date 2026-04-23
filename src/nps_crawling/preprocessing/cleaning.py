@@ -116,7 +116,10 @@ class CleanTextPipeline(Config):
 
             header, body_start = self._split_header_body(parsed_rows)
             caption = self._extract_caption(table)
-            prefix = f"Table '{caption}'" if caption else "Table"
+            prefix = f"'{caption}'" if caption else ""
+
+            def _with_prefix(segment: str) -> str:
+                return f"{prefix} | {segment}" if prefix else segment
 
             row_segments = []
 
@@ -128,11 +131,11 @@ class CleanTextPipeline(Config):
 
                 if self._has_digit(cells):
                     row_segments.append(
-                        f"{prefix} | {self._format_row(cells, header)}",
+                        _with_prefix(self._format_row(cells, header)),
                     )
                     continue
 
-                parts = [f"{prefix} | Section: {' '.join(cells)}"]
+                parts = [_with_prefix(f"Section: {' '.join(cells)}")]
                 for follow in parsed_rows[i + 1 : i + 1 + self._SECTION_FOLLOW_ROWS]:
                     if self._is_header_like(follow):
                         break
@@ -161,7 +164,7 @@ class CleanTextPipeline(Config):
                         ]
                         if values:
                             row_segments.append(
-                                f"{prefix} | {label} | " + " | ".join(values),
+                                _with_prefix(f"{label} | " + " | ".join(values)),
                             )
 
             if not row_segments:
