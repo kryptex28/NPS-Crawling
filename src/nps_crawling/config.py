@@ -30,6 +30,7 @@ class Config:
 
     ROOT_DIR = get_git_root()
     DATA_PATH = ROOT_DIR / "data"
+    QUERY_PATH = ROOT_DIR / "query"
 
     # ---------------------------------------------------------------------------
     # Local Mode
@@ -55,8 +56,8 @@ class Config:
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    PREPROCESSING_VERSION: str = "version_1"
-    CLASSIFICATION_VERSION: str = "version_1"
+    PREPROCESSING_VERSION: str = "version_3"
+    CLASSIFICATION_VERSION: str = "version_3"
 
     # Base directories
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
@@ -85,11 +86,54 @@ class Config:
     # are preprocessed. Filings with additional keywords are skipped.
     # Set to None to disable this filter and process all filings.
     SINGLE_KEYWORD_FILTER: str | None = None
+    # If below variable is set to True, it will exclude filings that contain the SINGLE_KEYWORD_FILTER.
+    # If set to False, it will include filings that contain the SINGLE_KEYWORD_FILTER and skip all others.
+    SINGLE_KEYWORD_FILTER_EXCLUDE: bool = False
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
                                                    "net promoter"]
+
+    # Define keywords/phrases here that should EXCLUDE a match even if they contain
+    # one of the include phrases above. A sentence match is dropped when the include
+    # keyword only appears as part of one of these excluded phrases. If the sentence
+    # also contains a standalone include keyword elsewhere, the match is kept.
+    LIST_OF_PHRASES_TO_EXCLUDE: list = [
+        "NEW PRODUCT SALES TO TOTAL PRODUCT SALES RATIO (NPS)",
+        "NPS Reservation System",
+        "NPS Submit software",
+        "Nationwide Payment Solutions",
+        "NPS Pharmaceuticals",
+        "Netezza Performance Server",
+        "National Processing Services",
+        "Nano-Pulse Stimulation",
+        "NPS Reservation System procurement",
+        "Net Power Solutions, LLC (“NPS”),",
+        "NPSAX",
+        "National Prearranged Services",
+        "NPS (Network Payment System)",
+        "NetBank Payment Systems, Inc. (“NPS”),",
+        "The National Park Service’s (“NPS”)",
+        "“Novation Proprietary Services” or “NPS”",
+        "Neah Power Systems",
+        "SNPS",
+        "NPS-KBIC PEF",
+        "National Product Services",
+        "natural products and supplements",
+        "National Partnerships",
+        "Networked Products & Services",
+        "NPS Services",
+        "Navitaire Professional Services",
+        "National Production Services",
+        "National Product Supply System",
+        "Nephrology Practice Solutions",
+        "network processors",
+        "NetApp Private Storage",
+        "NPS Purchase Price",
+        "NPS 2.X"
+        ]
+    
     # If any of the above keywords are found, define here the number of sentences
     # to include before and after the keyword
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2

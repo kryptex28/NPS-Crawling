@@ -5,7 +5,7 @@ import json
 from os import listdir
 from os.path import isfile, join
 
-from nps_crawling.utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
+from nps_crawling.crawler.pre_fetch_utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
 
 
 def create_search_params_from_config(path: str) -> list[SecSearchParams]:

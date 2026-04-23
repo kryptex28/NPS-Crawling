@@ -8,13 +8,69 @@ import sys
 
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
+
 from . import __version__
 
 log = logging.getLogger(__package__)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+stream_handler.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+log.addHandler(stream_handler)
+
 file_handler = logging.FileHandler('errors.log')
 file_handler.setLevel(logging.ERROR)
 file_handler.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
 log.addHandler(file_handler)
+
+def _ensure_docker_db_running() -> None:
+    """Startet den Docker-Postgres-Container wenn er noch nicht laeuft.
+
+    Prueft zuerst via ``docker compose ps`` ob der Container bereits laeuft.
+    Falls ja: kein Start, kein Warten - sofort weiter.
+    Falls nein: ``docker compose up -d`` und kurz warten bis Postgres bereit ist.
+    """
+    import time
+
+    compose_file = Config.ROOT_DIR / "docker" / "database" / "docker-compose.yml"
+
+    # Pruefen ob der Container bereits laeuft
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "ps", "--services", "--filter", "status=running"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        already_running = bool(result.stdout.strip())
+    except FileNotFoundError:
+        raise RuntimeError(
+            "'docker' wurde nicht gefunden. Bitte Docker Desktop installieren und starten.",
+        ) from None
+    except subprocess.CalledProcessError:
+        already_running = False
+
+    if already_running:
+        print("Docker-Postgres laeuft bereits.", flush=True)
+        return
+
+    # Container starten
+    print("LOCAL_MODE aktiv - starte Docker-Postgres...", flush=True)
+    try:
+        subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "up", "-d"],
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"'docker compose up -d' ist fehlgeschlagen (Exit-Code {exc.returncode}). "
+            "Bitte Docker Desktop starten und erneut versuchen.",
+        ) from exc
+
+    # Kurz warten, bis Postgres vollstaendig hochgefahren ist
+    time.sleep(3)
+    print("Docker-Postgres laeuft.", flush=True)
+
 
 def main(argv=None):
     """Parse arguments and execute commands."""
@@ -25,7 +81,7 @@ def main(argv=None):
         parser.print_help()
         sys.exit(1)
 
-    default_log_level = logging.WARNING
+    default_log_level = logging.INFO
     verbosity = default_log_level - ((getattr(args, "verbose", 0) - getattr(args, "quiet", 0)) * 10)
     log_level = min(logging.INFO, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
@@ -40,10 +96,14 @@ def main(argv=None):
             _ensure_docker_db_running()
 
         DbAdapter().ensure_table_exists()
-
+        
         if args.command == "crawl":
             crawler = CrawlerPipeline()
-            crawler.crawler_workflow()
+            crawler.crawler_workflow(dry_run=args.dry_run, 
+                                     db_only=args.db_only, 
+                                     prefetch_only=args.prefetch_only,
+                                     ignore_lookup=args.ignore_lookup,
+                                     limit=args.limit)
         elif args.command == "process":
             # need to do check here, since otherwise huggingface weights would still be loaded
             processed_dir = Config.NPS_CONTEXT_JSON_PATH / "files"
@@ -121,11 +181,38 @@ def create_parser() -> argparse.ArgumentParser:
         dest="command",
     )
 
-    subparsers.add_parser(
+    crawl_parser = subparsers.add_parser(
         "crawl",
         parents=[parent],
         description="Run crawler.",
     )
+    crawl_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate crawling without saving any data",
+    )
+    crawl_parser.add_argument(
+        "--db-only",
+        action="store_true",
+        help="Crawls data and only stores information in database",
+    )
+    crawl_parser.add_argument(
+        "--prefetch-only",
+        action="store_true",
+        help="Crawls data but does not crawl any content",
+    )
+    crawl_parser.add_argument(
+        "--ignore-lookup",
+        action="store_true",
+        help="Ignore lookup and crawl all filings regardless of existing database entries",
+    )
+    crawl_parser.add_argument(
+        "--limit",
+        action="store",
+        type=int,
+        help="Limit the number of filings to crawl (for testing purposes)",
+    )
+
     subparsers.add_parser(
         "process",
         parents=[parent],
@@ -152,52 +239,3 @@ def create_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     main()
-
-
-def _ensure_docker_db_running() -> None:
-    """Startet den Docker-Postgres-Container wenn er noch nicht laeuft.
-
-    Prueft zuerst via ``docker compose ps`` ob der Container bereits laeuft.
-    Falls ja: kein Start, kein Warten - sofort weiter.
-    Falls nein: ``docker compose up -d`` und kurz warten bis Postgres bereit ist.
-    """
-    import time
-
-    compose_file = Config.ROOT_DIR / "docker" / "database" / "docker-compose.yml"
-
-    # Pruefen ob der Container bereits laeuft
-    try:
-        result = subprocess.run(
-            ["docker", "compose", "-f", str(compose_file), "ps", "--services", "--filter", "status=running"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        already_running = bool(result.stdout.strip())
-    except FileNotFoundError:
-        raise RuntimeError(
-            "'docker' wurde nicht gefunden. Bitte Docker Desktop installieren und starten.",
-        ) from None
-    except subprocess.CalledProcessError:
-        already_running = False
-
-    if already_running:
-        print("Docker-Postgres laeuft bereits.", flush=True)
-        return
-
-    # Container starten
-    print("LOCAL_MODE aktiv - starte Docker-Postgres...", flush=True)
-    try:
-        subprocess.run(
-            ["docker", "compose", "-f", str(compose_file), "up", "-d"],
-            check=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"'docker compose up -d' ist fehlgeschlagen (Exit-Code {exc.returncode}). "
-            "Bitte Docker Desktop starten und erneut versuchen.",
-        ) from exc
-
-    # Kurz warten, bis Postgres vollstaendig hochgefahren ist
-    time.sleep(3)
-    print("Docker-Postgres laeuft.", flush=True)
