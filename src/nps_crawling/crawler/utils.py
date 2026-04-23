@@ -1,20 +1,21 @@
 """Utility functions for the NPS Crawling spider."""
 from scrapy.utils.reactor import install_reactor
+
 install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
 
 import logging
 import os
 
-from scrapy.crawler import CrawlerProcess
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from twisted.internet import defer, reactor
 
 from nps_crawling.config import Config
 from nps_crawling.crawler.spiders.better_spider import BetterSpider
-from nps_crawling.utils.filings import Filing
-from nps_crawling.utils.sec_params import SecSearchParams, create_search_params_from_config
-from nps_crawling.utils.sec_query import SecQuery
+
+from nps_crawling.crawler.pattern_strategy.pre_fetch.fetch_strategy import FetchStrategy
+from nps_crawling.crawler.pattern_strategy.pre_fetch.crawl_strategy import CrawlStrategy
+from nps_crawling.crawler.pattern_strategy.pre_fetch.search_strategy import SearchStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -25,47 +26,21 @@ class CrawlerPipeline(Config):
         """Initialize the CrawlerPipeline."""
         pass
 
-    def prefetch_data(self, query_path: str) -> list[Filing]:
-        # Create search parameters based on queries
-        search_parameters: list[SecSearchParams] = create_search_params_from_config(query_path)
-
-        # Create queries
-        sec_queries: list[SecQuery] = []
-        for parameter in search_parameters:
-            if parameter.filing_limit == -1:
-                parameter.filing_limit = get_project_settings()["SEC_QUERY_LIMIT_COUNT"]
-
-            query: SecQuery = SecQuery(sec_params=parameter)
-            sec_queries.append(query)
-
-        # Fetch all filings per query
-        filings_dict: dict[str, Filing] = {}
-        duplicates: dict[str, list[Filing]] = {}
-
-        for query in sec_queries:
-            temp: list[Filing] = query.fetch_filings()
-            print(len(temp))
-            for filing in temp:
-                if filing.id in filings_dict:
-                    # Collect duplicates for analysis
-                    if filing.id not in duplicates:
-                        duplicates[filing.id] = [filings_dict[filing.id]]
-                    duplicates[filing.id].append(filing)
-                else:
-                    filings_dict[filing.id] = filing
-
-        filings = list(filings_dict.values())
-
-        for _id, dupes in duplicates.items():
-            logger.info(f"Found for ID {_id} {len(dupes)} duplicates.")
-            
-        return filings
-
-    def crawler_workflow(self):
+    def crawler_workflow(self,
+                         dry_run: bool = False,
+                         db_only: bool = False,
+                         prefetch_only: bool = False,
+                         ignore_lookup: bool = False,
+                         limit: int = -1) -> None:
         """Run the NPS Crawling spider with specified settings."""
         os.environ['SCRAPY_SETTINGS_MODULE'] = 'nps_crawling.crawler.settings'
 
         settings = get_project_settings()
+        settings.update({'CRAWL_DRY_RUN': dry_run})
+        settings.update({'CRAWL_DB_ONLY': db_only})
+        settings.update({'CRAWL_IGNORE_LOOKUP': ignore_lookup})
+        if settings.get("SEC_QUERY_LIMIT_COUNT", None) is not None:
+            settings.update({'SEC_QUERY_LIMIT_COUNT': limit})
 
         settings.update({'LOG_LEVEL': logger.getEffectiveLevel()})
 
@@ -73,10 +48,9 @@ class CrawlerPipeline(Config):
         for name, value in settings.items():
             print(f"{name}: {value}")
         print("=== End of Settings ===\n")
-                
-        # TODO: Abstract logic
-        PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        SEC_QUERY_DIR_PATH = os.path.join(PROJECT_ROOT, 'queries')
+
+        SEC_QUERY_DIR_PATH = Config.QUERY_PATH
+        fetch_strategy: FetchStrategy = SearchStrategy()
 
         query_files = [
             os.path.join(SEC_QUERY_DIR_PATH, f)
@@ -84,29 +58,33 @@ class CrawlerPipeline(Config):
             if os.path.isfile(os.path.join(SEC_QUERY_DIR_PATH, f))
         ]
 
-        runner = CrawlerRunner(settings=settings)
+        if prefetch_only:
+            total_size: int = 0
+            for query_file in query_files:
+                filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
+                for filing in filings:
+                    logger.info(filing)
+                total_size += len(filings)
 
-        @defer.inlineCallbacks
-        def crawl_sequentially():
-            try:
-                for query_file in query_files:
-                    filings = self.prefetch_data(query_path=query_file)
-                    logger.info(f"Running spider for {query_file} with {len(filings)} filings")
-                    yield runner.crawl(BetterSpider, filings=filings)
-                    logger.info(f"Finished: {query_file}")
-            except Exception as e:
-                logger.error(f"Crawl error: {e}", exc_info=True)
-            finally:
-                reactor.stop()  # type: ignore[attr-defined]
+            logger.info(f"Total crawled filings from {len(query_files)} queries: {total_size}")
 
-        crawl_sequentially()
-        reactor.run()
+        else:
+            runner = CrawlerRunner(settings=settings)
 
-        # Run spider
-        #process = CrawlerProcess(settings)
+            @defer.inlineCallbacks
+            def crawl_sequentially():
+                try:
+                    for query_file in query_files:
+                        filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
+                        logger.info(f"Running spider for {query_file} with {len(filings)} filings")
+                        yield runner.crawl(BetterSpider, filings=filings)
+                        logger.info(f"Finished: {query_file}")
+                except Exception as e:
+                    logger.error(f"Crawl error: {e}", exc_info=True)
+                finally:
+                    reactor.stop()  # type: ignore[attr-defined]
 
-        #process.crawl(BetterSpider,
-         #             filings=filings)
-        #process.start()
+            crawl_sequentially()
+            reactor.run()
 
         return None

@@ -6,6 +6,8 @@ from uuid import uuid4
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
 
+import logging
+logger = logging.getLogger(__name__)    
 
 class SaveToJSONPipeline(Config):
     """Collect scraped items during a crawl and persist them as JSON files.
@@ -42,6 +44,8 @@ class SaveToJSONPipeline(Config):
         """Reset the in-memory buffer when the spider starts."""
         self.records = []
         self.start_timestamp = datetime.now()
+        self.dry_run = spider.settings.get("CRAWL_DB_ONLY", False)
+        self.db_only = spider.settings.get("CRAWL_DB_ONLY", False)
 
     def _to_serializable(self, val):
         """Recursively convert a value to a JSON-serializable type."""
@@ -187,9 +191,12 @@ class SaveToJSONPipeline(Config):
         fname = f"{safe_id}.json"
 
         # Save raw json to file
-        saved_path = self.json_root / fname
-        with open(saved_path, "w", encoding="utf-8") as f:
-            json.dump(self.records, f, ensure_ascii=False, indent=2)
+        if not self.db_only:
+            saved_path = self.json_root / fname
+            with open(saved_path, "w", encoding="utf-8") as f:
+                json.dump(self.records, f, ensure_ascii=False, indent=2)
+        else:
+            saved_path = "DRY_RUN - no file saved"
 
         # Update the path_to_raw in the database since the file is now saved
         if hasattr(self, 'db') and self.db is not None:
@@ -201,9 +208,9 @@ class SaveToJSONPipeline(Config):
                 if filing_id:
                     try:
                         self.db.update_path_to_raw(filing_id, str(saved_path.absolute()))
-                        print(f"{filing_id} updated")
+                        logger.info(f"{filing_id} updated")
                     except Exception as e:
-                        print(e)
+                        logger.warn(f"Failed to update path_to_raw for {filing_id}: {e}")
                         pass
 
         self.records = []
