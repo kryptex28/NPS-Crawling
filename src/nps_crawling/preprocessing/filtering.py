@@ -11,6 +11,7 @@ class NpsMentionFilterPipeline(Config):
         """Initialize the NpsMentionFilterPipeline."""
         # normalize phrases to lowercase for case-insensitive matching
         self.filter_words = [p.lower() for p in Config.LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR]
+        self.exclude_words = [p.lower() for p in Config.LIST_OF_PHRASES_TO_EXCLUDE]
 
         # define sentence splitting logic here, using simple logic here:
         # split on ., !, ? followed by whitespace
@@ -122,16 +123,33 @@ class NpsMentionFilterPipeline(Config):
         """Find matching phrases in a single sentence.
 
         input: single sentence
-        output: single sentence if this sentence includes a phrase as defined in
-        Config var LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR.
+        output: list of include phrases (from LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR)
+        found in the sentence, excluding hits that only appear as part of an
+        excluded phrase (LIST_OF_PHRASES_TO_EXCLUDE).
         """
         sentence_lower = single_sentence.lower()
+        masked_sentence = self._mask_excluded_phrases(sentence_lower)
+
         matches = []
         for phrase in self.filter_words:
-            if phrase in sentence_lower:
+            if phrase in masked_sentence:
                 matches.append(phrase)
 
         return matches
+
+    def _mask_excluded_phrases(self, sentence_lower):
+        """Replace every occurrence of an excluded phrase with spaces.
+
+        Spaces (rather than removal) preserve surrounding token boundaries so
+        an include keyword adjacent to an excluded phrase can't accidentally
+        merge with neighboring text.
+        """
+        masked = sentence_lower
+        for excluded in self.exclude_words:
+            if not excluded:
+                continue
+            masked = masked.replace(excluded, " " * len(excluded))
+        return masked
 
     def _get_sentence_range(self, n, idx):
         start = max(0, idx - self.sentences_before)
