@@ -101,7 +101,37 @@ class Config:
         "NEW PRODUCT SALES TO TOTAL PRODUCT SALES RATIO (NPS)",
         "NPS Reservation System",
         "NPS Submit software",
-    ]
+        "Nationwide Payment Solutions",
+        "NPS Pharmaceuticals",
+        "Netezza Performance Server",
+        "National Processing Services",
+        "Nano-Pulse Stimulation",
+        "NPS Reservation System procurement",
+        "Net Power Solutions, LLC (“NPS”),",
+        "NPSAX",
+        "National Prearranged Services",
+        "NPS (Network Payment System)",
+        "NetBank Payment Systems, Inc. (“NPS”),",
+        "The National Park Service’s (“NPS”)",
+        "“Novation Proprietary Services” or “NPS”",
+        "Neah Power Systems",
+        "SNPS",
+        "NPS-KBIC PEF",
+        "National Product Services",
+        "natural products and supplements",
+        "National Partnerships",
+        "Networked Products & Services",
+        "NPS Services",
+        "Navitaire Professional Services",
+        "National Production Services",
+        "National Product Supply System",
+        "Nephrology Practice Solutions",
+        "network processors",
+        "NetApp Private Storage",
+        "NPS Purchase Price",
+        "NPS 2.X"
+        ]
+    
     # If any of the above keywords are found, define here the number of sentences
     # to include before and after the keyword
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2
