@@ -54,8 +54,8 @@ class Config:
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    PREPROCESSING_VERSION: str = "version_1"
-    CLASSIFICATION_VERSION: str = "version_1"
+    PREPROCESSING_VERSION: str = "version_3"
+    CLASSIFICATION_VERSION: str = "version_3"
 
     # Base directories
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
@@ -92,6 +92,16 @@ class Config:
     # of the raw filings from crawler
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
                                                    "net promoter"]
+
+    # Define keywords/phrases here that should EXCLUDE a match even if they contain
+    # one of the include phrases above. A sentence match is dropped when the include
+    # keyword only appears as part of one of these excluded phrases. If the sentence
+    # also contains a standalone include keyword elsewhere, the match is kept.
+    LIST_OF_PHRASES_TO_EXCLUDE: list = [
+        "NEW PRODUCT SALES TO TOTAL PRODUCT SALES RATIO (NPS)",
+        "NPS Reservation System",
+        "NPS Submit software",
+    ]
     # If any of the above keywords are found, define here the number of sentences
     # to include before and after the keyword
     AMOUNT_SENTENCES_INCLUDED_BEFORE: int = 2

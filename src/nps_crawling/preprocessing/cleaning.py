@@ -17,6 +17,14 @@ class CleanTextPipeline(Config):
     def __init__(self):
         """Initialize with lowercased keyword list for table scanning."""
         self._keywords = [p.lower() for p in Config.LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR]
+        self._excluded = [p.lower() for p in Config.LIST_OF_PHRASES_TO_EXCLUDE]
+
+    def _mask_excluded(self, text_lower: str) -> str:
+        """Blank out excluded phrases so their substrings don't trigger matches."""
+        for excluded in self._excluded:
+            if excluded:
+                text_lower = text_lower.replace(excluded, " " * len(excluded))
+        return text_lower
 
     def cleaning_workflow(self, dict_batch):
         """Clean a batch of items by processing their 'html_text' fields."""
@@ -97,7 +105,7 @@ class CleanTextPipeline(Config):
            columns.
         """
         for table in soup.find_all("table"):
-            table_text_lower = table.get_text(" ", strip=True).lower()
+            table_text_lower = self._mask_excluded(table.get_text(" ", strip=True).lower())
             if not any(kw in table_text_lower for kw in self._keywords):
                 continue
 
@@ -126,7 +134,8 @@ class CleanTextPipeline(Config):
             # Patterns 1 + 2: keyword appears somewhere in a body row.
             for i in range(body_start, len(parsed_rows)):
                 cells = parsed_rows[i]
-                if not any(kw in " ".join(cells).lower() for kw in self._keywords):
+                row_text_lower = self._mask_excluded(" ".join(cells).lower())
+                if not any(kw in row_text_lower for kw in self._keywords):
                     continue
 
                 if self._has_digit(cells):
@@ -150,7 +159,7 @@ class CleanTextPipeline(Config):
             if not row_segments and header:
                 relevant_cols = [
                     idx for idx, h in enumerate(header)
-                    if any(kw in h.lower() for kw in self._keywords)
+                    if any(kw in self._mask_excluded(h.lower()) for kw in self._keywords)
                 ]
                 if relevant_cols:
                     for cells in parsed_rows[body_start:]:
