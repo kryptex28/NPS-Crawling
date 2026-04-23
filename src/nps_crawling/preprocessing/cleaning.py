@@ -75,10 +75,16 @@ class CleanTextPipeline(Config):
         handles them), so the expensive per-row parsing only runs for the
         small fraction of tables that actually contain a keyword.
 
-        Slow path emits one self-contained sentence per relevant row.  Each
-        sentence carries the table's caption (from ``<caption>`` or a short
-        preceding heading), column headers zipped against values, and the
-        row label.  Three hit patterns are handled:
+        Slow path emits the whole table as a *single* sentence: each
+        matching row becomes a compact segment joined with ``;`` inside a
+        ``[TABLE] ... [/TABLE].`` block, with the terminating period placed
+        after the closing marker so the downstream sentence splitter keeps
+        the entire table in one sentence (and the context window around a
+        keyword hit always carries the full table, not one row in isolation).
+
+        Each row segment carries the table's caption (from ``<caption>`` or
+        a short preceding heading), column headers zipped against values,
+        and the row label.  Three hit patterns are handled:
 
         1. **Data-row hit** — keyword is on a numeric row.  Emit that row.
         2. **Section-label hit** — keyword is on a non-numeric label row
@@ -110,9 +116,12 @@ class CleanTextPipeline(Config):
 
             header, body_start = self._split_header_body(parsed_rows)
             caption = self._extract_caption(table)
-            prefix = f"Table '{caption}'" if caption else "Table"
+            prefix = f"'{caption}'" if caption else ""
 
-            sentences = []
+            def _with_prefix(segment: str) -> str:
+                return f"{prefix} | {segment}" if prefix else segment
+
+            row_segments = []
 
             # Patterns 1 + 2: keyword appears somewhere in a body row.
             for i in range(body_start, len(parsed_rows)):
@@ -121,24 +130,24 @@ class CleanTextPipeline(Config):
                     continue
 
                 if self._has_digit(cells):
-                    sentences.append(
-                        f"{prefix} | {self._format_row(cells, header)}."
+                    row_segments.append(
+                        _with_prefix(self._format_row(cells, header)),
                     )
                     continue
 
-                parts = [f"{prefix} | Section: {' '.join(cells)}"]
+                parts = [_with_prefix(f"Section: {' '.join(cells)}")]
                 for follow in parsed_rows[i + 1 : i + 1 + self._SECTION_FOLLOW_ROWS]:
                     if self._is_header_like(follow):
                         break
                     if not self._has_digit(follow):
                         break
                     parts.append(self._format_row(follow, header))
-                sentences.append(" | ".join(parts) + ".")
+                row_segments.append(" | ".join(parts))
 
             # Pattern 3: keyword only in column header — emit data rows with
             # just the relevant column(s) so each row becomes a clean
-            # "<row label> | <keyword col>: <value>" sentence.
-            if not sentences and header:
+            # "<row label> | <keyword col>: <value>" segment.
+            if not row_segments and header:
                 relevant_cols = [
                     idx for idx, h in enumerate(header)
                     if any(kw in h.lower() for kw in self._keywords)
@@ -154,15 +163,20 @@ class CleanTextPipeline(Config):
                             if cells[c]
                         ]
                         if values:
-                            sentences.append(
-                                f"{prefix} | {label} | " + " | ".join(values) + "."
+                            row_segments.append(
+                                _with_prefix(f"{label} | " + " | ".join(values)),
                             )
 
-            if not sentences:
+            if not row_segments:
                 continue
 
-            replacement = " ".join(sentences)
-            table.replace_with(NavigableString(f" {replacement} "))
+            # Join rows with ';' so no period inside the block triggers a
+            # sentence split later. Scrub any stray '. ' that leaked in from
+            # cell/caption text, then close with a single period AFTER the
+            # [/TABLE] marker so the whole block reads as one sentence.
+            replacement = "; ".join(row_segments)
+            replacement = re.sub(r"\.\s+", "; ", replacement)
+            table.replace_with(NavigableString(f" [TABLE] {replacement} [/TABLE]. "))
 
     @staticmethod
     def _is_noise_cell(text: str) -> bool:
@@ -186,14 +200,15 @@ class CleanTextPipeline(Config):
 
     @classmethod
     def _split_header_body(cls, parsed_rows):
-        """Return ``(header_row, body_start_index)`` for a parsed table.
+        """Return ``(compound_header, body_start_index)`` for a parsed table.
 
         Walks the top of the table collecting consecutive header-like rows
-        (max 3) and picks the one with the most cells as the effective
-        header — typically the row closest to the data with the most
-        specific labels (e.g. year columns under a grouped
-        "Three Months Ended" super-header).  Returns ``([], 0)`` when no
-        header can be identified.
+        (max 3) and merges them into one compound header so stacked
+        super-headers are preserved.  A "Three Months Ended" super-header
+        over "2024 | 2023 | 2022" becomes
+        ``["Three Months Ended 2024", "Three Months Ended 2023", ...]``
+        instead of silently discarding the period context.  Returns
+        ``([], 0)`` when no header can be identified.
         """
         header_rows = []
         for row in parsed_rows[:3]:
@@ -203,8 +218,33 @@ class CleanTextPipeline(Config):
                 break
         if not header_rows:
             return [], 0
-        best = max(header_rows, key=len)
-        return best, len(header_rows)
+        return cls._build_compound_header(header_rows), len(header_rows)
+
+    @staticmethod
+    def _build_compound_header(header_rows):
+        """Merge stacked header rows into a single compound header.
+
+        The longest header row defines the column count; shorter rows are
+        broadcast across it proportionally, so a 1-cell super-header spans
+        all columns of the 3-cell sub-header below it.  Rows are processed
+        top-down, so super-headers become prefixes to the more specific
+        labels underneath.
+        """
+        m = max(len(r) for r in header_rows)
+        if m == 0:
+            return []
+        compound = [""] * m
+        for row in header_rows:
+            n = len(row)
+            if n == 0:
+                continue
+            for i in range(n):
+                start = (i * m) // n
+                end = ((i + 1) * m) // n
+                for j in range(start, end):
+                    cell = row[i]
+                    compound[j] = f"{compound[j]} {cell}".strip() if compound[j] else cell
+        return compound
 
     @staticmethod
     def _extract_caption(table) -> str:
