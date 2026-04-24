@@ -55,8 +55,8 @@ class Config:
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    PREPROCESSING_VERSION: str = "version_3"
-    CLASSIFICATION_VERSION: str = "version_3"
+    PREPROCESSING_VERSION: str = "version_1"
+    CLASSIFICATION_VERSION: str = "version_1"
 
     # Base directories
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
