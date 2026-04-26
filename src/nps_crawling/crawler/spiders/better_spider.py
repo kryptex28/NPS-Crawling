@@ -1,12 +1,15 @@
 """Improved Spider to crawl SEC filings for NPS mentions based on parameters and SEC search function."""
 from typing import Any, AsyncIterator, Iterable
+from typing_extensions import Self
 
 import scrapy
+from scrapy.crawler import Crawler
+from scrapy import signals
 
 from nps_crawling.crawler.pattern_factory.processing_factory import ProcessingFactory
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.crawler.pre_fetch_utils.filings import Filing
-
+from nps_crawling.utils.event_bus import bus
 
 class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
@@ -64,3 +67,16 @@ class BetterSpider(scrapy.Spider):
 
         # Dispatch into pipeline
         yield item
+
+    def item_scraped(self, item: FilingItem, spider: scrapy.Spider) -> None:
+        """Called when an item is scraped."""
+        self.logger.info(f"Item scraped: {item['filing'].file_path_name}")
+        filing: Filing = item['filing']
+        bus.publish("crawl.result", filing)
+
+    @classmethod
+    def from_crawler(cls, crawler: Crawler, *args, **kwargs):
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        # Connect the spider.item_scraped method to the item_scraped signal
+        crawler.signals.connect(spider.item_scraped, signal=signals.item_scraped)
+        return spider

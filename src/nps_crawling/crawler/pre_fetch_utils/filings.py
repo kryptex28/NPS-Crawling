@@ -72,6 +72,16 @@ class Filing:
     def __str__(self) -> str:
         return f"{self.id} - {self.display_names} - {self.keyword}"
 
+    def to_json(self) -> dict:
+        return {
+            'ciks': list(self.ciks),           # ensure list not set
+            'filing_id': str(self.id),          # ensure string
+            'url': str(self.get_url()[0]),      # ensure string
+            'display_names': list(self.display_names),  # ensure list not set
+            'form': str(self.form),
+            'status': 'Crawled'
+        }
+
 
 class FilingDateRange(Enum):
     """Enum class to abstract the filing date range."""

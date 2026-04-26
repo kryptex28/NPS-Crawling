@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Check for New Files</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
   </head>
   <body>
     <main class="page">
@@ -18,6 +19,27 @@
           <div class="spinner" aria-hidden="true"></div>
           <p class="status-text">The search has started. This may take some time. Please keep this window open until the process completes.</p>
         </div>
+        <div id="filing-display-control">
+          <div>
+            <span id="element-count">Elements: 0</span>
+          </div>
+          <div class="paging-control" id="paging-control">
+            <button id="paging-prev" disabled>&#8592; Prev</button>
+            <span id="paging-info">Page 1 of 1</span>
+            <button id="paging-next">Next &#8594;</button>
+          </div>
+          <div class="segmented-control" role="group" aria-label="Items per page">
+            <label>
+              <input type="radio" name="elements" value="10"> <span>10</span>
+            </label>
+            <label>
+              <input type="radio" name="elements" value="25"> <span>25</span>
+            </label>
+            <label>
+              <input type="radio" name="elements" value="100" checked> <span>100</span>
+            </label>
+          </div>
+        </div>
         <div class="status-complete" id="status-complete" hidden>
           <p>Process completed. Duration: 00:10. Newly crawled files: 12.</p>
           <div class="form-actions">
@@ -25,8 +47,9 @@
             <a class="ghost button-link" href="/">Back to search</a>
           </div>
         </div>
+        <div class="results-list" id="results-list"></div>
       </section>
     </main>
-    <script src="check.js"></script>
+    <script src="/services/hub-flask/static/js/check.js"></script>
   </body>
 </html>

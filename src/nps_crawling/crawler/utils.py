@@ -5,7 +5,7 @@ install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
 
 import logging
 import os
-
+import crochet
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from twisted.internet import defer, reactor
@@ -18,7 +18,24 @@ from nps_crawling.crawler.pattern_strategy.pre_fetch.crawl_strategy import Crawl
 from nps_crawling.crawler.pattern_strategy.pre_fetch.search_strategy import SearchStrategy
 
 logger = logging.getLogger(__name__)
+crochet.setup()
 
+@crochet.wait_for(timeout=3600)
+@defer.inlineCallbacks
+def _run_crawl_sequentially(runner: CrawlerRunner,
+                            query_files: list[str],
+                            fetch_strategy: FetchStrategy,
+                            ignore_lookup: bool):
+    try:
+        for query_file in query_files:
+            filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
+            logger.info(f"Running spider for {query_file} with {len(filings)} filings")
+            yield runner.crawl(BetterSpider, filings=filings)
+            logger.info(f"Finished: {query_file}")
+    except Exception as e:
+        logger.error(f"Crawl error: {e}", exc_info=True)
+    finally:
+        reactor.stop()  # type: ignore[attr-defined]
 
 class CrawlerPipeline(Config):
     """Crawler pipeline to run the NPS Crawling spider."""
@@ -71,20 +88,6 @@ class CrawlerPipeline(Config):
         else:
             runner = CrawlerRunner(settings=settings)
 
-            @defer.inlineCallbacks
-            def crawl_sequentially():
-                try:
-                    for query_file in query_files:
-                        filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
-                        logger.info(f"Running spider for {query_file} with {len(filings)} filings")
-                        yield runner.crawl(BetterSpider, filings=filings)
-                        logger.info(f"Finished: {query_file}")
-                except Exception as e:
-                    logger.error(f"Crawl error: {e}", exc_info=True)
-                finally:
-                    reactor.stop()  # type: ignore[attr-defined]
-
-            crawl_sequentially()
-            reactor.run()
+        _run_crawl_sequentially(runner=runner, query_files=query_files, fetch_strategy=fetch_strategy, ignore_lookup=ignore_lookup)
 
         return None

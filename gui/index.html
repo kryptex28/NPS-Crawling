@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EDGAR Search – GUI Mock</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css" />
   </head>
   <body>
     <main class="page">
@@ -13,7 +13,7 @@
         <img class="logo" src="thu_logo.png" alt="THU logo" />
       </header>
       <section class="panel">
-        <form id="edgar-form" class="form" action="/search" method="post" autocomplete="off">
+        <form id="edgar-form" class="form" action="/services/hub-flask/search" method="post" autocomplete="off">
           <div class="form-row">
             <label for="query">Document word or phrase?</label>
             <input
