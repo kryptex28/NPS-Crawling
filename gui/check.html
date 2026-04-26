@@ -15,6 +15,11 @@
       </header>
 
       <section class="panel">
+        <div id="crawl-control">
+          <button type="button" id="start-crawl" class="primary"">Start new crawl</button>
+          <button type="button" id="stop-crawl" class="ghost" disabled>Stop crawl</button>
+          <button type="button" id="clear-results" class="ghost">Clear results</button>
+        </div>
         <div class="status-block">
           <div class="spinner" aria-hidden="true"></div>
           <p class="status-text">The search has started. This may take some time. Please keep this window open until the process completes.</p>
@@ -37,6 +42,12 @@
             </label>
             <label>
               <input type="radio" name="elements" value="100" checked> <span>100</span>
+            </label>
+            <label>
+              <input type="radio" name="elements" value="1000" checked> <span>1000</span>
+            </label>
+            <label>
+              <input type="radio" name="elements" value="10000" checked> <span>10000</span>
             </label>
           </div>
         </div>

@@ -6,6 +6,10 @@ const pagingPrev = document.getElementById("paging-prev");
 const pagingNext = document.getElementById("paging-next");
 const pagingInfo = document.getElementById("paging-info");
 
+const startCrawlBtn = document.getElementById("start-crawl");
+const stopCrawlBtn = document.getElementById("stop-crawl");
+const clearResultsBtn = document.getElementById("clear-results");
+
 const elementCount = document.getElementById("element-count");
 
 const start = Date.now();
@@ -34,8 +38,8 @@ const renderPage = (page) => {
     checkbox.type = "checkbox";
     checkbox.checked = true;
     checkbox.name = "selected_results";
-    checkbox.value = item.filingId;
-    checkbox.id = `result-${index}`;
+    checkbox.value = item.filing_id;
+    checkbox.id = `result-${startIndex + index}`;
 
     const meta = document.createElement("div");
     meta.className = "result-meta";
@@ -44,7 +48,7 @@ const renderPage = (page) => {
     link.target = "_blank";
     link.rel = "noreferrer";
     //link.textContent = item.filingId;
-    link.textContent = item.display_names
+    link.textContent = item.display_names[0]
     const sub = document.createElement("span");
     sub.innerHTML = `
     CIKs ${item.ciks} <br>
@@ -53,7 +57,7 @@ const renderPage = (page) => {
     meta.append(link, sub);
 
     const status = document.createElement("span");
-    status.className = "status-pill";
+    status.className = `status-pill ${item.status}`;
     status.textContent = item.status;
 
     row.append(checkbox, meta, status);
@@ -130,17 +134,20 @@ document.querySelectorAll('.segmented-control input[type="radio"]').forEach(radi
 });
 
 const addResults = (items) => {
-  allItems.push(...items);
-  totalCount += items.length;
+  items.forEach(item => {
+    const existingIndex = allItems.findIndex(i => i.filing_id === item.filing_id);
 
-  const totalPages = Math.ceil(allItems.length / maxItemsPerPage);
+    if (existingIndex !== -1) {
+      allItems[existingIndex] = item;
+    }
+    else {
+      allItems.push(item);
+      totalCount++;
+    }
+  });
 
-  if(currentPage >= totalPages - 1) {
-    renderPage(currentPage);
-  }
-
+  renderPage(currentPage);
   elementCount.textContent = `Elements: ${totalCount}`;
-
   updatePaging();
 };
 
@@ -152,3 +159,38 @@ sseStream.onerror = (e) => {
   console.error("SSE error:", e);
   sseStream.close();
 };
+
+startCrawlBtn.addEventListener("click", () => {
+  fetch("/services/hub-flask/start-crawl", { method: "POST" })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to start crawl");
+      }
+      console.log("Crawl started successfully");
+    })
+    .catch(error => {
+      console.error("Error starting crawl:", error);
+    });
+});
+
+stopCrawlBtn.addEventListener("click", () => {
+  fetch("/services/hub-flask/stop-crawl", { method: "POST" })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to stop crawl");
+      }
+      console.log("Crawl stopped successfully");
+    })
+    .catch(error => {
+      console.error("Error stopping crawl:", error);
+    });
+});
+
+clearResultsBtn.addEventListener("click", () => {
+  allItems = [];
+  totalCount = 0;
+  currentPage = 0;
+  renderPage(currentPage);
+  updatePaging();
+  elementCount.textContent = `Elements: ${totalCount}`;
+});

@@ -73,12 +73,22 @@ class Filing:
         return f"{self.id} - {self.display_names} - {self.keyword}"
 
     def to_json(self) -> dict:
+
         return {
+            'id': str(self.id),              # ensure string
             'ciks': list(self.ciks),           # ensure list not set
             'filing_id': str(self.id),          # ensure string
             'url': str(self.get_url()[0]),      # ensure string
             'display_names': list(self.display_names),  # ensure list not set
             'form': str(self.form),
+            'ticker': list(self.ticker),         # ensure list not set
+            'period_ending': str(self.period_ending),
+            'file_type': str(self.file_type),
+            'file_description': str(self.file_description),
+            'file_date': str(self.file_date),
+            'biz_locations': list(self.biz_locations),
+            'sics': list(self.sics),
+            'keyword': str(self.keyword),
             'status': 'Crawled'
         }
 

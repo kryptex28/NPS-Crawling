@@ -17,12 +17,32 @@ def results():
 def check():
     return send_from_directory(".", "check.html")
 
+@crawl_bp.post("/start-crawl")
+@login_required
+def start_crawl():
+    from services.crawl_service import initialize_crawl, last_data, crawl_done
+    if not last_data:
+        return jsonify({"error": "No search data available. Please perform a search first."}), 400
+    initialize_crawl(last_data)
+    return jsonify({"status": "started"})
+
+@crawl_bp.post("/stop-crawl")
+@login_required
+def stop_crawl():
+    from services.crawl_service import crawl_done
+    import services.crawl_service as cs
+    cs.crawl_done = True
+    return jsonify({"status": "stopped"})
+
 @crawl_bp.post("/search")
 @login_required
 def search():
     data = request.form.to_dict(flat=True)
     data["filing_types"] = request.form.getlist("filing_types")
-    initialize_crawl(data)
+
+    from services.crawl_service import last_data
+    last_data.clear()
+    last_data.update(data)
     return send_from_directory(".", "check.html")
 
 @crawl_bp.get("/stream-crawl")
