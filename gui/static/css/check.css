@@ -90,3 +90,15 @@
 .segmented-control input:checked + span:hover {
   background: #2563eb;
 }
+
+.prefetched {
+  border: 1px solid #dcd4c6;
+  background: #bbd7e3;
+  color: white;
+}
+
+.crawled {
+  border: 1px solid #dcd4c6;
+  background: #94e1c7;
+  color: white;
+}

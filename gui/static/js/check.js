@@ -33,6 +33,7 @@ const renderPage = (page) => {
   pageItems.forEach((item, index) => {
     const row = document.createElement("div");
     row.className = "result-item";
+    row.classList.add(item.status);
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -57,7 +58,7 @@ const renderPage = (page) => {
     meta.append(link, sub);
 
     const status = document.createElement("span");
-    status.className = `status-pill ${item.status}`;
+    // status.className = `status-pill ${item.status}`;
     status.textContent = item.status;
 
     row.append(checkbox, meta, status);

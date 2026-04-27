@@ -18,3 +18,4 @@ matplotlib
 python-dotenv
 openpyxl
 flask
+crochet
