@@ -106,10 +106,25 @@ class DbAdapter:
             UNIQUE (filing_id, experiment_version)
         );
         """)
+        create_stmt_preprocessing = text(f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name}_preprocessing (
+            id SERIAL PRIMARY KEY,
+            filing_id VARCHAR REFERENCES {self.table_name}(id) ON DELETE CASCADE,
+            preprocessing_version VARCHAR NOT NULL,
+            
+            nps_relevant BOOLEAN NOT NULL,
+            path_to_preprocessed VARCHAR,
+            
+            processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE (filing_id, preprocessing_version)
+        );
+        """)
+
         with self.engine.begin() as conn:
             conn.execute(create_stmt)
+            conn.execute(create_stmt_preprocessing)
             conn.execute(create_stmt_classifications)
-        print(f"Tabelle '{self.table_name}' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
+        print(f"Tabellen '{self.table_name}', '{self.table_name}_preprocessing' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """
@@ -288,3 +303,16 @@ class DbAdapter:
         Retrieves all classification results for a specific filing.
         """
         return self._db.get_classifications(filing_id)
+
+    def upsert_preprocessing_result(self, filing_id: str, version: str, nps_relevant: bool, path_to_preprocessed: str | None = None) -> None:
+        """
+        Upserts preprocessing results for a specific filing and experiment version.
+        This updates both the versioned preprocessing table and the main filings table.
+        
+        Args:
+            filing_id (str): The unique identifier for the filing.
+            version (str): The preprocessing experiment version.
+            nps_relevant (bool): Whether the filing is considered relevant.
+            path_to_preprocessed (str | None): Path to the preprocessed JSON file.
+        """
+        self._db.upsert_preprocessing_result(filing_id, version, nps_relevant, path_to_preprocessed)

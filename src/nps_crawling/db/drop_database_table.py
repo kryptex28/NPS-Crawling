@@ -26,16 +26,17 @@ def drop_table() -> None:
 
     table_name = Config.DATABASE_TABLE_NAME
 
-    print(f"Attempting to drop tables '{table_name}' and '{table_name}_classifications'...")
+    print(f"Attempting to drop tables '{table_name}', '{table_name}_preprocessing', and '{table_name}_classifications'...")
 
     with engine.connect() as conn:
-        # Drop the classification table first to easily avoid foreign key constraint issues
+        # Drop the dependent tables first to easily avoid foreign key constraint issues
         conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}_classifications" CASCADE'))
+        conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}_preprocessing" CASCADE'))
         # Then drop the main table
         conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
         conn.commit()
 
-    print(f"Tables '{table_name}' and '{table_name}_classifications' dropped successfully.")
+    print(f"Tables dropped successfully.")
 
 
 if __name__ == "__main__":
