@@ -257,19 +257,48 @@ class DbAdapter:
         rows_affected = self._db.update_fields(filing_id, touch_last_crawled=False, url=url)
         return rows_affected > 0
 
-    def get_all_filings(self, limit: int = 100) -> list[dict]:
+    def get_all_filings(self, limit: int | None = None) -> list[dict]:
         """
-        Retrieves a list of up to `limit` filings.
+        Retrieves a list of filings with all meta information.
 
         Args:
-            limit (int): The maximum number of filings to retrieve. Defaults to 100.
+            limit (int | None): The maximum number of filings to retrieve. If None, retrieves ALL filings. Defaults to None.
 
         Returns:
             list[dict]: A list of dictionary representations of the rows.
         """
-        stmt = text(f"SELECT * FROM {self.table_name} LIMIT :limit")
+        if limit is not None:
+            stmt = text(f"SELECT * FROM {self.table_name} LIMIT :limit")
+            params = {"limit": limit}
+        else:
+            stmt = text(f"SELECT * FROM {self.table_name}")
+            params = {}
+            
         with self.engine.connect() as conn:
-            rows = conn.execute(stmt, {"limit": limit}).mappings().all()
+            rows = conn.execute(stmt, params).mappings().all()
+            return [dict(row) for row in rows]
+
+    def get_filings_by_keyword(self, keyword: str, strict: bool = False) -> list[dict]:
+        """
+        Retrieves all filings that contain a specific keyword, including all meta information.
+
+        Args:
+            keyword (str): The keyword to search for.
+            strict (bool): If True, only returns filings where this is the ONLY keyword. 
+                           If False, returns all filings containing this keyword.
+
+        Returns:
+            list[dict]: A list of dictionary representations of the rows.
+        """
+        quoted_keyword = f'"{keyword}"'
+        
+        if strict:
+            stmt = text(f"SELECT * FROM {self.table_name} WHERE array_length(keywords, 1) = 1 AND (keywords[1] = :keyword OR keywords[1] = :quoted_keyword)")
+        else:
+            stmt = text(f"SELECT * FROM {self.table_name} WHERE :keyword = ANY(keywords) OR :quoted_keyword = ANY(keywords)")
+            
+        with self.engine.connect() as conn:
+            rows = conn.execute(stmt, {"keyword": keyword, "quoted_keyword": quoted_keyword}).mappings().all()
             return [dict(row) for row in rows]
 
     def get_filing_paths(self, filing_id: str) -> dict | None:
