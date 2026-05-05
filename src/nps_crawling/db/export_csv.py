@@ -10,7 +10,7 @@ def export_to_csv(filepath: str = "nps_filings_export.csv", all: bool = True, ke
     """
     Exports the database table to a CSV file.
     If all is True, all rows where nps_relevant is True are exported.
-    If all is False, only rows containing the specified keyword are exported.
+    If all is False, only rows containing the specified keyword AND nps_relevant=True are exported.
     """
     try:
         db = DbAdapter()
@@ -24,8 +24,9 @@ def export_to_csv(filepath: str = "nps_filings_export.csv", all: bool = True, ke
         stmt = text(f"SELECT * FROM {db.table_name} WHERE nps_relevant = True")
         params = {}
     else:
-        stmt = text(f"SELECT * FROM {db.table_name} WHERE :keyword = ANY(keywords)")
-        params = {"keyword": keyword}
+        quoted_keyword = f'"{keyword}"'
+        stmt = text(f"SELECT * FROM {db.table_name} WHERE (:keyword = ANY(keywords) OR :quoted_keyword = ANY(keywords)) AND nps_relevant = True")
+        params = {"keyword": keyword, "quoted_keyword": quoted_keyword}
 
     try:
         with db.engine.connect() as conn:

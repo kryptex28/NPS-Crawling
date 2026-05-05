@@ -344,9 +344,21 @@ class PreProcessingPipeline(Config):
                 continue
             raw_keywords = self._db.return_keywords(filing_id)
             cleaned_keywords = [k.strip("\"'").lower() for k in raw_keywords]
-            matches = cleaned_keywords == [self._keyword_filter.lower()]
-            if self._keyword_filter_exclude:
-                matches = not matches
+            
+            if isinstance(self._keyword_filter, list):
+                filter_lower = [k.strip("\"'").lower() for k in self._keyword_filter]
+                if self._keyword_filter_exclude:
+                    # Verwirf das Filing, sobald auch nur eins der Filter-Keywords darin vorkommt
+                    matches = not any(k in cleaned_keywords for k in filter_lower)
+                else:
+                    # Nimm es nur, wenn es EXAKT 1 Keyword hat und dieses in der Liste ist
+                    matches = len(cleaned_keywords) == 1 and cleaned_keywords[0] in filter_lower
+            else:
+                filter_lower_single = self._keyword_filter.strip("\"'").lower()
+                if self._keyword_filter_exclude:
+                    matches = filter_lower_single not in cleaned_keywords
+                else:
+                    matches = cleaned_keywords == [filter_lower_single]
             if matches:
                 filtered.append(json_file)
             else:
