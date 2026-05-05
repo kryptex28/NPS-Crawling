@@ -2,126 +2,35 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
+import re
+from turtle import pd
 
 from git import List
 import joblib
+from sympy import re
 from sentence_transformers import SentenceTransformer
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoModelForQuestionAnswering, AutoTokenizer, pipeline
 from ollama import ChatResponse, Client
 from pathvalidate import sanitize_filename
+from sklearn.svm import SVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report
 
-class ClassificationClass(Enum, str):
-    """Enum for classification classes."""
-    HUGGINGFACE = "HuggingFace"
-    OLLAMA = "Ollama"
-    SVM = "SVM"
+from nps_crawling.classification.options import (
+    ClassificationOption,
+    ClassificationProperty,
+    NPSCategory,
+    HasNumericNPS,
+    NPSValue
+)
 
-class ClassificationProperty():
-    """Class for classification properties."""
-    def __init__(self, name: str, options: list, description = "", example = ""):
-        self.name = name
-        self.options = options
-        self.description = description
-        self.example = example
-
-
-class ClassificationOptionName(Enum, str):
-    """Enum for classification labels."""
-    NPS_CATEGORY = "nps_category"
-    HAS_NUMERIC_NPS = "has_numeric_nps"
-    NPS_VALUE = "nps_value"
-
-class ClassificationOption():
-
-    @abstractmethod
-    def get_classification_properties(self) -> List[ClassificationProperty]:
-        """Get classification properties."""
-        pass
-
-class NPSCategory(ClassificationOption):
-
-    def get_classification_properties(self) -> List[ClassificationProperty]:
-        """Get classification properties for NPS category."""
-        return [
-            ClassificationProperty(
-                name="KPI_CURRENT_VALUE",
-                options=[0, 1],
-                description="Reports a specific NPS value.",
-                example="We achieved a Net Promoter Score of 60.",
-            ),
-            ClassificationProperty(
-                name="KPI_TREND",
-                options=[0, 1],
-                description="Describes change over time (increase, decrease, improvement).",
-                example="The Net Promoter Score declined in 2023.",
-            ),
-            ClassificationProperty(
-                name="KPI_HISTORICAL_COMPARISON",
-                options=[0, 1],
-                description="Explicit comparison to past values (year, quarter, etc.).",
-                example="Compared to Q3, our NPS increased by 10%.",
-            ),
-            ClassificationProperty(
-                name="BENCHMARK_COMPARISON_POSITIVE",
-                options=[0, 1],
-                description="NPS is described as higher than or outperforming competitors, industry, or benchmarks.",
-                example="Our NPS is higher than the industry average.",
-            ),
-            ClassificationProperty(
-                name="BENCHMARK_COMPARISON_NEGATIVE",
-                options=[0, 1],
-                description="NPS is described as lower than or underperforming relative to competitors, industry, or benchmarks.",
-                example="Our NPS is below the industry average.",
-            ),
-            ClassificationProperty(
-                name="TARGET_OUTLOOK",
-                options=[0, 1],
-                description="Future goals, targets, or ambitions related to NPS.",
-                example="We aim to improve our NPS to 70 next year.",
-            ),
-            ClassificationProperty(
-                name="NPS_GOAL_REACHED",
-                options=[0, 1],
-                description="Indicates that the company explicitly states it has met or exceeded a predefined NPS target, goal, or threshold.",
-                example="Our annual NPS target was reached.",
-            ),
-            ClassificationProperty(
-                name="MGMT_COMPENSATION_GOVERNANCE",
-                options=[0, 1],
-                description="NPS linked to compensation, incentives, or governance.",
-                example=r"20% of the incentive plan is based on Net Promoter Score.",
-            ),
-            ClassificationProperty(
-                name="CUSTOMER_CASE_EVIDENCE",
-                options=[0, 1],
-                description="NPS used in customer stories, testimonials, or case examples.",
-                example="Our tool helped a retailer boost its NPS by 10 points.",
-            ),
-            ClassificationProperty(
-                name="NPS_SERVICE_PROVIDER",
-                options=[0, 1],
-                description="Company provides NPS-related services or tools.",
-                example="We provide consulting on Net Promoter Score programs.",
-            ),
-            ClassificationProperty(
-                name="METHODOLOGY_DEFINITION",
-                options=[0, 1],
-                description="Explains what NPS is or how it works.",
-                example="NPS measures customer loyalty.",
-            )
-        ]
-        
-
-class ModelBase(ABC):
-    """LLM Base abstract class."""
-    @abstractmethod
-    def __init__(self,
-                 persona,
-                 model,
-            )
-        ]
-        
+class DataEntry:
+    """Data entry class."""
+    def __init__(self, column_name: str, entry):
+        self.column_name = column_name
+        self.entry = entry
 
 class ModelBase(ABC):
     """LLM Base abstract class."""
@@ -149,11 +58,73 @@ class ModelBase(ABC):
         self.options.update(kwargs)
 
     @abstractmethod
-    def classify(self, text):
+    def classify(self, classification_option: ClassificationOption, text: str) -> List[DataEntry]:
         """Base abstract classify function."""
         pass
 
-class LLMHuggingFace(ModelBase):
+    def evaluate(
+        self,
+        classification_option: ClassificationOption,
+        classification_property: ClassificationProperty,
+        texts: List[str],
+        labels
+    ) -> dict:
+        """Evaluate model on given texts and labels."""
+        predictions = []
+        for text in texts:
+            data_entries = self.classify(classification_option, text)
+            for data_entry in data_entries:
+                if data_entry.column_name == classification_property.name:
+                    predictions.append(data_entry.entry)
+                    break
+
+        evaluation_results = classification_report(labels, predictions, output_dict=True)
+        print(classification_report(labels, predictions))
+        return evaluation_results
+
+class LLMBase(ModelBase):
+
+    def _generate_response(self, classification_option: ClassificationOption, text: str) -> str:
+        """Generate response for given classification option and text."""
+        pass
+
+    def classify(self, classification_option: NPSCategory, text: str) -> List[DataEntry]:
+        """Classify given text."""
+        response = self._generate_response(classification_option, text)
+
+        data_entries = List[DataEntry]()
+
+        for option in classification_option.get_classification_properties():
+            if option.name in response:
+                data_entries.append(DataEntry(column_name=option.name, entry=option.options[1]))
+            else:
+                data_entries.append(DataEntry(column_name=option.name, entry=option.options[0]))
+
+        return data_entries
+
+    def classify(self, classification_option: HasNumericNPS, text: str) -> List[DataEntry]:
+        """Classify given text."""
+        response = self._generate_response(classification_option, text)
+        class_properties = classification_option.get_classification_properties()
+        for class_property in class_properties:
+            match = re.search(class_property.options, response)
+            if match:
+                property_value = float(match.group().replace(',', '.'))
+                return [DataEntry(column_name=class_property.name, entry=property_value)]
+        return [DataEntry(column_name=class_properties[0].name, entry=-1)]
+
+    def classify(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
+        """Classify given text."""
+        response = self._generate_response(classification_option, text)
+        class_properties = classification_option.get_classification_properties()
+        for class_property in class_properties:
+            for property_value in class_property.options:
+                if str(property_value) in response:
+                    return [DataEntry(column_name=class_property.name, entry=property_value)]
+                return [DataEntry(column_name=class_property.name, entry=class_property.options[0])]
+        return [DataEntry(column_name=class_properties[0].name, entry=class_properties[0].options[0])]
+
+class LLMHuggingFace(LLMBase):
     """Huggingface LLM class."""
     def __init__(self,
                  persona,
@@ -196,10 +167,10 @@ class LLMHuggingFace(ModelBase):
             tokenizer=self.tokenizer,
         )
 
-    def classify(self, text):
-        """Classify given text."""
+    def _generate_response(self, classification_option: ClassificationOption, text: str) -> str:
+        """Generate response for given classification option and text."""
         messages = [
-            {"role": "system", "content": self.persona},
+            {"role": "system", "content": classification_option.get_persona()},
             {"role": "user", "content": text},
         ]
 
@@ -220,10 +191,10 @@ class LLMHuggingFace(ModelBase):
         )
 
         generated = result[0]["generated_text"]
-        response = generated[len(prompt):].strip()
-        return response
+        return generated[len(prompt):].strip()
 
-class LLMOllama(ModelBase):
+
+class LLMOllama(LLMBase):
     """Ollama LLM class."""
     def __init__(self,
                  persona,
@@ -251,23 +222,23 @@ class LLMOllama(ModelBase):
         self.host = host
         self.port = port
 
-    def classify(self, text):
-        """Classify given text."""
+    def _generate_response(self, classification_option: ClassificationOption, text: str) -> str:
+        """Generate response for given classification option and text."""
         client = Client(host=f"{self.host}:{self.port}")
-
         response: ChatResponse = client.chat(
             model=self.model,
             messages=[
-                {'role': 'system', 'content': self.persona},
+                {'role': 'system', 'content': classification_option.get_persona()},
                 {'role': 'user', 'content': text},
             ],
             options=self.options,
         )
         return response['message']['content'].strip()
 
+
 class SVMClassificationModel(ModelBase):
     """Classification model using SVM."""
-    def __init__(self, model: str, **kwargs):
+    def __init__(self, model: str, qa_model: str, **kwargs):
         BASE_DIR = Path(__file__).resolve().parent
         BGE_CACHE_DIR = BASE_DIR / "cache" / sanitize_filename(model)
 
@@ -278,34 +249,89 @@ class SVMClassificationModel(ModelBase):
         else:
             self.embedding_model = SentenceTransformer(str(BGE_CACHE_DIR))
 
-        SVM_CACHE_DIR = BASE_DIR / "cache" / "svm_pipeline.joblib"
-        if not SVM_CACHE_DIR.exists():
-            raise FileNotFoundError(
-                f"SVM model cache file not found at {SVM_CACHE_DIR}. "
-                "Please ensure the model is trained and saved correctly.",
-            )
+        self.cache_dir = BASE_DIR / "cache"
 
-        self.svm_model = joblib.load(SVM_CACHE_DIR)
-
-        LABEL_ENCODER_CACHE_DIR = BASE_DIR / "cache" / "label_encoder.joblib"
-        if not LABEL_ENCODER_CACHE_DIR.exists():
-            raise FileNotFoundError(
-                f"Label encoder cache file not found at {LABEL_ENCODER_CACHE_DIR}. "
-                "Please ensure the label encoder is saved correctly.",
-            )
-
-        self.label_encoder = joblib.load(LABEL_ENCODER_CACHE_DIR)
-
-    def classify(self, text: str) -> str:
+    def classify(self, classification_option : ClassificationOption, text: str) -> List[DataEntry]:
+        class_properties = classification_option.get_classification_properties()
+        svm_paths = [self.cache_dir / class_property.name for class_property in class_properties]
+        for svm_path in svm_paths:
+            if not svm_path.exists():
+                raise RuntimeError(f"SVM model for {svm_path.stem} not found in cache. Please train the model first.")
+        
         embedding = self.embedding_model.encode([text])
-        prediction = self.svm_model.predict(embedding)
-        prediction_label = self.label_encoder.inverse_transform(prediction)
-        return prediction_label[0]
+        data_entries = List[DataEntry]()
+        for class_property in class_properties:
+            svm_model = joblib.load(self.cache_dir / f"{class_property.name}.joblib")
+            prediction = svm_model.predict(embedding)
+            data_entries.append(DataEntry(column_name=class_property.name, entry=prediction[0]))
+
+        return data_entries
+    
+    def classify(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
+        raise NotImplementedError("SVMClassificationModel does not support NPSValue classification.")
+    
+    def train(self, classification_property: ClassificationProperty, texts: List[str], labels: List[int]):
+        """Train SVM model for given classification option."""
+        embeddings = self.embedding_model.encode(texts)
+        svm_model = make_pipeline(StandardScaler(), SVC(kernel='linear', random_state=42))
+        svm_model.fit(embeddings, labels)
+        joblib.dump(svm_model, self.cache_dir / f"{classification_property.name}.joblib")
+    
+class QAHuggingface(LLMBase):
+    """Classification model using question answering."""
+    def __init__(self,
+                persona,
+                temperature=0.0,
+                top_p=1.0,
+                top_k=1,
+                num_predict=128,
+                seed=42,
+                repeat_penalty=1.0,
+                model='mistralai/Mistral-7B-Instruct-v0.3',
+                device=None,
+                **kwargs,
+                ):
+        """Initialize Huggingface LLM class."""
+        super().__init__(persona=persona,
+                            temperature=temperature,
+                            top_k=top_k,
+                            top_p=top_p,
+                            num_predict=num_predict,
+                            seed=seed,
+                            repeat_penalty=repeat_penalty,
+                            **kwargs)
+        self.model_name = model
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            vram = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            print(f"VRAM: {vram:.1f} GB — {torch.cuda.get_device_name(0)}")
+        else:
+            print("No CUDA GPU detected")
+
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = AutoModelForQuestionAnswering.from_pretrained(
+            self.model_name,
+            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+            device_map="auto",
+        )
+        self.pipe = pipeline(
+            "question-answering",
+            model=self.model,
+            tokenizer=self.tokenizer,
+        )
+
+class ClassificationClass(str, Enum):
+    """Enum for classification classes."""
+    LLMHUGGINGFACE = "LLMHuggingFace"
+    LLMOLLAMA = "LLMOllama"
+    SVM = "SVM"
+    QAHUGGINGFACE = "QAHuggingFace"
 
 _MODEL_CLASSES_MAP = {
-    ClassificationClass.HUGGINGFACE: LLMHuggingFace,
-    ClassificationClass.OLLAMA: LLMOllama,
+    ClassificationClass.LLMHUGGINGFACE: LLMHuggingFace,
+    ClassificationClass.LLMOLLAMA: LLMOllama,
     ClassificationClass.SVM: SVMClassificationModel,
+    ClassificationClass.QAHUGGINGFACE: QAHuggingface,
 }
 
 def get_model_class(model_class: ClassificationClass) -> ModelBase:
