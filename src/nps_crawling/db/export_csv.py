@@ -54,4 +54,4 @@ def export_to_csv(filepath: str = "nps_filings_export.csv", all: bool = True, ke
 if __name__ == "__main__":
     # all=True exportiert alle nps_relevant=True
     # all=False exportiert nur Filings mit dem spezifizierten Keyword in der keywords Spalte
-    export_to_csv("nps_filings_export.csv", all=True, keyword="net promotor")
+    export_to_csv("nps_filings_export.csv", all=False, keyword="net promotor")
