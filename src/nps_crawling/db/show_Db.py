@@ -22,12 +22,30 @@ def main() -> None:
             false_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant = FALSE")).scalar()
             null_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant IS NULL")).scalar()
             
-            # Keywords analysis
-            unique_keywords_count = conn.execute(text(f"SELECT COUNT(DISTINCT kw) FROM {db.table_name}, unnest(keywords) AS kw")).scalar()
-            
-            keyword_counts = conn.execute(text(f"SELECT kw, COUNT(*) as cnt FROM {db.table_name}, unnest(keywords) AS kw GROUP BY kw ORDER BY cnt DESC")).fetchall()
-            
-            combination_counts = conn.execute(text(f"SELECT keywords, COUNT(*) as cnt FROM {db.table_name} GROUP BY keywords ORDER BY cnt DESC")).fetchall()
+            # Get all keywords to process in python for clean aggregation
+            all_keywords_rows = conn.execute(text(f"SELECT keywords FROM {db.table_name}")).fetchall()
+
+        from collections import Counter
+        keyword_counter = Counter()
+        combination_counter = Counter()
+
+        for row in all_keywords_rows:
+            kws = row[0]
+            if not kws:
+                combination_counter["[Keine Keywords]"] += 1
+                continue
+                
+            # Clean keywords (keep original quotes, just strip spaces)
+            clean_kws = []
+            for k in kws:
+                clean_k = k.strip()
+                clean_kws.append(clean_k)
+                keyword_counter[clean_k] += 1
+                
+            # Sort the array so ['A', 'B'] is the same combination as ['B', 'A']
+            clean_kws.sort()
+            kws_str = "[" + ", ".join([f"'{k}'" for k in clean_kws]) + "]"
+            combination_counter[kws_str] += 1
 
         print("=" * 50)
         print(f"Statistiken zur Datenbank-Tabelle '{db.table_name}':")
@@ -36,21 +54,15 @@ def main() -> None:
         print(f"  - nps_relevant = False: {false_count}")
         print(f"  - nps_relevant = Null:  {null_count}")
         print("-" * 50)
-        print(f"  - Verschiedene Keywords (Gesamt): {unique_keywords_count}")
+        print(f"  - Verschiedene Keywords (Gesamt): {len(keyword_counter)}")
         
         print("\nFilings pro Keyword:")
-        for row in keyword_counts:
-            print(f"    * '{row[0]}': {row[1]}")
+        for kw, cnt in keyword_counter.most_common():
+            print(f"    * '{kw}': {cnt}")
             
         print("\nFilings pro Keyword-Kombination:")
-        for row in combination_counts:
-            # row[0] is the keywords array
-            kws = row[0]
-            if not kws:
-                kws_str = "[Keine Keywords]"
-            else:
-                kws_str = "[" + ", ".join([f"'{k}'" for k in kws]) + "]"
-            print(f"    * {kws_str}: {row[1]}")
+        for combo, cnt in combination_counter.most_common():
+            print(f"    * {combo}: {cnt}")
             
         print("=" * 50 + "\n")
     except Exception as e:
