@@ -16,9 +16,11 @@ application = Flask(__name__,
 
 from routes.static_routes import static_bp
 from routes.crawl_routes import crawl_bp
+from routes.query_routes import query_bp
 
 application.register_blueprint(static_bp, url_prefix=PREFIX)
 application.register_blueprint(crawl_bp, url_prefix=PREFIX)
+application.register_blueprint(query_bp, url_prefix=PREFIX)
 
 if __name__ == "__main__":
     # Wir nutzen Port 5000 und Host 0.0.0.0 wie von der Admin gefordert

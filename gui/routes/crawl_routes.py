@@ -34,10 +34,11 @@ def stop_crawl():
     cs.crawl_done = True
     return jsonify({"status": "stopped"})
 
+
 @crawl_bp.post("/search")
 @login_required
 def search():
-    data = request.form.to_dict(flat=True)
+    data: dict = request.form.to_dict(flat=True)
     data["filing_types"] = request.form.getlist("filing_types")
 
     from services.crawl_service import last_data

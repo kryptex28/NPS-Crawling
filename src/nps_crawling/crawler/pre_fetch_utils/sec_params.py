@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from os import listdir
 from os.path import isfile, join
 
@@ -85,6 +86,22 @@ def create_config_from_search_params(params: list[SecSearchParams]) -> dict:
 
     return data
 
+def create_config_from_dict(data) -> SecSearchParams:
+    print(data)
+    return SecSearchParams()
+
+def store_config(path: str, parameter: SecSearchParams) -> None:
+
+    os.makedirs(os.path.dirname(f"{path}"), exist_ok=True)
+    id = str(parameter.__hash__).translate(str.maketrans(':*?"<>|/\\', '_________'))
+    fname = f"{id}.json"
+
+    saved_path = f"{path}/{fname}"
+    with open(saved_path, "w", encoding="utf-8") as f:
+        json.dump(parameter.create_dict, f, ensure_ascii=False, indent=2)
+    
+
+
 
 class SecSearchParams:
     """Class abstraction of sec.gov parameter based search."""
@@ -165,3 +182,6 @@ class SecSearchParams:
             'filing_category': self.filing_category.to_string(),
             'filing_categories': self.filing_categories,
         }
+    
+    def __hash__(self) -> int:
+        return hash((self.keyword, self.from_date, self.to_date, self.individual_search.ticker, self.individual_search.cik))

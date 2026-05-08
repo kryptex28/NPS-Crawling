@@ -13,7 +13,7 @@
         <img class="logo" src="thu_logo.png" alt="THU logo" />
       </header>
       <section class="panel">
-        <form id="edgar-form" class="form" action="/services/hub-flask/search" method="post" autocomplete="off">
+        <form id="edgar-form" class="form" action="/services/hub-flask/create-query" method="post" autocomplete="off">
           <div class="form-row">
             <label for="query">Document word or phrase?</label>
             <input
@@ -206,8 +206,9 @@
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="primary">Search</button>
+            <button type="submit" class="primary">Create Query</button>
             <button type="reset" class="ghost">Clear all</button>
+            <!--<button type="create" class="secondary">Create Query</button>-->
           </div>
         </form>
       </section>
@@ -231,8 +232,15 @@
 
         <div class="results-list" id="results-list"></div>
       </section>
+      <div id="query-container">
+        <button type="button" class="collapsible">Show Queries</button>
+        <div class="collapsible-content" id="queries-list">
+          <div class="query-list" id="query-list"></div>
+        </div>
+      </div>
     </main>
 
-    <script src="app.js"></script>
+    <script src="static/js/app.js"></script>
+    <script src="static/js/query.js"></script>
   </body>
 </html>

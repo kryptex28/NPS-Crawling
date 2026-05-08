@@ -3,6 +3,14 @@ const resultsPanel = document.getElementById("results-panel");
 const resultsList = document.getElementById("results-list");
 const bulkSelect = document.getElementById("bulk-select");
 
+document.querySelectorAll(".collapsible").forEach(button => {
+  button.addEventListener("click", () => {
+    button.classList.toggle("active");
+    const content = button.nextElementSibling;
+    content.style.display = content.style.display === "block" ? "none" : "block";
+  });
+});
+
 const dummyResults = [
   {
     cik: "0000320193",
@@ -82,3 +90,4 @@ bulkSelect.addEventListener("change", () => {
     setAllCheckboxes(false);
   }
 });
+
