@@ -1,6 +1,7 @@
 """SEC Parameter search abstraction module with utility functions."""
 from __future__ import annotations
 
+import uuid
 import json
 import os
 from os import listdir
@@ -55,6 +56,7 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
                       filing_categories=filing_categories,
                       filing_limit=filing_limit,
                       force_crawl=force_crawl,
+                      id=query_id,
                       )
 
         params.append(p)
@@ -86,19 +88,42 @@ def create_config_from_search_params(params: list[SecSearchParams]) -> dict:
 
     return data
 
-def create_config_from_dict(data) -> SecSearchParams:
-    print(data)
-    return SecSearchParams()
+def get_config_from_id(path: str, id: str) -> str:
+    return join(path, f"{id}.json")
+
+def create_config_from_dict(data: dict) -> SecSearchParams:    
+    keyword: str = data.get("query", "")
+    entity: str = data.get("entity", "")
+    filing_category_str: str = data.get("filing_category", "")
+    date_range: str = data.get("date_range", "")
+    from_date: str = data.get("from_date", "")
+    to_date: str = data.get("to_date", "")
+
+    filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(filing_category_str)
+    if filing_category == FilingsCategoryCollectionCoarse.CUSTOM:
+        filing_categories: list[str] = data.get('filing_categories', [])
+    else:
+        filing_categories: list[str] = FilingCategoryCollection.filing_categories[filing_category]
+
+    return SecSearchParams(keyword=keyword,
+                           filing_category=filing_category,
+                           filing_categories=filing_categories,
+                           individual_search=CompanyTicker("",[""],""),
+                           date_range=date_range,
+                           from_date=from_date,
+                           to_date=to_date,
+                           query_base=""
+                           )
 
 def store_config(path: str, parameter: SecSearchParams) -> None:
 
     os.makedirs(os.path.dirname(f"{path}"), exist_ok=True)
-    id = str(parameter.__hash__).translate(str.maketrans(':*?"<>|/\\', '_________'))
-    fname = f"{id}.json"
+    id = parameter.id.translate(str.maketrans(':*?"<>|/\\', '_________'))
+    fname = f"{parameter.id}.json"
 
     saved_path = f"{path}/{fname}"
     with open(saved_path, "w", encoding="utf-8") as f:
-        json.dump(parameter.create_dict, f, ensure_ascii=False, indent=2)
+        json.dump({ "queries": parameter.create_dict() }, f, ensure_ascii=False, indent=2)
     
 
 
@@ -115,8 +140,13 @@ class SecSearchParams:
                  filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.ALL,
                  filing_categories: list[str] = [],
                  filing_limit: int = -1,
-                 force_crawl: bool = False):
+                 force_crawl: bool = False,
+                 id: str = ""):
         """Initialize SecSearchParams class."""
+        if len(id) == 0:
+            self.id = str(uuid.uuid4())
+        else:
+            self.id = id
         self.query_base = query_base
         self.keyword = keyword
         self.from_date = from_date
@@ -170,7 +200,7 @@ class SecSearchParams:
             individual_search_cik = self.individual_search.cik
             individual_search_title = self.individual_search.title
 
-        return {
+        return { self.id: {
             'query_base': self.query_base,
             'keyword': self.keyword,
             'from_date': self.from_date,
@@ -181,7 +211,7 @@ class SecSearchParams:
             'individual_search_title': individual_search_title,
             'filing_category': self.filing_category.to_string(),
             'filing_categories': self.filing_categories,
-        }
+        }}
     
     def __hash__(self) -> int:
         return hash((self.keyword, self.from_date, self.to_date, self.individual_search.ticker, self.individual_search.cik))

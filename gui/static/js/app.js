@@ -4,6 +4,7 @@ const resultsList = document.getElementById("results-list");
 const bulkSelect = document.getElementById("bulk-select");
 
 document.querySelectorAll(".collapsible").forEach(button => {
+  console.log("click")
   button.addEventListener("click", () => {
     button.classList.toggle("active");
     const content = button.nextElementSibling;
@@ -72,10 +73,28 @@ function setAllCheckboxes(checked) {
   });
 }
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  renderResults(dummyResults);
-  resultsPanel.hidden = false;
+  
+  const formData = new FormData(form);
+
+  try {
+    const response = await fetch("/services/hub-flask/create-query", {
+      method: "POST",
+      body: formData
+    });
+
+    const result = await response.json()
+
+    if (result.status) {
+      queryList.innerHTML = "";
+      queryMap.clear();
+      getQueries();
+    }
+
+  } catch (err) {
+    console.error("Failed to create query: ", err);
+  }
 });
 
 form.addEventListener("reset", () => {
@@ -83,6 +102,7 @@ form.addEventListener("reset", () => {
   resultsList.innerHTML = "";
 });
 
+/*
 bulkSelect.addEventListener("change", () => {
   if (bulkSelect.value === "all") {
     setAllCheckboxes(true);
@@ -90,4 +110,4 @@ bulkSelect.addEventListener("change", () => {
     setAllCheckboxes(false);
   }
 });
-
+*/
