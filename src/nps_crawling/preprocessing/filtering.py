@@ -56,22 +56,32 @@ class NpsMentionFilterPipeline(Config):
         for record in records:
             text = record.get("core_text", "")
             sentences = self._split_into_sentences(text)
-            record["context"] = self._extract_context_windows_from_sentences(sentences)
+            hits, excluded_count = self._extract_context_windows_from_sentences(sentences)
+            record["context"] = hits
             record["all_context_windows"] = self._build_concatenated_context(
-                sentences, record["context"],
+                sentences, hits,
             )
+            record.setdefault("metadata", {})["Context Windows Excluded"] = excluded_count
         return records
 
     def _extract_context_windows_from_sentences(self, sentences):
-        """Extract all context windows from a list of sentences."""
+        """Extract all context windows from a list of sentences.
+
+        Returns ``(hits, excluded_count)`` where ``excluded_count`` is the
+        number of (sentence, phrase) pairs that would have produced a context
+        window but were suppressed because the include phrase only appeared
+        inside an entry of LIST_OF_PHRASES_TO_EXCLUDE.
+        """
         if not sentences:
-            return []
+            return [], 0
 
         n = len(sentences)
         hits = []
+        excluded_count = 0
 
         for idx, sentence in enumerate(sentences):
-            matched_phrases = self._finding_matching_phrases(sentence)
+            matched_phrases, suppressed = self._finding_matching_phrases(sentence)
+            excluded_count += suppressed
             if not matched_phrases:
                 continue
 
@@ -90,7 +100,7 @@ class NpsMentionFilterPipeline(Config):
                     "char_cutoff_applied": char_cutoff,
                 })
 
-        return hits
+        return hits, excluded_count
 
     def _build_concatenated_context(self, sentences, context_windows):
         """Merge all context windows into one string without duplicate sentences."""
@@ -149,11 +159,14 @@ class NpsMentionFilterPipeline(Config):
         masked_sentence = self._mask_excluded_phrases(sentence_lower)
 
         matches = []
+        suppressed = 0
         for phrase in self.filter_words:
             if phrase in masked_sentence:
                 matches.append(phrase)
+            elif phrase in sentence_lower:
+                suppressed += 1
 
-        return matches
+        return matches, suppressed
 
     def _mask_excluded_phrases(self, sentence_lower):
         """Replace every occurrence of an excluded phrase with spaces.
