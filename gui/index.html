@@ -416,6 +416,19 @@
             <!--<button type="create" class="secondary">Create Query</button>-->
           </div>
         </form>
+          <div id="query-container">
+            <div id="query-control-menu">
+              <button type="button" class="query-control" id="query-select-all">Select All</button>
+              <button type="button" class="query-control" id="query-delete">Delete</button>
+            </div>
+            <div class="collapsible-content" id="queries-list">
+              <div class="query-list" id="query-list"></div>
+            </div>
+          </div>
+          <form id="start-search-form" action="/services/hub-flask/start-search" method="post">
+            <input type="hidden" name="ids" id="ids-input" />
+            <button type="submit">Start Search</button>
+          </form>
       </section>
 <!----
       <section class="panel results" id="results-panel" hidden>
@@ -436,18 +449,9 @@
         </div>
 
         <div class="results-list" id="results-list"></div>
-        -->
       </section>
-      <div id="query-container">
-        <button type="button" class="collapsible">Show Queries</button>
-        <div id="query-control-menu">
-          <button type="button" class="query-control" id="query-select-all">Select All</button>
-          <button type="button" class="query-control" id="query-delete">Delete</button>
-        </div>
-        <div class="collapsible-content" id="queries-list">
-          <div class="query-list" id="query-list"></div>
-        </div>
-      </div>
+      -->
+
     </main>
 
     <script src="static/js/app.js"></script>

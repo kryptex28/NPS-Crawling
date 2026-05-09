@@ -2,6 +2,7 @@
 from flask import Flask, jsonify, request, send_from_directory
 from functools import wraps
 from nps_crawling.db.db_adapter import DbAdapter
+from nps_crawling.config import Config
 
 import logging
 
@@ -21,6 +22,8 @@ from routes.query_routes import query_bp
 application.register_blueprint(static_bp, url_prefix=PREFIX)
 application.register_blueprint(crawl_bp, url_prefix=PREFIX)
 application.register_blueprint(query_bp, url_prefix=PREFIX)
+
+application.secret_key = Config.FLASK_APPLICATION_SECRET
 
 if __name__ == "__main__":
     # Wir nutzen Port 5000 und Host 0.0.0.0 wie von der Admin gefordert

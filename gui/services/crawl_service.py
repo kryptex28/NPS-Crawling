@@ -40,22 +40,19 @@ bus.subscribe("crawl.done", on_crawl_done)
 bus.subscribe("crawl.result", on_crawl_received)
 bus.subscribe("prefetch.result", on_prefetch_received)
 
-def initialize_crawl(data: dict):
+def initialize_crawl(ids: list[str]):
     global crawl_done
 
     crawl_dict.clear()
-    thread: threading.Thread = threading.Thread(target=_run_crawl, args=(data, ))
+    thread: threading.Thread = threading.Thread(target=_run_crawl, args=(ids, ))
     thread.daemon = True
     thread.start()
 
-def _run_crawl(data: dict) -> None:
-    global crawl_done, last_data
-
-    if data:
-        last_data = data
+def _run_crawl(ids: list[str]) -> None:
+    global crawl_done
     
     crawler = CrawlerPipeline()
-    crawler.crawler_workflow()
+    crawler.crawler_workflow(search_parameter_files=ids)
     crawl_done = True
 
 def event_stream():

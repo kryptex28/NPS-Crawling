@@ -1,6 +1,10 @@
-from flask import Blueprint, jsonify, request, send_from_directory, Response
+from flask import Blueprint, jsonify, request, send_from_directory, Response, redirect, url_for, session
 from middleware.auth import login_required
 from services.crawl_service import initialize_crawl, event_stream
+from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams, get_search_params_from_id, create_search_params_from_config
+from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams
+from nps_crawling.config import Config
+import json
 
 import logging
 
@@ -20,10 +24,16 @@ def check():
 @crawl_bp.post("/start-crawl")
 @login_required
 def start_crawl():
-    from services.crawl_service import initialize_crawl, last_data, crawl_done
-    if not last_data:
-        return jsonify({"error": "No search data available. Please perform a search first."}), 400
-    initialize_crawl(last_data)
+    id_list: list[str] = json.loads(session.get("selected_ids", []))
+    parameters: list[str] = []
+
+    for id in id_list:
+        path: str = get_search_params_from_id(Config.GUI_QUERY_PATH, id=id)
+        parameters.append(path)
+    
+    initialize_crawl(parameters)
+
+
     return jsonify({"status": "started"})
 
 @crawl_bp.post("/stop-crawl")
@@ -34,6 +44,15 @@ def stop_crawl():
     cs.crawl_done = True
     return jsonify({"status": "stopped"})
 
+@crawl_bp.post("/start-search")
+@login_required
+def start_search():
+    data: dict = request.form.to_dict(flat=True)
+    print(data)
+    
+    id_list: list[str] = data.get("ids", "")
+    session["selected_ids"] = id_list
+    return redirect(url_for("crawl_routes.check"))
 
 @crawl_bp.post("/search")
 @login_required
@@ -44,7 +63,8 @@ def search():
     from services.crawl_service import last_data
     last_data.clear()
     last_data.update(data)
-    return send_from_directory(".", "check.html")
+    
+    return redirect(url_for("crawl_routes.check"))
 
 @crawl_bp.get("/stream-crawl")
 @login_required

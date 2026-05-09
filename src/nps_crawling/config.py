@@ -177,3 +177,6 @@ class Config:
         )
 
     MODEL = "SVM"  # Options: "SVM", "Ollama"
+
+
+    FLASK_APPLICATION_SECRET: str = os.getenv("FLASK_APPLICATION_SECRET", "nps-crawler-secret")

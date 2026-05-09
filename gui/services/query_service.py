@@ -1,7 +1,7 @@
 import os
 from os.path import isdir, join
 
-from nps_crawling.crawler.pre_fetch_utils.sec_params import create_config_from_dict, create_search_params_from_config_dir, store_config, get_config_from_id
+from nps_crawling.crawler.pre_fetch_utils.sec_params import create_config_from_dict, create_search_params_from_config_dir, store_config, get_search_params_from_id
 from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams
 from nps_crawling.config import Config
 

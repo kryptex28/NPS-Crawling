@@ -23,11 +23,11 @@ crochet.setup()
 @crochet.wait_for(timeout=3600)
 @defer.inlineCallbacks
 def _run_crawl_sequentially(runner: CrawlerRunner,
-                            query_files: list[str],
+                            search_parameter_files: list[str],
                             fetch_strategy: FetchStrategy,
                             ignore_lookup: bool):
     try:
-        for query_file in query_files:
+        for query_file in search_parameter_files:
             filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
             logger.info(f"Running spider for {query_file} with {len(filings)} filings")
             yield runner.crawl(BetterSpider, filings=filings)
@@ -44,6 +44,7 @@ class CrawlerPipeline(Config):
         pass
 
     def crawler_workflow(self,
+                         search_parameter_files: list[str] = [],
                          dry_run: bool = False,
                          db_only: bool = False,
                          prefetch_only: bool = False,
@@ -69,25 +70,26 @@ class CrawlerPipeline(Config):
         SEC_QUERY_DIR_PATH = Config.QUERY_PATH
         fetch_strategy: FetchStrategy = SearchStrategy()
 
-        query_files = [
-            os.path.join(SEC_QUERY_DIR_PATH, f)
-            for f in os.listdir(SEC_QUERY_DIR_PATH)
-            if os.path.isfile(os.path.join(SEC_QUERY_DIR_PATH, f))
-        ]
+        if not search_parameter_files:
+            search_parameter_files = [
+                os.path.join(SEC_QUERY_DIR_PATH, f)
+                for f in os.listdir(SEC_QUERY_DIR_PATH)
+                if os.path.isfile(os.path.join(SEC_QUERY_DIR_PATH, f))
+            ]
 
         if prefetch_only:
             total_size: int = 0
-            for query_file in query_files:
+            for query_file in search_parameter_files:
                 filings = fetch_strategy.fetch(query_path=query_file, ignore_lookup=ignore_lookup)
                 for filing in filings:
                     logger.info(filing)
                 total_size += len(filings)
 
-            logger.info(f"Total crawled filings from {len(query_files)} queries: {total_size}")
+            logger.info(f"Total crawled filings from {len(search_parameter_files)} queries: {total_size}")
+            return 
+        runner = CrawlerRunner(settings=settings)
 
-        else:
-            runner = CrawlerRunner(settings=settings)
-
-        _run_crawl_sequentially(runner=runner, query_files=query_files, fetch_strategy=fetch_strategy, ignore_lookup=ignore_lookup)
-
-        return None
+        _run_crawl_sequentially(runner=runner, 
+                                search_parameter_files=search_parameter_files, 
+                                fetch_strategy=fetch_strategy, 
+                                ignore_lookup=ignore_lookup)

@@ -88,7 +88,7 @@ def create_config_from_search_params(params: list[SecSearchParams]) -> dict:
 
     return data
 
-def get_config_from_id(path: str, id: str) -> str:
+def get_search_params_from_id(path: str, id: str) -> str:
     return join(path, f"{id}.json")
 
 def create_config_from_dict(data: dict) -> SecSearchParams:    

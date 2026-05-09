@@ -17,6 +17,8 @@ const start = Date.now();
 const sseStream = new EventSource("/services/hub-flask/stream-crawl");
 const resultsList = document.getElementById("results-list");
 
+const currentCrawlerStatus = document.getElementById("current-crawler-status");
+
 let totalCount = 0;
 let pageCount = 0;
 let maxItemsPerPage = 10;
