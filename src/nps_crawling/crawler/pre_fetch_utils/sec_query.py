@@ -2,16 +2,16 @@
 import logging
 import sys
 import time
-
+import math
 import requests
 
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.crawler.pre_fetch_utils.filings import Filing
 from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams
 from nps_crawling.crawler.pre_fetch_utils.sec_ticker_map import SecTickerMap
+from nps_crawling.utils.event_bus import bus
 
 logger = logging.getLogger(__name__)
-
 
 def get_total_filings_count(data: dict) -> int:
     """Get total number of queried filings."""
@@ -54,6 +54,7 @@ class SecQuery:
 
     def are_filings_present_in_db(self, filings: list[Filing], bypass_filter: bool = False) -> list[Filing]:
         temp: list[Filing] = []
+        duplicates: list[Filing] = []
         try:
             db: DbAdapter = DbAdapter()
 
@@ -66,7 +67,10 @@ class SecQuery:
                 else:
                     db.add_keyword(filing.id, filing.keyword)
                     logger.debug(f"Filing with ID {filing.get_id()} does exists in DB")
+                    duplicates.append(filing)
                     pass
+
+            bus.publish("crawler.duplicates", duplicates)
 
             old_length: int = len(filings)
             filings.clear()
@@ -125,6 +129,7 @@ class SecQuery:
             query = len(hits)
 
             logger.info(f'Iterating through page: {page}')
+            bus.publish('paging.info', page, math.ceil(total / 100))
 
             if limit < query:
                 response['hits']['hits'] = hits[:limit]
@@ -222,6 +227,14 @@ class SecQuery:
         )
 
         return filing
+
+    def create_filing_from_db(self, data: dict) -> Filing:
+        wrapped = {
+            "_id": data["id"],
+            "_index": "edgar",
+            "_source": data
+        }
+        return self.create_filing(wrapped)
 
     def create_filings(self, data: list) -> list[Filing]:
         """Create list of filings based on JSON payload."""

@@ -88,8 +88,7 @@ class Filing:
             'file_date': str(self.file_date),
             'biz_locations': list(self.biz_locations),
             'sics': list(self.sics),
-            'keyword': str(self.keyword),
-            'status': 'Crawled'
+            'keyword': str(self.keyword)
         }
 
 

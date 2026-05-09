@@ -4,6 +4,7 @@ from services.crawl_service import initialize_crawl, event_stream
 from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams, get_search_params_from_id, create_search_params_from_config
 from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams
 from nps_crawling.config import Config
+from nps_crawling.utils.event_bus import bus
 import json
 
 import logging
@@ -39,9 +40,7 @@ def start_crawl():
 @crawl_bp.post("/stop-crawl")
 @login_required
 def stop_crawl():
-    from services.crawl_service import crawl_done
-    import services.crawl_service as cs
-    cs.crawl_done = True
+    bus.publish("crawler.stop")
     return jsonify({"status": "stopped"})
 
 @crawl_bp.post("/start-search")

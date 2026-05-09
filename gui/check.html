@@ -17,7 +17,7 @@
       <section class="panel">
         <div id="crawl-control">
           <button type="button" id="start-crawl" class="primary"">Start new crawl</button>
-          <button type="button" id="stop-crawl" class="ghost" disabled>Stop crawl</button>
+          <button type="button" id="stop-crawl" class="ghost">Stop crawl</button>
           <button type="button" id="clear-results" class="ghost">Clear results</button>
         </div>
         <div class="status-block">
@@ -28,30 +28,32 @@
           <div>
             <span id="element-count">Elements: 0</span>
           </div>
-          <div>
-            <span id="current-crawler-status"></span>
+          <div id="current-crawler-status-container">
+            <span id="current-crawler-status">Test</span>
           </div>
-          <div class="paging-control" id="paging-control">
-            <button id="paging-prev" disabled>&#8592; Prev</button>
-            <span id="paging-info">Page 1 of 1</span>
-            <button id="paging-next">Next &#8594;</button>
-          </div>
-          <div class="segmented-control" role="group" aria-label="Items per page">
-            <label>
-              <input type="radio" name="elements" value="10"> <span>10</span>
-            </label>
-            <label>
-              <input type="radio" name="elements" value="25"> <span>25</span>
-            </label>
-            <label>
-              <input type="radio" name="elements" value="100" checked> <span>100</span>
-            </label>
-            <label>
-              <input type="radio" name="elements" value="1000" checked> <span>1000</span>
-            </label>
-            <label>
-              <input type="radio" name="elements" value="10000" checked> <span>10000</span>
-            </label>
+          <div id="control-container">
+            <div class="paging-control" id="paging-control">
+              <button id="paging-prev" disabled>&#8592; Prev</button>
+              <span id="paging-info">Page 1 of 1</span>
+              <button id="paging-next">Next &#8594;</button>
+            </div>
+            <div class="segmented-control" role="group" aria-label="Items per page">
+              <label>
+                <input type="radio" name="elements" value="10"> <span>10</span>
+              </label>
+              <label>
+                <input type="radio" name="elements" value="25"> <span>25</span>
+              </label>
+              <label>
+                <input type="radio" name="elements" value="100" checked> <span>100</span>
+              </label>
+              <label>
+                <input type="radio" name="elements" value="1000"> <span>1000</span>
+              </label>
+              <label>
+                <input type="radio" name="elements" value="10000"> <span>10000</span>
+              </label>
+            </div>
           </div>
         </div>
         <div class="status-complete" id="status-complete" hidden>

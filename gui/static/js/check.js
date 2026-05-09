@@ -33,6 +33,8 @@ const renderPage = (page) => {
   const pageItems = allItems.slice(startIndex, startIndex + maxItemsPerPage);
 
   pageItems.forEach((item, index) => {
+    console.log(item);
+
     const row = document.createElement("div");
     row.className = "result-item";
     row.classList.add(item.status);
@@ -122,6 +124,14 @@ sseStream.onmessage = (e) => {
     sseStream.close();
     return;
   }
+
+  if (result.__heartbeat) return;
+
+  if (result.type == "paging") {
+    currentCrawlerStatus.textContent = `Fetching page ${result.page}. Remaining pages: ${result.total}`;
+    return;
+  }
+
 
   const items = Array.isArray(result) ? result : [result];
   addResults(items);

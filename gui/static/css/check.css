@@ -24,6 +24,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  height: 25px;
 }
 
 .paging-control button:hover:not(:disabled) {
@@ -71,6 +72,7 @@
   border-right: 1px solid #d1d5db;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
+  height: 25px;
 }
 
 .segmented-control label:last-child span {
@@ -101,4 +103,24 @@
   border: 1px solid #dcd4c6;
   background: #94e1c7;
   color: white;
+}
+
+.database {
+  border: 1px solid #dcd4c6;
+  background: #dcb554;
+  color: white;
+}
+
+#filing-display-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+#control-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }

@@ -5,6 +5,7 @@ from typing_extensions import Self
 import scrapy
 from scrapy.crawler import Crawler
 from scrapy import signals
+from scrapy.exceptions import CloseSpider
 
 from nps_crawling.crawler.pattern_factory.processing_factory import ProcessingFactory
 from nps_crawling.crawler.items import FilingItem
@@ -31,10 +32,13 @@ class BetterSpider(scrapy.Spider):
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
         self.logger.info("Starting scrapy spider.")
+        bus.publish("crawler.status", "Starting", "")
 
         for i, filing in enumerate(self.filings):
             self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
             url: str = filing.get_url()[0]
+            bus.publish("crawler.status", "Dispatching", url)
+
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
@@ -44,12 +48,15 @@ class BetterSpider(scrapy.Spider):
                 dont_filter=True,
             )
 
+
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""
         self.logger.info(f"Parsing {response.url}")
         filing: Filing = response.meta['filing']
         keyword: str = filing.keyword
         url: str = response.meta['url']
+
+        bus.publish("crawler.status", "Parsing", url)
 
         # Extract text from response content
         try:
