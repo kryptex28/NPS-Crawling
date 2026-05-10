@@ -17,4 +17,4 @@ def set_config():
     print(data)
     update_config_from_dict(data=data)
 
-    return {}
+    return {"status": True}

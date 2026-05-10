@@ -179,7 +179,7 @@ class Config:
             "Output: The chosen category label and nothing else."
         )
 
-    MODEL = "SVM"  # Options: "SVM", "Ollama"
+    MODEL: str = "SVM"  # Options: "SVM", "Ollama"
 
 
     FLASK_APPLICATION_SECRET: str = os.getenv("FLASK_APPLICATION_SECRET", "nps-crawler-secret")

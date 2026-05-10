@@ -3,11 +3,6 @@ const resultsPanel = document.getElementById("results-panel");
 const resultsList = document.getElementById("results-list");
 const bulkSelect = document.getElementById("bulk-select");
 
-const openConfig = document.getElementById("open-config");
-const dialog = document.getElementById("config-dialog");
-const configForm = document.getElementById("config-form");
-
-
 document.querySelectorAll(".collapsible").forEach(button => {
   console.log("click")
   button.addEventListener("click", () => {
@@ -111,31 +106,3 @@ form.addEventListener("reset", () => {
 document.getElementById("start-search-form").addEventListener("submit", (event) =>  {
   document.getElementById("ids-input").value = JSON.stringify(getSelectedIds());
 })
-
-configForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const formData = new FormData(configForm);
-
-  try {
-    const response = await fetch("/services/hub-flask/set-config", {
-      method: "POST",
-      body: formData
-    });
-
-    const result = await response.json()
-
-    if (result.status) {
-      alert("Configuration updated successfully!");
-    } else {
-      alert("Failed to update configuration.");
-    }
-  } catch (err) {
-    console.error("Failed to update configuration: ", err);
-    alert("An error occurred while updating configuration.");
-  }
-});
-
-openConfig.addEventListener("click", () => {
-    dialog.showModal();
-});
