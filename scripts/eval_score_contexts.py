@@ -1,11 +1,11 @@
 """Score the frozen evaluation context windows with the current similarity model.
 
-Reads ``data/evaluation/contexts.jsonl`` (produced by
+Reads ``evaluation/preprocessing/contexts.jsonl`` (produced by
 ``eval_export_for_labeling.py``) and runs ``SimilarityPipeline.embed_and_score``
 on every row. Writes one JSONL of raw scores per run, named after the embedding
 model so results from different model configs don't overwrite each other:
 
-    data/evaluation/scores_<sanitized_model_name>.jsonl
+    evaluation/preprocessing/scores_<sanitized_model_name>.jsonl
 
 To compare a different embedding model or a different ``SIMILARITY_REFERENCE_TEXT``,
 edit ``src/nps_crawling/config.py`` and re-run this script. No threshold is
@@ -25,7 +25,7 @@ from nps_crawling.config import Config
 from nps_crawling.preprocessing.similarity import SimilarityPipeline
 
 
-EVAL_DIR = Config.DATA_PATH / "evaluation"
+EVAL_DIR = Path(__file__).resolve().parents[1] / "evaluation" / "preprocessing"
 CONTEXTS_JSONL = EVAL_DIR / "contexts.jsonl"
 
 

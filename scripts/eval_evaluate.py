@@ -1,7 +1,7 @@
 """Compare manual labels against scored context windows.
 
-Joins ``data/evaluation/labeling.xlsx`` (your manual labels, keyed by
-``context_id``) with one or more ``data/evaluation/scores_*.jsonl`` files
+Joins ``evaluation/preprocessing/labeling.xlsx`` (your manual labels, keyed by
+``context_id``) with one or more ``evaluation/preprocessing/scores_*.jsonl`` files
 (produced by ``eval_score_contexts.py``) and prints precision / recall / F1
 across a sweep of thresholds for each scored model.
 
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from nps_crawling.config import Config
 
 
-EVAL_DIR = Config.DATA_PATH / "evaluation"
+EVAL_DIR = Path(__file__).resolve().parents[1] / "evaluation" / "preprocessing"
 LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 
 
@@ -115,7 +115,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--scores", nargs="*",
-        help="Specific scores_*.jsonl file(s) (relative to data/evaluation/). "
+        help="Specific scores_*.jsonl file(s) (relative to evaluation/preprocessing/). "
              "Default: all scores_*.jsonl found.",
     )
     parser.add_argument(
