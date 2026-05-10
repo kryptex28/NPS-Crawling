@@ -416,6 +416,93 @@
             <!--<button type="create" class="secondary">Create Query</button>-->
           </div>
         </form>
+          <div id="preference-window">
+            <div id="open-config">
+              <button type="button" id="config-button">Configuration</button>
+            </div>
+              <dialog id="config-dialog">
+                <div class="dialog-header">
+                  <h2>Configuration</h2>
+                  <button type="button" id="dialog-close" aria-label="Close">✕</button>
+                </div>
+                <form id="config-form" method="dialog" action="/services/hub-flask/set-config" method="post">
+                  <div class="dialog-body">
+                    <div>
+                      <h3>Crawler Configuration</h3>
+                      <div>
+                        <label for="config-crawler-global-limit">Result limit</label>
+                        <input id="config-crawler-global-limit" name="crawler_global_limit" type="number" value="1000" />
+                      </div>
+                      <div>
+                        <label for="config-crawler-dry-run">Dry run</label>
+                        <input id="config-crawler-dry-run" name="dry_run" type="checkbox" />
+                      </div>
+                      <div>
+                        <label for="config-crawler-delay">Delay between requests (ms) (Lower values may lead to IP blocking)</label>
+                        <input id="config-crawler-delay" name="crawler_delay" type="number" value="0.1" />
+                      </div>
+                      <div>
+                        <label for="config-crawler-user-agent">User agent</label>
+                        <input id="config-crawler-user-agent" name="crawler_user_agent" type="text" value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" />
+                      </div>
+                      <div>
+                        <label for="config-crawler-stats-dump">Stats dump</label>
+                        <input id="config-crawler-stats-dump" name="stats_dump" type="checkbox" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3>Database Configuration</h3>
+                      <div>
+                        <label for="config-database-table-name">Table name</label>
+                        <input id="config-database-table-name" name="database_table_name" type="text" value="nps_filings_table"/>
+                      </div>
+                      <div>
+                        <label for="config-database-connection-string">Connection string</label>
+                        <input id="config-database-connection-string" name="database_connection_string" type="text" value="crawler:crawler@localhost:5432/crawler"/>
+                      </div>
+                      <div>
+                        <label for="config-database-local-mode">Local mode</label>
+                        <input id="config-database-local-mode" name="local_mode" type="checkbox" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3>Preprocessing Configuration</h3>
+                      <div>
+                        <label for="config-preprocessing-keyword-list">Keyword list (comma-separated)</label>
+                        <input id="config-preprocessing-keyword-list" name="preprocessing_keyword_list" type="text" />
+                      </div>
+                      <div>
+                        <label for="config-preprocessing-keyword-exclude-list">Keyword exclude list (comma-separated)</label>
+                        <input id="config-preprocessing-keyword-exclude-list" name="preprocessing_keyword_exclude_list" type="text" />
+                      </div>
+                      <div>
+                        <label for="config-preprocessing-threshold-value">Threshold value</label>
+                        <input id="config-preprocessing-threshold-value" name="preprocessing_threshold_value" type="number" value="0.5" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3>Model Configuration</h3>
+                      <div>
+                        <label for="config-model-selection">Model selection</label>
+                        <select id="config-model-selection" name="model_selection">
+                          <option value="svm">SVM</option>
+                          <option value="llm">LLM</option>
+                          <option value="REGEX">REGEX</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label for="config-model-persona-prompt">Persona prompt</label>
+                        <input id="config-model-persona-prompt" name="model_persona_prompt" type="text" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="dialog-footer">
+                    <button type="submit" class="primary">Save</button>
+                    <button type="button" id="dialog-cancel" class="ghost">Cancel</button>
+                  </div>
+                </form>
+              </dialog>
+          </div>
           <div id="query-container">
             <div id="query-control-menu">
               <button type="button" class="query-control" id="query-select-all">Select All</button>

@@ -18,10 +18,13 @@ application = Flask(__name__,
 from routes.static_routes import static_bp
 from routes.crawl_routes import crawl_bp
 from routes.query_routes import query_bp
+from routes.config_routes import config_bp
 
 application.register_blueprint(static_bp, url_prefix=PREFIX)
 application.register_blueprint(crawl_bp, url_prefix=PREFIX)
 application.register_blueprint(query_bp, url_prefix=PREFIX)
+application.register_blueprint(config_bp, url_prefix=PREFIX)
+
 
 application.secret_key = Config.FLASK_APPLICATION_SECRET
 

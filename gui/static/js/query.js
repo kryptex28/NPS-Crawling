@@ -5,6 +5,7 @@ const queryList = document.getElementById("query-list");
 const btnSelectAll = document.getElementById("query-select-all");
 const btnDelete = document.getElementById("query-delete");
 
+
 const queryMap = new Map();
 
 const renderQuery = (uuid, content) => {
