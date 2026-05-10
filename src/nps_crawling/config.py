@@ -56,8 +56,8 @@ class Config:
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    PREPROCESSING_VERSION: str = "version_3"
-    CLASSIFICATION_VERSION: str = "version_3"
+    PREPROCESSING_VERSION: str = "version_1"
+    CLASSIFICATION_VERSION: str = "version_1"
 
     # Base directories
     RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
@@ -82,13 +82,16 @@ class Config:
     # NPS_CLASSIFIED_JSON) are created lazily by the respective pipeline constructors.
 
     """ PREPROCESSING CONFIG """
-    # When set, only filings whose db keywords list is exactly [SINGLE_KEYWORD_FILTER]
-    # are preprocessed. Filings with additional keywords are skipped.
+    # When set, only filings whose db keywords list matches the keywords in this list are preprocessed.
     # Set to None to disable this filter and process all filings.
-    SINGLE_KEYWORD_FILTER: str | None = None
+    # It can be a single string (exact match) or a list of strings (any match).
+    SINGLE_KEYWORD_FILTER: str | list[str] | None = ["net promotor"]
     # If below variable is set to True, it will exclude filings that contain the SINGLE_KEYWORD_FILTER.
     # If set to False, it will include filings that contain the SINGLE_KEYWORD_FILTER and skip all others.
     SINGLE_KEYWORD_FILTER_EXCLUDE: bool = False
+    # If STRICT is True, filings are only included if they contain EXACTLY ONE keyword and it matches.
+    # If STRICT is False, filings are included if they contain at least one of the keywords (even if they have others).
+    SINGLE_KEYWORD_FILTER_STRICT: bool = True
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
