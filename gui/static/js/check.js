@@ -19,6 +19,8 @@ const resultsList = document.getElementById("results-list");
 
 const currentCrawlerStatus = document.getElementById("current-crawler-status");
 
+const preprocessingForm = document.getElementById("start-preprocessing-form");
+
 let totalCount = 0;
 let pageCount = 0;
 let maxItemsPerPage = 10;
@@ -206,4 +208,13 @@ clearResultsBtn.addEventListener("click", () => {
   renderPage(currentPage);
   updatePaging();
   elementCount.textContent = `Elements: ${totalCount}`;
+});
+
+preprocessingForm.addEventListener("submit", (e) => {
+  // Collect checked IDs and stuff them into the hidden input
+  const checkedBoxes = document.querySelectorAll('input[name="selected_results"]:checked');
+  const ids = Array.from(checkedBoxes).map(cb => cb.value).join(",");
+  
+  document.getElementById("ids-input").value = ids;
+  
 });

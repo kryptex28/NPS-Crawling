@@ -20,6 +20,13 @@
           <button type="button" id="stop-crawl" class="ghost">Stop crawl</button>
           <button type="button" id="clear-results" class="ghost">Clear results</button>
         </div>
+        <div>
+          <form id="start-preprocessing-form" action="/services/hub-flask/start-preprocessing" method="post">
+            <label for="preprocessing-type">Start preprocessing:</label>
+            <input type="hidden" name="ids" id="ids-input" />
+            <button type="submit">Start Preprocessing</button>
+          </form>
+        </div>
         <div class="status-block">
           <div class="spinner" aria-hidden="true"></div>
           <p class="status-text">The search has started. This may take some time. Please keep this window open until the process completes.</p>
