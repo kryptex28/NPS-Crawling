@@ -57,6 +57,7 @@ class NpsMentionFilterPipeline(Config):
             text = record.get("core_text", "")
             sentences = self._split_into_sentences(text)
             hits, excluded_count = self._extract_context_windows_from_sentences(sentences)
+            hits = self._deduplicate_hits(hits)
             record["context"] = hits
             record["all_context_windows"] = self._build_concatenated_context(
                 sentences, hits,
@@ -103,6 +104,29 @@ class NpsMentionFilterPipeline(Config):
                 })
 
         return hits, excluded_count
+
+    @staticmethod
+    def _deduplicate_hits(hits):
+        """Collapse hits with identical ``context`` strings into one entry.
+
+        When multiple phrases match the same sentence and produce the exact
+        same context window, keep a single hit whose ``matched_phrase`` is
+        the comma-joined list of all matched phrases (in first-seen order).
+        Avoids embedding and storing the same window twice.
+        """
+        if not hits:
+            return hits
+        by_context = {}
+        for hit in hits:
+            key = hit["context"]
+            if key in by_context:
+                existing = by_context[key]
+                existing["matched_phrase"] = (
+                    f"{existing['matched_phrase']}, {hit['matched_phrase']}"
+                )
+            else:
+                by_context[key] = hit
+        return list(by_context.values())
 
     def _contains_excluded_phrase(self, context: str) -> bool:
         """True if any LIST_OF_PHRASES_TO_EXCLUDE entry appears in ``context``."""
