@@ -123,12 +123,12 @@ def main():
         help="Lowest threshold in sweep (default: 0.00)",
     )
     parser.add_argument(
-        "--max", type=float, default=0.50,
-        help="Highest threshold in sweep (default: 0.50)",
+        "--max", type=float, default=0.80,
+        help="Highest threshold in sweep (default: 0.80)",
     )
     parser.add_argument(
-        "--step", type=float, default=0.02,
-        help="Threshold step (default: 0.02)",
+        "--step", type=float, default=0.05,
+        help="Threshold step (default: 0.05)",
     )
     args = parser.parse_args()
 
