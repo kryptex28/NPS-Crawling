@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import csv
 import json
 import sys
 from pathlib import Path
@@ -102,13 +103,25 @@ def evaluate_one(scores_path: Path, labels: dict, thresholds):
     print(f"\n{'thr':>6} {'TP':>5} {'FP':>5} {'FN':>5} {'TN':>5} "
           f"{'P':>7} {'R':>7} {'F1':>7}")
     best = (None, -1.0)
+    rows = []
     for t in thresholds:
         tp, fp, fn, tn, p, r, f1 = metrics(labels, scores, t)
         print(f"{t:>6.2f} {tp:>5} {fp:>5} {fn:>5} {tn:>5} "
               f"{p:>7.3f} {r:>7.3f} {f1:>7.3f}")
+        rows.append((t, tp, fp, fn, tn, p, r, f1))
         if f1 > best[1]:
             best = (t, f1)
     print(f"\n  Best F1 at threshold {best[0]:.2f}: F1={best[1]:.3f}")
+
+    csv_path = EVAL_DIR / f"{scores_path.stem}_metrics.csv"
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["threshold", "TP", "FP", "FN", "TN",
+                         "precision", "recall", "F1"])
+        for t, tp, fp, fn, tn, p, r, f1 in rows:
+            writer.writerow([f"{t:.2f}", tp, fp, fn, tn,
+                             f"{p:.6f}", f"{r:.6f}", f"{f1:.6f}"])
+    print(f"  Wrote {csv_path}")
 
 
 def main():
@@ -127,8 +140,8 @@ def main():
         help="Highest threshold in sweep (default: 0.80)",
     )
     parser.add_argument(
-        "--step", type=float, default=0.05,
-        help="Threshold step (default: 0.05)",
+        "--step", type=float, default=0.02,
+        help="Threshold step (default: 0.02)",
     )
     args = parser.parse_args()
 

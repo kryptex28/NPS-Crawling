@@ -23,7 +23,7 @@ OUT_DIR = ROOT / "data" / "json_raw_lowest_highest"
 
 TOP_N = 10
 BOTTOM_N = 10
-PER_BUCKET = 2
+PER_BUCKET = 8
 BUCKET_EDGES = [round(0.1 * i, 1) for i in range(1, 11)]  # 0.1, 0.2, ..., 1.0
 
 
