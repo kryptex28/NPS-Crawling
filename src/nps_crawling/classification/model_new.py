@@ -36,7 +36,6 @@ class ModelBase(ABC):
     """LLM Base abstract class."""
     @abstractmethod
     def __init__(self,
-                 persona,
                  model,
                  temperature=0.0,
                  top_p=1.0,
@@ -46,7 +45,6 @@ class ModelBase(ABC):
                  repeat_penalty=1.0,
                  **kwargs):
         """Abstract init function."""
-        self.persona = persona
         self.options = {
             'temperature': temperature,
             'top_p': top_p,
@@ -92,7 +90,7 @@ class LLMBase(ModelBase):
         """Classify given text."""
         response = self._generate_response(classification_option, text)
 
-        data_entries = List[DataEntry]()
+        data_entries = []
 
         for option in classification_option.get_classification_properties():
             if option.name in response:
@@ -102,7 +100,7 @@ class LLMBase(ModelBase):
 
         return data_entries
 
-    def classify(self, classification_option: HasNumericNPS, text: str) -> List[DataEntry]:
+    def classify(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
         """Classify given text."""
         response = self._generate_response(classification_option, text)
         class_properties = classification_option.get_classification_properties()
@@ -113,7 +111,7 @@ class LLMBase(ModelBase):
                 return [DataEntry(column_name=class_property.name, entry=property_value)]
         return [DataEntry(column_name=class_properties[0].name, entry=-1)]
 
-    def classify(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
+    def classify(self, classification_option: HasNumericNPS, text: str) -> List[DataEntry]:
         """Classify given text."""
         response = self._generate_response(classification_option, text)
         class_properties = classification_option.get_classification_properties()
@@ -127,7 +125,6 @@ class LLMBase(ModelBase):
 class LLMHuggingFace(LLMBase):
     """Huggingface LLM class."""
     def __init__(self,
-                 persona,
                  temperature=0.0,
                  top_p=1.0,
                  top_k=1,
@@ -139,8 +136,7 @@ class LLMHuggingFace(LLMBase):
                  **kwargs,
                  ):
         """Initialize Huggingface LLM class."""
-        super().__init__(persona=persona,
-                         temperature=temperature,
+        super().__init__(temperature=temperature,
                          top_k=top_k,
                          top_p=top_p,
                          num_predict=num_predict,
@@ -197,7 +193,6 @@ class LLMHuggingFace(LLMBase):
 class LLMOllama(LLMBase):
     """Ollama LLM class."""
     def __init__(self,
-                 persona,
                  temperature=0.0,
                  top_p=1.0,
                  top_k=1,
@@ -210,8 +205,7 @@ class LLMOllama(LLMBase):
                  **kwargs,
                  ):
         """Initialize Ollama LLM class."""
-        super().__init__(persona=persona,
-                         temperature=temperature,
+        super().__init__(temperature=temperature,
                          top_k=top_k,
                          top_p=top_p,
                          num_predict=num_predict,
@@ -238,7 +232,7 @@ class LLMOllama(LLMBase):
 
 class SVMClassificationModel(ModelBase):
     """Classification model using SVM."""
-    def __init__(self, model: str, qa_model: str, **kwargs):
+    def __init__(self, model: str, **kwargs):
         BASE_DIR = Path(__file__).resolve().parent
         BGE_CACHE_DIR = BASE_DIR / "cache" / sanitize_filename(model)
 
@@ -252,23 +246,23 @@ class SVMClassificationModel(ModelBase):
         self.cache_dir = BASE_DIR / "cache"
 
     def classify(self, classification_option : ClassificationOption, text: str) -> List[DataEntry]:
+        if isinstance(classification_option, NPSValue):
+            raise NotImplementedError("SVMClassificationModel does not support NPSValue classification.")
         class_properties = classification_option.get_classification_properties()
-        svm_paths = [self.cache_dir / class_property.name for class_property in class_properties]
+        svm_paths = [self.cache_dir / f"{class_property.name}.joblib" for class_property in class_properties]
         for svm_path in svm_paths:
             if not svm_path.exists():
-                raise RuntimeError(f"SVM model for {svm_path.stem} not found in cache. Please train the model first.")
+                raise RuntimeError(f"SVM model for {svm_path} not found in cache. Please train the model first.")
         
         embedding = self.embedding_model.encode([text])
-        data_entries = List[DataEntry]()
+        data_entries = []
         for class_property in class_properties:
             svm_model = joblib.load(self.cache_dir / f"{class_property.name}.joblib")
             prediction = svm_model.predict(embedding)
             data_entries.append(DataEntry(column_name=class_property.name, entry=prediction[0]))
 
         return data_entries
-    
-    def classify(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
-        raise NotImplementedError("SVMClassificationModel does not support NPSValue classification.")
+
     
     def train(self, classification_property: ClassificationProperty, texts: List[str], labels: List[int]):
         """Train SVM model for given classification option."""
@@ -280,7 +274,6 @@ class SVMClassificationModel(ModelBase):
 class QAHuggingface(LLMBase):
     """Classification model using question answering."""
     def __init__(self,
-                persona,
                 temperature=0.0,
                 top_p=1.0,
                 top_k=1,
@@ -292,13 +285,13 @@ class QAHuggingface(LLMBase):
                 **kwargs,
                 ):
         """Initialize Huggingface LLM class."""
-        super().__init__(persona=persona,
-                            temperature=temperature,
+        super().__init__(temperature=temperature,
                             top_k=top_k,
                             top_p=top_p,
                             num_predict=num_predict,
                             seed=seed,
                             repeat_penalty=repeat_penalty,
+                            model=model,
                             **kwargs)
         self.model_name = model
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -334,8 +327,8 @@ _MODEL_CLASSES_MAP = {
     ClassificationClass.QAHUGGINGFACE: QAHuggingface,
 }
 
-def get_model_class(model_class: ClassificationClass) -> ModelBase:
+def get_model_class(model_class: ClassificationClass, model_kwargs= dict()) -> ModelBase:
     """Get model class based on classification class."""
     if model_class not in _MODEL_CLASSES_MAP:
         raise ValueError(f"Unsupported model class: {model_class}")
-    return _MODEL_CLASSES_MAP[model_class]
+    return _MODEL_CLASSES_MAP[model_class](**model_kwargs)

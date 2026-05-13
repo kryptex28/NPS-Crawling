@@ -125,7 +125,7 @@ class HasNumericNPS(ClassificationOption):
         """Get classification properties for has numeric NPS."""
         return [
             ClassificationProperty(
-                name="HAS_NUMERIC_NPS",
+                name="has_numeric_nps",
                 options=[0, 1],
                 description="Indicates whether the text contains a specific numeric NPS value.",
                 example="Our NPS is 60.",
@@ -145,7 +145,7 @@ class NPSValue(ClassificationOption):
         """Get classification properties for NPS value."""
         return [
             ClassificationProperty(
-                name="NPS_VALUE",
+                name="nps_value_fix",
                 options=r"r'\b(?:100(?:[.,]0+)?|(?:\d{1,2})(?:[.,]\d+)?)\b'",
                 description="What is the numeric NPS value?",
                 example="Text: Our NPS is 60. Answer: 60.",
@@ -155,7 +155,7 @@ class NPSValue(ClassificationOption):
     def get_persona(self):
         """Get persona for NPS value."""
         return ("You are a net promoter score text classifier.\n"
-            "Task: Given an input context window, extract the specific numeric NPS value mentioned in the text. The NPS value is an integer between 0 and 100.\n"
+            "Task: Given an input context window, extract the specific numeric NPS value mentioned in the text. The NPS value is a floating number between 0 and 100.\n"
             "Output: The numeric NPS value if mentioned, or -1 if no specific numeric NPS value is present."
         )
 
