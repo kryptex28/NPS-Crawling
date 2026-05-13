@@ -7,7 +7,7 @@ ollama
 pypdf
 requests
 sentence-transformers~=5.2.3
-transformers
+transformers==5.2.0
 torch
 langchain
 langchain-huggingface

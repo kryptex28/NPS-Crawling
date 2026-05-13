@@ -3,9 +3,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
 import re
-from turtle import pd
 
-from git import List
+from typing import List
 import joblib
 from sympy import re
 from sentence_transformers import SentenceTransformer
@@ -86,12 +85,11 @@ class LLMBase(ModelBase):
         """Generate response for given classification option and text."""
         pass
 
-    def classify(self, classification_option: NPSCategory, text: str) -> List[DataEntry]:
+    def _classify_nps_category(self, classification_option: NPSCategory, text: str) -> List[DataEntry]:
         """Classify given text."""
         response = self._generate_response(classification_option, text)
 
         data_entries = []
-
         for option in classification_option.get_classification_properties():
             if option.name in response:
                 data_entries.append(DataEntry(column_name=option.name, entry=option.options[1]))
@@ -99,8 +97,19 @@ class LLMBase(ModelBase):
                 data_entries.append(DataEntry(column_name=option.name, entry=option.options[0]))
 
         return data_entries
-
-    def classify(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
+    
+    def _classify_has_numeric_nps(self, classification_option: HasNumericNPS, text: str) -> List[DataEntry]:
+        """Classify given text."""
+        response = self._generate_response(classification_option, text)
+        class_properties = classification_option.get_classification_properties()
+        for class_property in class_properties:
+            for property_value in class_property.options:
+                if str(property_value) in response:
+                    return [DataEntry(column_name=class_property.name, entry=property_value)]
+                return [DataEntry(column_name=class_property.name, entry=class_property.options[0])]
+        return [DataEntry(column_name=class_properties[0].name, entry=class_properties[0].options[0])]
+    
+    def _classify_nps_value(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
         """Classify given text."""
         response = self._generate_response(classification_option, text)
         class_properties = classification_option.get_classification_properties()
@@ -111,16 +120,16 @@ class LLMBase(ModelBase):
                 return [DataEntry(column_name=class_property.name, entry=property_value)]
         return [DataEntry(column_name=class_properties[0].name, entry=-1)]
 
-    def classify(self, classification_option: HasNumericNPS, text: str) -> List[DataEntry]:
+    def classify(self, classification_option: ClassificationOption, text: str) -> List[DataEntry]:
         """Classify given text."""
-        response = self._generate_response(classification_option, text)
-        class_properties = classification_option.get_classification_properties()
-        for class_property in class_properties:
-            for property_value in class_property.options:
-                if str(property_value) in response:
-                    return [DataEntry(column_name=class_property.name, entry=property_value)]
-                return [DataEntry(column_name=class_property.name, entry=class_property.options[0])]
-        return [DataEntry(column_name=class_properties[0].name, entry=class_properties[0].options[0])]
+        if isinstance(classification_option, NPSCategory):
+            return self._classify_nps_category(classification_option, text)
+        elif isinstance(classification_option, HasNumericNPS):
+            return self._classify_has_numeric_nps(classification_option, text)
+        elif isinstance(classification_option, NPSValue):
+            return self._classify_nps_value(classification_option, text)
+        else:
+            raise ValueError(f"Unsupported classification option type: {type(classification_option)}")
 
 class LLMHuggingFace(LLMBase):
     """Huggingface LLM class."""
@@ -136,13 +145,16 @@ class LLMHuggingFace(LLMBase):
                  **kwargs,
                  ):
         """Initialize Huggingface LLM class."""
-        super().__init__(temperature=temperature,
-                         top_k=top_k,
-                         top_p=top_p,
-                         num_predict=num_predict,
-                         seed=seed,
-                         repeat_penalty=repeat_penalty,
-                         **kwargs)
+        super().__init__(
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            num_predict=num_predict,
+            seed=seed,
+            repeat_penalty=repeat_penalty,
+            model=model,
+            **kwargs
+        )
         self.model_name = model
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         if torch.cuda.is_available():
@@ -206,6 +218,7 @@ class LLMOllama(LLMBase):
                  ):
         """Initialize Ollama LLM class."""
         super().__init__(temperature=temperature,
+                         model=model,
                          top_k=top_k,
                          top_p=top_p,
                          num_predict=num_predict,
@@ -280,7 +293,7 @@ class QAHuggingface(LLMBase):
                 num_predict=128,
                 seed=42,
                 repeat_penalty=1.0,
-                model='mistralai/Mistral-7B-Instruct-v0.3',
+                model='timpal0l/mdeberta-v3-base-squad2',
                 device=None,
                 **kwargs,
                 ):
@@ -308,7 +321,7 @@ class QAHuggingface(LLMBase):
             device_map="auto",
         )
         self.pipe = pipeline(
-            "question-answering",
+            "text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
         )
