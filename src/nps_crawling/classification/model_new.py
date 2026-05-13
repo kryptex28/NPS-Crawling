@@ -321,7 +321,7 @@ class QAHuggingface(LLMBase):
             device_map="auto",
         )
         self.pipe = pipeline(
-            "text-generation",
+            "question-answering",
             model=self.model,
             tokenizer=self.tokenizer,
         )
