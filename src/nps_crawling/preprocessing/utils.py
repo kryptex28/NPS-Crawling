@@ -131,6 +131,7 @@ class PreProcessingPipeline(Config):
         filings_rejected_fully = 0
         total_context_windows_accepted = 0
         total_context_windows_rejected = 0
+        total_context_windows_excluded = 0
         all_similarity_scores = []
         all_filings_averages = []
 
@@ -212,6 +213,9 @@ class PreProcessingPipeline(Config):
                     cw_accept = meta.get("Context Windows Accept", 0)
                     cw_reject = meta.get("Context Windows Reject", 0)
                     cw_total = meta.get("Context Windows total", 0)
+                    cw_excluded = meta.get("Context Windows Excluded", 0)
+
+                    total_context_windows_excluded += cw_excluded
 
                     if cw_total == 0:
                         continue
@@ -248,6 +252,7 @@ class PreProcessingPipeline(Config):
             "experiment_setup": {
                 "preprocessing_version": Config.PREPROCESSING_VERSION,
                 "filter_phrases": Config.LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR,
+                "phrases_to_exclude": Config.LIST_OF_PHRASES_TO_EXCLUDE,
                 "context_sentences_before": Config.AMOUNT_SENTENCES_INCLUDED_BEFORE,
                 "context_sentences_after": Config.AMOUNT_SENTENCES_INCLUDED_AFTER,
                 "embedding_model": Config.SIMILARITY_EMBEDDING_MODEL,
@@ -267,6 +272,7 @@ class PreProcessingPipeline(Config):
                 "filings_rejected_partial": filings_rejected - filings_rejected_fully,
                 "context_windows_accepted": total_context_windows_accepted,
                 "context_windows_rejected": total_context_windows_rejected,
+                "context_windows_excluded_by_exclude_list": total_context_windows_excluded,
                 "lowest_similarity_context": round(min(all_similarity_scores), 4) if all_similarity_scores else None,
                 "highest_similarity_context": round(max(all_similarity_scores), 4) if all_similarity_scores else None,
                 "average_similarity_context": round(sum(all_similarity_scores) / len(all_similarity_scores), 4) if all_similarity_scores else None,

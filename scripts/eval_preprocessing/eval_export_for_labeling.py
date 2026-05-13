@@ -3,8 +3,8 @@
 Runs ONLY cleaning + filtering (no similarity scoring) over every JSON file in
 ``data/json_raw/files/`` and writes:
 
-    data/evaluation/contexts.jsonl   — frozen source of truth (one row per context)
-    data/evaluation/labeling.xlsx    — same rows, with an empty ``label`` column
+    evaluation/preprocessing/contexts.jsonl   — frozen source of truth (one row per context)
+    evaluation/preprocessing/labeling.xlsx    — same rows, with an empty ``label`` column
 
 You manually fill the ``label`` column in Excel (1 = relevant, 0 = not relevant,
 leave empty to skip). The ``context_id`` column ties labels back to scores
@@ -29,7 +29,7 @@ from nps_crawling.preprocessing.cleaning import CleanTextPipeline
 from nps_crawling.preprocessing.filtering import NpsMentionFilterPipeline
 
 
-EVAL_DIR = Config.DATA_PATH / "evaluation"
+EVAL_DIR = Path(__file__).resolve().parents[1] / "evaluation" / "preprocessing"
 CONTEXTS_JSONL = EVAL_DIR / "contexts.jsonl"
 LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 

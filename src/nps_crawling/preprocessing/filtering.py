@@ -56,19 +56,29 @@ class NpsMentionFilterPipeline(Config):
         for record in records:
             text = record.get("core_text", "")
             sentences = self._split_into_sentences(text)
-            record["context"] = self._extract_context_windows_from_sentences(sentences)
+            hits, excluded_count = self._extract_context_windows_from_sentences(sentences)
+            hits = self._deduplicate_hits(hits)
+            record["context"] = hits
             record["all_context_windows"] = self._build_concatenated_context(
-                sentences, record["context"],
+                sentences, hits,
             )
+            record.setdefault("metadata", {})["Context Windows Excluded"] = excluded_count
         return records
 
     def _extract_context_windows_from_sentences(self, sentences):
-        """Extract all context windows from a list of sentences."""
+        """Extract all context windows from a list of sentences.
+
+        Returns ``(hits, excluded_count)`` where ``excluded_count`` is the
+        number of context windows that were dropped because at least one
+        phrase from LIST_OF_PHRASES_TO_EXCLUDE appeared anywhere inside the
+        built window.
+        """
         if not sentences:
-            return []
+            return [], 0
 
         n = len(sentences)
         hits = []
+        excluded_count = 0
 
         for idx, sentence in enumerate(sentences):
             matched_phrases = self._finding_matching_phrases(sentence)
@@ -81,6 +91,9 @@ class NpsMentionFilterPipeline(Config):
                 context, char_cutoff = self._create_context_window(
                     sentences, start, end, idx, phrase,
                 )
+                if self._contains_excluded_phrase(context):
+                    excluded_count += 1
+                    continue
                 hits.append({
                     "matched_phrase": phrase,
                     "context": context,
@@ -90,7 +103,40 @@ class NpsMentionFilterPipeline(Config):
                     "char_cutoff_applied": char_cutoff,
                 })
 
-        return hits
+        return hits, excluded_count
+
+    @staticmethod
+    def _deduplicate_hits(hits):
+        """Collapse hits with identical ``context`` strings into one entry.
+
+        When multiple phrases match the same sentence and produce the exact
+        same context window, keep a single hit whose ``matched_phrase`` is
+        the comma-joined list of all matched phrases (in first-seen order).
+        Avoids embedding and storing the same window twice.
+        """
+        if not hits:
+            return hits
+        by_context = {}
+        for hit in hits:
+            key = hit["context"]
+            if key in by_context:
+                existing = by_context[key]
+                existing["matched_phrase"] = (
+                    f"{existing['matched_phrase']}, {hit['matched_phrase']}"
+                )
+            else:
+                by_context[key] = hit
+        return list(by_context.values())
+
+    def _contains_excluded_phrase(self, context: str) -> bool:
+        """True if any LIST_OF_PHRASES_TO_EXCLUDE entry appears in ``context``."""
+        if not context:
+            return False
+        context_lower = context.lower()
+        return any(
+            excluded and excluded in context_lower
+            for excluded in self.exclude_words
+        )
 
     def _build_concatenated_context(self, sentences, context_windows):
         """Merge all context windows into one string without duplicate sentences."""
@@ -138,36 +184,13 @@ class NpsMentionFilterPipeline(Config):
         ]
 
     def _finding_matching_phrases(self, single_sentence):
-        """Find matching phrases in a single sentence.
+        """Find include phrases (LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR) in a sentence.
 
-        input: single sentence
-        output: list of include phrases (from LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR)
-        found in the sentence, excluding hits that only appear as part of an
-        excluded phrase (LIST_OF_PHRASES_TO_EXCLUDE).
+        Excluded phrases are no longer masked here — exclusion is enforced
+        on the full context window in ``_extract_context_windows_from_sentences``.
         """
         sentence_lower = single_sentence.lower()
-        masked_sentence = self._mask_excluded_phrases(sentence_lower)
-
-        matches = []
-        for phrase in self.filter_words:
-            if phrase in masked_sentence:
-                matches.append(phrase)
-
-        return matches
-
-    def _mask_excluded_phrases(self, sentence_lower):
-        """Replace every occurrence of an excluded phrase with spaces.
-
-        Spaces (rather than removal) preserve surrounding token boundaries so
-        an include keyword adjacent to an excluded phrase can't accidentally
-        merge with neighboring text.
-        """
-        masked = sentence_lower
-        for excluded in self.exclude_words:
-            if not excluded:
-                continue
-            masked = masked.replace(excluded, " " * len(excluded))
-        return masked
+        return [phrase for phrase in self.filter_words if phrase in sentence_lower]
 
     def _get_sentence_range(self, n, idx):
         start = max(0, idx - self.sentences_before)
