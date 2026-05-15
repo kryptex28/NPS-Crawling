@@ -47,7 +47,7 @@ class Config:
     # ---------------------------------------------------------------------------
 
     # Database Settings
-    DATABASE_TABLE_NAME: str = "nps_filings_new"
+    DATABASE_TABLE_NAME: str = "nps_filings_final"
 
     # Define experiment name, preprocessing version and classification version.
     # For PREPROCESSING:
