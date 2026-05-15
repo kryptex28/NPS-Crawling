@@ -1,7 +1,7 @@
 """Compare manual labels against scored context windows.
 
-Joins ``data/evaluation/labeling.xlsx`` (your manual labels, keyed by
-``context_id``) with one or more ``data/evaluation/scores_*.jsonl`` files
+Joins ``evaluation/preprocessing/labeling.xlsx`` (your manual labels, keyed by
+``context_id``) with one or more ``evaluation/preprocessing/scores_*.jsonl`` files
 (produced by ``eval_score_contexts.py``) and prints precision / recall / F1
 across a sweep of thresholds for each scored model.
 
@@ -11,17 +11,18 @@ Usage:
 """
 
 import argparse
+import csv
 import json
 import sys
 from pathlib import Path
 
 # Allow running as a plain script without installing the package
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from nps_crawling.config import Config
 
 
-EVAL_DIR = Config.DATA_PATH / "evaluation"
+EVAL_DIR = Path(__file__).resolve().parents[2] / "evaluation" / "preprocessing"
 LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 
 
@@ -102,20 +103,32 @@ def evaluate_one(scores_path: Path, labels: dict, thresholds):
     print(f"\n{'thr':>6} {'TP':>5} {'FP':>5} {'FN':>5} {'TN':>5} "
           f"{'P':>7} {'R':>7} {'F1':>7}")
     best = (None, -1.0)
+    rows = []
     for t in thresholds:
         tp, fp, fn, tn, p, r, f1 = metrics(labels, scores, t)
         print(f"{t:>6.2f} {tp:>5} {fp:>5} {fn:>5} {tn:>5} "
               f"{p:>7.3f} {r:>7.3f} {f1:>7.3f}")
+        rows.append((t, tp, fp, fn, tn, p, r, f1))
         if f1 > best[1]:
             best = (t, f1)
     print(f"\n  Best F1 at threshold {best[0]:.2f}: F1={best[1]:.3f}")
+
+    csv_path = EVAL_DIR / f"{scores_path.stem}_metrics.csv"
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["threshold", "TP", "FP", "FN", "TN",
+                         "precision", "recall", "F1"])
+        for t, tp, fp, fn, tn, p, r, f1 in rows:
+            writer.writerow([f"{t:.2f}", tp, fp, fn, tn,
+                             f"{p:.6f}", f"{r:.6f}", f"{f1:.6f}"])
+    print(f"  Wrote {csv_path}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--scores", nargs="*",
-        help="Specific scores_*.jsonl file(s) (relative to data/evaluation/). "
+        help="Specific scores_*.jsonl file(s) (relative to evaluation/preprocessing/). "
              "Default: all scores_*.jsonl found.",
     )
     parser.add_argument(
@@ -123,8 +136,8 @@ def main():
         help="Lowest threshold in sweep (default: 0.00)",
     )
     parser.add_argument(
-        "--max", type=float, default=0.50,
-        help="Highest threshold in sweep (default: 0.50)",
+        "--max", type=float, default=0.80,
+        help="Highest threshold in sweep (default: 0.80)",
     )
     parser.add_argument(
         "--step", type=float, default=0.02,
