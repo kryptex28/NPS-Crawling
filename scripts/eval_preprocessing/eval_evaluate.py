@@ -17,12 +17,12 @@ import sys
 from pathlib import Path
 
 # Allow running as a plain script without installing the package
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from nps_crawling.config import Config
 
 
-EVAL_DIR = Path(__file__).resolve().parents[1] / "evaluation" / "preprocessing"
+EVAL_DIR = Path(__file__).resolve().parents[2] / "evaluation" / "preprocessing"
 LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 
 
