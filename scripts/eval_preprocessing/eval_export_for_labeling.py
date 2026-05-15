@@ -22,14 +22,14 @@ from pathlib import Path
 from tqdm import tqdm
 
 # Allow running as a plain script without installing the package
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from nps_crawling.config import Config
 from nps_crawling.preprocessing.cleaning import CleanTextPipeline
 from nps_crawling.preprocessing.filtering import NpsMentionFilterPipeline
 
 
-EVAL_DIR = Path(__file__).resolve().parents[1] / "evaluation" / "preprocessing"
+EVAL_DIR = Path(__file__).resolve().parents[2] / "evaluation" / "preprocessing"
 CONTEXTS_JSONL = EVAL_DIR / "contexts.jsonl"
 LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 
