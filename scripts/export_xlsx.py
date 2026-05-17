@@ -38,7 +38,16 @@ def parse_display_name(name: str):
     return company, ticker
 
 
-def collect_rows():
+def collect_rows(only_relevant: bool = True):
+    relevant_ids = None
+    if only_relevant:
+        try:
+            from nps_crawling.db.db_adapter import DbAdapter
+            db = DbAdapter()
+            relevant_ids = {row["id"] for row in db.get_all_filings() if row.get("nps_relevant")}
+        except Exception as e:
+            print(f"Warning: Could not connect to DB for relevancy check: {e}")
+
     rows = []
     seen_snippets = set()
     for json_path in sorted(DATA_DIR.glob("*.json")):
@@ -47,6 +56,12 @@ def collect_rows():
 
         for record in records:
             filing = record.get("metadata", {}).get("filing", {})
+            filing_id = filing.get("id")
+
+            if only_relevant and relevant_ids is not None:
+                if filing_id not in relevant_ids:
+                    continue
+
             display_names = filing.get("display_names", [])
             if not display_names:
                 continue
@@ -88,8 +103,8 @@ def collect_rows():
     return rows
 
 
-def main():
-    rows = collect_rows()
+def main(only_relevant: bool = True):
+    rows = collect_rows(only_relevant=only_relevant)
     if not rows:
         print("No valid records found.")
         sys.exit(1)
@@ -126,4 +141,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(only_relevant=True)

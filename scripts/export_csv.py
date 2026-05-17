@@ -59,4 +59,4 @@ if __name__ == "__main__":
     # all=True exportiert alle nps_relevant=True
     # all=False exportiert nur Filings mit dem spezifizierten Keyword in der keywords Spalte
     # strict=True erzwingt, dass es das einzige Keyword im Filing ist. strict=False erlaubt weitere Keywords.
-    export_to_csv("nps_filings_export.csv", all=False, keyword="net promotor", strict=False)
+    export_to_csv("nps_filings_export.csv", all=True, keyword="net promotor", strict=False)
