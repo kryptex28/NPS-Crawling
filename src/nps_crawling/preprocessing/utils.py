@@ -95,7 +95,6 @@ class PreProcessingPipeline(Config):
         self.storage = SaveToJSONPipeline()
 
         self._keyword_filter = Config.SINGLE_KEYWORD_FILTER
-        self._keyword_filter_exclude = Config.SINGLE_KEYWORD_FILTER_EXCLUDE
         self._keyword_filter_strict = Config.SINGLE_KEYWORD_FILTER_STRICT
         self._db = DbAdapter() if self._keyword_filter else None
 
@@ -259,7 +258,6 @@ class PreProcessingPipeline(Config):
                 "similarity_reference_text": Config.SIMILARITY_REFERENCE_TEXT,
                 "similarity_threshold": Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW,
                 "single_keyword_filter": Config.SINGLE_KEYWORD_FILTER,
-                "single_keyword_filter_exclude": Config.SINGLE_KEYWORD_FILTER_EXCLUDE,
                 "single_keyword_filter_strict": Config.SINGLE_KEYWORD_FILTER_STRICT,
             },
             "processed_filings": {
@@ -355,33 +353,24 @@ class PreProcessingPipeline(Config):
             
             if isinstance(self._keyword_filter, list):
                 filter_lower = [k.strip("\"'").lower() for k in self._keyword_filter]
-                if self._keyword_filter_exclude:
-                    # Verwirf das Filing, sobald auch nur eins der Filter-Keywords darin vorkommt
-                    matches = not any(k in cleaned_keywords for k in filter_lower)
+                if self._keyword_filter_strict:
+                    # Nimm es nur, wenn es EXAKT 1 Keyword hat und dieses in der Liste ist
+                    matches = len(cleaned_keywords) == 1 and cleaned_keywords[0] in filter_lower
                 else:
-                    if self._keyword_filter_strict:
-                        # Nimm es nur, wenn es EXAKT 1 Keyword hat und dieses in der Liste ist
-                        matches = len(cleaned_keywords) == 1 and cleaned_keywords[0] in filter_lower
-                    else:
-                        # Nimm es, solange mindestens eins der Keywords darin vorkommt (auch wenn es weitere hat)
-                        matches = any(k in cleaned_keywords for k in filter_lower)
+                    # Nimm es, solange mindestens eins der Keywords darin vorkommt (auch wenn es weitere hat)
+                    matches = any(k in cleaned_keywords for k in filter_lower)
             else:
                 filter_lower_single = self._keyword_filter.strip("\"'").lower()
-                if self._keyword_filter_exclude:
-                    matches = filter_lower_single not in cleaned_keywords
+                if self._keyword_filter_strict:
+                    matches = cleaned_keywords == [filter_lower_single]
                 else:
-                    if self._keyword_filter_strict:
-                        matches = cleaned_keywords == [filter_lower_single]
-                    else:
-                        matches = filter_lower_single in cleaned_keywords
+                    matches = filter_lower_single in cleaned_keywords
             if matches:
                 filtered.append(json_file)
             else:
                 logger.debug(
-                    "Skipping %s — keywords %s %s single-keyword filter '%s'",
-                    json_file.name, cleaned_keywords,
-                    "match excluded keyword" if self._keyword_filter_exclude else "don't match",
-                    self._keyword_filter,
+                    "Skipping %s — keywords %s don't match single-keyword filter '%s'",
+                    json_file.name, cleaned_keywords, self._keyword_filter,
                 )
         logger.info(
             "Keyword filter: %d / %d files passed", len(filtered), len(json_files),

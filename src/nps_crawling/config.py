@@ -85,9 +85,6 @@ class Config:
     # Set to None to disable this filter and process all filings.
     # It can be a single string (exact match) or a list of strings (any match).
     SINGLE_KEYWORD_FILTER: str | list[str] | None = ["net promotor"]
-    # If below variable is set to True, it will exclude filings that contain the SINGLE_KEYWORD_FILTER.
-    # If set to False, it will include filings that contain the SINGLE_KEYWORD_FILTER and skip all others.
-    SINGLE_KEYWORD_FILTER_EXCLUDE: bool = False
     # If STRICT is True, filings are only included if they contain EXACTLY ONE keyword and it matches.
     # If STRICT is False, filings are included if they contain at least one of the keywords (even if they have others).
     SINGLE_KEYWORD_FILTER_STRICT: bool = True
