@@ -21,8 +21,8 @@ from the "display_names" field in the filing metadata, which has the format:
 PROCESSED_BASE = Path(__file__).resolve().parent.parent / "data" / "json_processed"
 VERSION = "version_1"
 DATA_DIR = PROCESSED_BASE / VERSION / "files"
-OUTPUT_PATH = Path("filings_summary.xlsx")
-
+OUTPUT_PATH = PROCESSED_BASE / "filings_summary.xlsx"
+MAX_ROWS = 500
 
 # Requires "COMPANY NAME  (TICKER)  (CIK ...)" — two parenthesized groups
 DISPLAY_NAME_RE = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*\(CIK\s+[^)]+\)")
@@ -38,67 +38,58 @@ def parse_display_name(name: str):
     return company, ticker
 
 
-def collect_rows(only_relevant: bool = True):
-    from nps_crawling.db.db_adapter import DbAdapter
-    db = DbAdapter()
-    db_rows = db.get_all_filings()
-    
+def collect_rows():
     rows = []
-    for row in db_rows:
-        if only_relevant and not row.get("nps_relevant"):
-            continue
-            
-        display_names = row.get("display_names") or []
-        display_name = display_names[0] if display_names else ""
-        parsed = parse_display_name(display_name)
-        if parsed:
+    seen_snippets = set()
+    for json_path in sorted(DATA_DIR.glob("*.json")):
+        with open(json_path, encoding="utf-8") as f:
+            records = json.load(f)
+
+        for record in records:
+            filing = record.get("metadata", {}).get("filing", {})
+            display_names = filing.get("display_names", [])
+            if not display_names:
+                continue
+
+            parsed = parse_display_name(display_names[0])
+            if parsed is None:
+                continue  # weird display_name -> skip
+
             company_name, ticker = parsed
-        else:
-            company_name = display_name
-            tickers = row.get("ticker") or []
-            ticker = tickers[0] if tickers else ""
-            
-        ciks = row.get("ciks") or []
-        cik = ciks[0] if ciks else ""
-        
-        filing_type = row.get("file_type") or ""
-        filing_date = row.get("file_date") or ""
-        url = row.get("url") or ""
-        
-        snippet = ""
-        path_to_preprocessed = row.get("path_to_preprocessed")
-        if path_to_preprocessed:
-            p = Path(path_to_preprocessed)
-            if not p.is_absolute():
-                p = Path(__file__).resolve().parent.parent / p
-            if p.exists():
-                try:
-                    with open(p, encoding="utf-8") as f:
-                        records = json.load(f)
-                        if records:
-                            record = records[0]
-                            contexts = record.get("context", [])
-                            if contexts:
-                                snippet = contexts[0].get("context", "")
-                                snippet = ILLEGAL_CHARACTERS_RE.sub("", snippet)
-                except Exception:
-                    pass
-                    
-        rows.append([
-            company_name,
-            ticker,
-            cik,
-            filing_type,
-            filing_date,
-            url,
-            snippet,
-        ])
+            cik = filing.get("ciks", [""])[0]
+            filing_type = filing.get("file_type", "")
+            filing_date = filing.get("file_date", "")
+            url = record.get("url", "")
+
+            # First context snippet, truncated
+            contexts = record.get("context", [])
+            snippet = ""
+            if contexts:
+                snippet = contexts[0].get("context", "")
+                snippet = ILLEGAL_CHARACTERS_RE.sub("", snippet)
+
+            if snippet in seen_snippets:
+                continue
+            seen_snippets.add(snippet)
+
+            rows.append([
+                company_name,
+                ticker,
+                cik,
+                filing_type,
+                filing_date,
+                url,
+                snippet,
+            ])
+
+            if len(rows) >= MAX_ROWS:
+                return rows
 
     return rows
 
 
-def main(only_relevant: bool = True):
-    rows = collect_rows(only_relevant=only_relevant)
+def main():
+    rows = collect_rows()
     if not rows:
         print("No valid records found.")
         sys.exit(1)
@@ -135,4 +126,4 @@ def main(only_relevant: bool = True):
 
 
 if __name__ == "__main__":
-    main(only_relevant=True)
+    main()
