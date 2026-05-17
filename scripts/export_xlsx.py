@@ -21,7 +21,7 @@ from the "display_names" field in the filing metadata, which has the format:
 PROCESSED_BASE = Path(__file__).resolve().parent.parent / "data" / "json_processed"
 VERSION = "version_1"
 DATA_DIR = PROCESSED_BASE / VERSION / "files"
-OUTPUT_PATH = PROCESSED_BASE / "filings_summary.xlsx"
+OUTPUT_PATH = Path("filings_summary.xlsx")
 MAX_ROWS = 500
 
 # Requires "COMPANY NAME  (TICKER)  (CIK ...)" — two parenthesized groups
