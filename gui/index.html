@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EDGAR Search – GUI Mock</title>
     <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css" />
+    <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css" />
   </head>
   <body>
     <main class="page">
@@ -13,6 +14,8 @@
         <img class="logo" src="thu_logo.png" alt="THU logo" />
       </header>
       <section class="panel">
+        <div id="navigation">
+        </div>
         <form id="edgar-form" class="form" action="/services/hub-flask/create-query" method="post" autocomplete="off">
           <div class="form-row">
             <label for="query">Document word or phrase?</label>
@@ -544,5 +547,6 @@
     <script src="static/js/app.js"></script>
     <script src="static/js/query.js"></script>
     <script src="static/js/config.js"></script>
+    <script src="static/js/navigation.js"></script>
   </body>
 </html>

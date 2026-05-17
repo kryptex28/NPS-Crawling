@@ -6,6 +6,7 @@
     <title>Crawled Files – Results</title>
     <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css"/>
   </head>
   <body>
     <main class="page">
@@ -15,6 +16,8 @@
       </header>
 
       <section class="panel">
+        <div id="navigation">
+        </div>
         <div class="results-header">
           <h2>Results</h2>
           <form class="results-actions" action="/services/hub-flask/export-results" method="post">
@@ -36,5 +39,6 @@
         </div>
       </section>
     </main>
+    <script src="/services/hub-flask/static/js/navigation.js"></script>
   </body>
 </html>

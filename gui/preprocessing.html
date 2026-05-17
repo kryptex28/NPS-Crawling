@@ -6,6 +6,7 @@
     <title>Check for New Files</title>
     <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css"/>
   </head>
   <body>
     <main class="page">
@@ -15,6 +16,8 @@
       </header>
 
       <section class="panel">
+        <div id="navigation">
+        </div>
         <div id="preprocessing-control">
           <button type="button" id="start-preprocessing" class="primary"">Start new preprocessing</button>
           <button type="button" id="stop-preprocessing" class="ghost">Stop preprocessing</button>
@@ -74,5 +77,6 @@
       </section>
     </main>
     <script src="/services/hub-flask/static/js/preprocessing.js"></script>
+    <script src="/services/hub-flask/static/js/navigation.js"></script>
   </body>
 </html>
