@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Crawled Files – Results</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
   </head>
   <body>
     <main class="page">
@@ -16,53 +17,21 @@
       <section class="panel">
         <div class="results-header">
           <h2>Results</h2>
-          <div class="results-actions">
+          <form class="results-actions" action="/services/hub-flask/export-results" method="post">
             <div class="results-toolbar">
               <label for="export-format">Format</label>
-              <select id="export-format">
+              <select id="export-format" name="format">
                 <option value="csv">CSV</option>
                 <option value="xlsx">Excel (.xlsx)</option>
               </select>
             </div>
-            <button type="button" class="primary">Export results</button>
-            <a class="ghost button-link" href="/">Back to search</a>
-          </div>
+            <button type="submit" class="primary">Export results</button>
+          </form>
         </div>
 
-        <div class="results-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Filing ID</th>
-                <th>CIK</th>
-                <th>Company</th>
-                <th>URL</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-              </tr>
-              <tr>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-              </tr>
-              <tr>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-                <td>Placeholder</td>
-              </tr>
-            </tbody>
+        <div class="results-table-container">
+          <table id="results-table">
+            
           </table>
         </div>
       </section>
