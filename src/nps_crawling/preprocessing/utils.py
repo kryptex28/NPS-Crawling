@@ -138,6 +138,7 @@ class PreProcessingPipeline(Config):
         total_context_windows_rejected = 0
         total_context_windows_excluded = 0
         filings_excluded_by_exclude_list = 0
+        filings_skipped_no_context = 0
         all_similarity_scores = []
         all_filings_averages = []
 
@@ -230,6 +231,7 @@ class PreProcessingPipeline(Config):
                         continue
 
                     if cw_total == 0:
+                        filings_skipped_no_context += 1
                         continue
 
                     filings_total += 1
@@ -276,6 +278,9 @@ class PreProcessingPipeline(Config):
                 "threshold_keyword_scope_strict": Config.THRESHOLD_KEYWORD_SCOPE_STRICT,
             },
             "processed_filings": {
+                "filings_to_be_processed_total": filings_total + filings_excluded_by_exclude_list + filings_skipped_no_context,
+                "filings_excluded_by_exclude_list": filings_excluded_by_exclude_list,
+                "filings_skipped_no_context": filings_skipped_no_context,
                 "filings_processed_total": filings_total,
                 "filings_accepted_total": filings_accepted,
                 "filings_accepted_full": filings_accepted_fully,
@@ -286,7 +291,6 @@ class PreProcessingPipeline(Config):
                 "context_windows_accepted": total_context_windows_accepted,
                 "context_windows_rejected": total_context_windows_rejected,
                 "context_windows_excluded_by_exclude_list": total_context_windows_excluded,
-                "filings_excluded_by_exclude_list": filings_excluded_by_exclude_list,
                 "lowest_similarity_context": round(min(all_similarity_scores), 4) if all_similarity_scores else None,
                 "highest_similarity_context": round(max(all_similarity_scores), 4) if all_similarity_scores else None,
                 "average_similarity_context": round(sum(all_similarity_scores) / len(all_similarity_scores), 4) if all_similarity_scores else None,
