@@ -22,7 +22,7 @@ PROCESSED_BASE = Path(__file__).resolve().parent.parent / "data" / "json_process
 VERSION = "version_1"
 DATA_DIR = PROCESSED_BASE / VERSION / "files"
 OUTPUT_PATH = Path("filings_summary.xlsx")
-MAX_ROWS = 500
+
 
 # Requires "COMPANY NAME  (TICKER)  (CIK ...)" — two parenthesized groups
 DISPLAY_NAME_RE = re.compile(r"^(.+?)\s*\(([^)]+)\)\s*\(CIK\s+[^)]+\)")
@@ -97,8 +97,6 @@ def collect_rows(only_relevant: bool = True):
                 snippet,
             ])
 
-            if len(rows) >= MAX_ROWS:
-                return rows
 
     return rows
 
