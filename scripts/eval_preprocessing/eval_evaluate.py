@@ -59,7 +59,12 @@ def load_labels():
 
 def load_scores(path: Path):
     out = {}
-    timing = {"embedding_seconds_total": None, "embedding_ms_per_context": None}
+    meta = {
+        "embedding_seconds_total": None,
+        "embedding_ms_per_context": None,
+        "model": None,
+        "reference_text_id": None,
+    }
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -67,10 +72,12 @@ def load_scores(path: Path):
                 continue
             obj = json.loads(line)
             out[obj["context_id"]] = obj["similarity_score"]
-            if timing["embedding_seconds_total"] is None:
-                timing["embedding_seconds_total"] = obj.get("embedding_seconds_total")
-                timing["embedding_ms_per_context"] = obj.get("embedding_ms_per_context")
-    return out, timing
+            if meta["embedding_seconds_total"] is None:
+                meta["embedding_seconds_total"] = obj.get("embedding_seconds_total")
+                meta["embedding_ms_per_context"] = obj.get("embedding_ms_per_context")
+                meta["model"] = obj.get("model")
+                meta["reference_text_id"] = obj.get("reference_text_id")
+    return out, meta
 
 
 def metrics(labels, scores, threshold):
@@ -94,16 +101,20 @@ def metrics(labels, scores, threshold):
 
 
 def evaluate_one(scores_path: Path, labels: dict, thresholds):
-    scores, timing = load_scores(scores_path)
+    scores, meta = load_scores(scores_path)
     matched = sum(1 for cid in labels if cid in scores)
 
     print(f"\n=== {scores_path.name} ===")
+    if meta["model"] or meta["reference_text_id"]:
+        print(
+            f"Model: {meta['model']}  |  Reference text: {meta['reference_text_id']}"
+        )
     print(f"Labels: {len(labels)}  |  Scored & labeled: {matched}  |  "
           f"Missing scores for labeled rows: {len(labels) - matched}")
-    if timing["embedding_seconds_total"] is not None:
+    if meta["embedding_seconds_total"] is not None:
         print(
-            f"Embedding time: {timing['embedding_seconds_total']:.3f}s total, "
-            f"{timing['embedding_ms_per_context']:.2f} ms/context"
+            f"Embedding time: {meta['embedding_seconds_total']:.3f}s total, "
+            f"{meta['embedding_ms_per_context']:.2f} ms/context"
         )
     if matched == 0:
         print("  No overlap between labels and scores — check context_ids.")
@@ -123,8 +134,8 @@ def evaluate_one(scores_path: Path, labels: dict, thresholds):
     print(f"\n  Best F1 at threshold {best[0]:.2f}: F1={best[1]:.3f}")
 
     csv_path = EVAL_DIR / f"{scores_path.stem}_metrics.csv"
-    sec_total = timing["embedding_seconds_total"]
-    ms_per_ctx = timing["embedding_ms_per_context"]
+    sec_total = meta["embedding_seconds_total"]
+    ms_per_ctx = meta["embedding_ms_per_context"]
     sec_total_str = f"{sec_total:.6f}" if sec_total is not None else ""
     ms_per_ctx_str = f"{ms_per_ctx:.6f}" if ms_per_ctx is not None else ""
     with open(csv_path, "w", encoding="utf-8", newline="") as f:
