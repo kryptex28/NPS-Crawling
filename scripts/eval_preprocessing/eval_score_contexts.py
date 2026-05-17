@@ -16,6 +16,7 @@ applied here — raw cosine scores are stored so threshold sweeps in
 import json
 import re
 import sys
+import time
 from pathlib import Path
 
 # Allow running as a plain script without installing the package
@@ -52,7 +53,21 @@ def main():
     print(f"Scoring {len(rows)} contexts with model '{Config.SIMILARITY_EMBEDDING_MODEL}' …")
     sim = SimilarityPipeline()
     texts = [row["context"] for row in rows]
+
+    # Warm-up call so model load + lazy init don't pollute the timed run.
+    sim.embed_and_score(texts[:1])
+
+    t0 = time.perf_counter()
     scores = sim.embed_and_score(texts)
+    embedding_seconds_total = time.perf_counter() - t0
+    embedding_ms_per_context = (embedding_seconds_total / len(rows)) * 1000.0
+
+    print(
+        f"Embedding+scoring took {embedding_seconds_total:.3f}s "
+        f"({embedding_ms_per_context:.2f} ms/context, "
+        f"{len(rows) / embedding_seconds_total:.1f} contexts/sec) — "
+        f"steady-state, excludes model load."
+    )
 
     out_path = EVAL_DIR / f"scores_{model_slug(Config.SIMILARITY_EMBEDDING_MODEL)}.jsonl"
     with open(out_path, "w", encoding="utf-8") as f:
@@ -62,6 +77,8 @@ def main():
                 "similarity_score": round(float(score), 6),
                 "model": Config.SIMILARITY_EMBEDDING_MODEL,
                 "reference_text": Config.SIMILARITY_REFERENCE_TEXT,
+                "embedding_seconds_total": round(embedding_seconds_total, 6),
+                "embedding_ms_per_context": round(embedding_ms_per_context, 6),
             }, ensure_ascii=False) + "\n")
 
     print(f"Wrote {len(rows)} scores to {out_path}")

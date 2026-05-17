@@ -59,6 +59,7 @@ def load_labels():
 
 def load_scores(path: Path):
     out = {}
+    timing = {"embedding_seconds_total": None, "embedding_ms_per_context": None}
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -66,7 +67,10 @@ def load_scores(path: Path):
                 continue
             obj = json.loads(line)
             out[obj["context_id"]] = obj["similarity_score"]
-    return out
+            if timing["embedding_seconds_total"] is None:
+                timing["embedding_seconds_total"] = obj.get("embedding_seconds_total")
+                timing["embedding_ms_per_context"] = obj.get("embedding_ms_per_context")
+    return out, timing
 
 
 def metrics(labels, scores, threshold):
@@ -90,12 +94,17 @@ def metrics(labels, scores, threshold):
 
 
 def evaluate_one(scores_path: Path, labels: dict, thresholds):
-    scores = load_scores(scores_path)
+    scores, timing = load_scores(scores_path)
     matched = sum(1 for cid in labels if cid in scores)
 
     print(f"\n=== {scores_path.name} ===")
     print(f"Labels: {len(labels)}  |  Scored & labeled: {matched}  |  "
           f"Missing scores for labeled rows: {len(labels) - matched}")
+    if timing["embedding_seconds_total"] is not None:
+        print(
+            f"Embedding time: {timing['embedding_seconds_total']:.3f}s total, "
+            f"{timing['embedding_ms_per_context']:.2f} ms/context"
+        )
     if matched == 0:
         print("  No overlap between labels and scores — check context_ids.")
         return
@@ -114,13 +123,19 @@ def evaluate_one(scores_path: Path, labels: dict, thresholds):
     print(f"\n  Best F1 at threshold {best[0]:.2f}: F1={best[1]:.3f}")
 
     csv_path = EVAL_DIR / f"{scores_path.stem}_metrics.csv"
+    sec_total = timing["embedding_seconds_total"]
+    ms_per_ctx = timing["embedding_ms_per_context"]
+    sec_total_str = f"{sec_total:.6f}" if sec_total is not None else ""
+    ms_per_ctx_str = f"{ms_per_ctx:.6f}" if ms_per_ctx is not None else ""
     with open(csv_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["threshold", "TP", "FP", "FN", "TN",
-                         "precision", "recall", "F1"])
+                         "precision", "recall", "F1",
+                         "embedding_seconds_total", "embedding_ms_per_context"])
         for t, tp, fp, fn, tn, p, r, f1 in rows:
             writer.writerow([f"{t:.2f}", tp, fp, fn, tn,
-                             f"{p:.6f}", f"{r:.6f}", f"{f1:.6f}"])
+                             f"{p:.6f}", f"{r:.6f}", f"{f1:.6f}",
+                             sec_total_str, ms_per_ctx_str])
     print(f"  Wrote {csv_path}")
 
 
