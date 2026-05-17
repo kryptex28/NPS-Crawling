@@ -138,6 +138,7 @@ class PreProcessingPipeline(Config):
         total_context_windows_rejected = 0
         total_context_windows_excluded = 0
         filings_excluded_by_exclude_list = 0
+        filings_skipped_no_context = 0
         all_similarity_scores = []
         all_filings_averages = []
 
@@ -181,6 +182,10 @@ class PreProcessingPipeline(Config):
                     if not contexts:
                         record["metadata"]["Context Windows Accept"] = 0
                         record["metadata"]["Context Windows Reject"] = 0
+                        continue
+                    # Skip embedding for filings outside the threshold scope:
+                    # their windows are auto-accepted regardless of score.
+                    if not file_apply_threshold:
                         continue
                     for ctx_idx, ctx in enumerate(contexts):
                         all_texts.append(ctx["context"])
@@ -230,6 +235,7 @@ class PreProcessingPipeline(Config):
                         continue
 
                     if cw_total == 0:
+                        filings_skipped_no_context += 1
                         continue
 
                     filings_total += 1
@@ -276,6 +282,9 @@ class PreProcessingPipeline(Config):
                 "threshold_keyword_scope_strict": Config.THRESHOLD_KEYWORD_SCOPE_STRICT,
             },
             "processed_filings": {
+                "filings_to_be_processed_total": filings_total + filings_excluded_by_exclude_list + filings_skipped_no_context,
+                "filings_excluded_by_exclude_list": filings_excluded_by_exclude_list,
+                "filings_skipped_no_context": filings_skipped_no_context,
                 "filings_processed_total": filings_total,
                 "filings_accepted_total": filings_accepted,
                 "filings_accepted_full": filings_accepted_fully,
@@ -286,7 +295,6 @@ class PreProcessingPipeline(Config):
                 "context_windows_accepted": total_context_windows_accepted,
                 "context_windows_rejected": total_context_windows_rejected,
                 "context_windows_excluded_by_exclude_list": total_context_windows_excluded,
-                "filings_excluded_by_exclude_list": filings_excluded_by_exclude_list,
                 "lowest_similarity_context": round(min(all_similarity_scores), 4) if all_similarity_scores else None,
                 "highest_similarity_context": round(max(all_similarity_scores), 4) if all_similarity_scores else None,
                 "average_similarity_context": round(sum(all_similarity_scores) / len(all_similarity_scores), 4) if all_similarity_scores else None,
@@ -313,7 +321,12 @@ class PreProcessingPipeline(Config):
 
             title_main = f"Similarity Score Distribution (Experiment: {Config.PREPROCESSING_VERSION})"
             title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
-            plt.title(f"{title_main}\n{title_sub}", fontsize=12)
+            if Config.THRESHOLD_KEYWORD_SCOPE is not None:
+                scope_str = ", ".join(Config.THRESHOLD_KEYWORD_SCOPE)
+                title_scope = f"Threshold scope: {scope_str} (scored windows only)"
+                plt.title(f"{title_main}\n{title_sub}\n{title_scope}", fontsize=12)
+            else:
+                plt.title(f"{title_main}\n{title_sub}", fontsize=12)
 
             plt.axvline(Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW, color='darkred', linestyle='dashed', linewidth=2, label='Threshold')
             plt.legend()

@@ -100,12 +100,14 @@ class SimilarityPipeline:
             contexts = record.get("context", [])
             if not contexts:
                 continue
-            scores = [ctx["similarity_score"] for ctx in contexts]
             apply_threshold = record.get("metadata", {}).get("threshold_applied", True)
-            if apply_threshold:
-                accepted_count = sum(1 for s in scores if s >= self.threshold_context)
-            else:
-                accepted_count = len(scores)
+            if not apply_threshold:
+                # Out-of-scope filings skip embedding entirely — no scores, all accepted.
+                record["metadata"]["Context Windows Accept"] = len(contexts)
+                record["metadata"]["Context Windows Reject"] = 0
+                continue
+            scores = [ctx["similarity_score"] for ctx in contexts]
+            accepted_count = sum(1 for s in scores if s >= self.threshold_context)
             record["metadata"]["Context Windows Accept"] = accepted_count
             record["metadata"]["Context Windows Reject"] = len(scores) - accepted_count
             record["filings_average"] = round(float(sum(scores) / len(scores)), 4)
