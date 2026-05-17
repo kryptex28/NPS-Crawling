@@ -17,7 +17,7 @@ crawl_bp: Blueprint = Blueprint("crawl_routes", __name__)
 def results():
     return send_from_directory(".", "results.html")
 
-@crawl_bp.get("/check")
+@crawl_bp.get("/crawl")
 @login_required
 def check():
     return send_from_directory(".", "check.html")
@@ -53,16 +53,14 @@ def start_search():
     session["selected_ids"] = id_list
     return redirect(url_for("crawl_routes.check"))
 
-@crawl_bp.post("/search")
+@crawl_bp.post("/crawl")
 @login_required
 def search():
     data: dict = request.form.to_dict(flat=True)
-    data["filing_types"] = request.form.getlist("filing_types")
-
-    from services.crawl_service import last_data
-    last_data.clear()
-    last_data.update(data)
+    print(data)
     
+    id_list: list[str] = data.get("ids", "")
+    session["selected_ids"] = id_list
     return redirect(url_for("crawl_routes.check"))
 
 @crawl_bp.get("/stream-crawl")

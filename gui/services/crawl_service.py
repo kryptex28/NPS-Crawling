@@ -98,37 +98,3 @@ def event_stream():
         except Exception as e:
             logger.error(f"Error in event stream: {e}", exc_info=True)
             yield f"data: { json.dumps({"__error": str(e)} )}\n\n"
-
-"""
-def event_stream():
-    last_prefetch_cound = 0
-    send_ids: set = set()
-
-    try:
-        while True:
-
-            current_keys = list(crawl_dict.keys())
-            for filing_id in current_keys:
-                if filing_id not in send_ids:
-                    result = crawl_dict[filing_id]
-                    logger.info(f"Yielding new result for ID {filing_id}")
-                    yield f"data: {json.dumps(result)}\n\n"
-                    send_ids.add(filing_id)
-
-            for filing_id in list(updated_ids):
-                result = crawl_dict.get(filing_id)
-                logger.info(f"Yielding updated result for ID {filing_id}")
-                yield f"data: {json.dumps(result)}\n\n"
-                updated_ids.remove(filing_id)
-
-            if crawl_done:
-                logger.info("Crawl done, yielding final event")
-                yield 'data: {"__done": true}\n\n'
-                return
-            
-            time.sleep(0.5)
-    except Exception as e:
-        logger.error(f"Error in event stream: {e}", exc_info=True)
-        yield f'data: {json.dumps({"__error": str(e)})}\n\n'
-
-        """

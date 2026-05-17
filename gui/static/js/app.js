@@ -103,6 +103,6 @@ form.addEventListener("reset", () => {
 });
 
 
-document.getElementById("start-search-form").addEventListener("submit", (event) =>  {
+document.getElementById("search-form").addEventListener("submit", (event) =>  {
   document.getElementById("ids-input").value = JSON.stringify(getSelectedIds());
 })
