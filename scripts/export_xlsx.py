@@ -39,64 +39,60 @@ def parse_display_name(name: str):
 
 
 def collect_rows(only_relevant: bool = True):
-    relevant_ids = None
-    if only_relevant:
-        try:
-            from nps_crawling.db.db_adapter import DbAdapter
-            db = DbAdapter()
-            relevant_ids = {row["id"] for row in db.get_all_filings() if row.get("nps_relevant")}
-        except Exception as e:
-            print(f"Warning: Could not connect to DB for relevancy check: {e}")
-
+    from nps_crawling.db.db_adapter import DbAdapter
+    db = DbAdapter()
+    db_rows = db.get_all_filings()
+    
     rows = []
-    seen_snippets = set()
-    for json_path in sorted(DATA_DIR.glob("*.json")):
-        with open(json_path, encoding="utf-8") as f:
-            records = json.load(f)
-
-        for record in records:
-            filing = record.get("metadata", {}).get("filing", {})
-            filing_id = filing.get("id")
-
-            if only_relevant and relevant_ids is not None:
-                if filing_id not in relevant_ids:
-                    continue
-
-            display_names = filing.get("display_names", [])
-            if not display_names:
-                continue
-
-            parsed = parse_display_name(display_names[0])
-            if parsed is None:
-                continue  # weird display_name -> skip
-
+    for row in db_rows:
+        if only_relevant and not row.get("nps_relevant"):
+            continue
+            
+        display_names = row.get("display_names") or []
+        display_name = display_names[0] if display_names else ""
+        parsed = parse_display_name(display_name)
+        if parsed:
             company_name, ticker = parsed
-            cik = filing.get("ciks", [""])[0]
-            filing_type = filing.get("file_type", "")
-            filing_date = filing.get("file_date", "")
-            url = record.get("url", "")
-
-            # First context snippet, truncated
-            contexts = record.get("context", [])
-            snippet = ""
-            if contexts:
-                snippet = contexts[0].get("context", "")
-                snippet = ILLEGAL_CHARACTERS_RE.sub("", snippet)
-
-            if snippet in seen_snippets:
-                continue
-            seen_snippets.add(snippet)
-
-            rows.append([
-                company_name,
-                ticker,
-                cik,
-                filing_type,
-                filing_date,
-                url,
-                snippet,
-            ])
-
+        else:
+            company_name = display_name
+            tickers = row.get("ticker") or []
+            ticker = tickers[0] if tickers else ""
+            
+        ciks = row.get("ciks") or []
+        cik = ciks[0] if ciks else ""
+        
+        filing_type = row.get("file_type") or ""
+        filing_date = row.get("file_date") or ""
+        url = row.get("url") or ""
+        
+        snippet = ""
+        path_to_preprocessed = row.get("path_to_preprocessed")
+        if path_to_preprocessed:
+            p = Path(path_to_preprocessed)
+            if not p.is_absolute():
+                p = Path(__file__).resolve().parent.parent / p
+            if p.exists():
+                try:
+                    with open(p, encoding="utf-8") as f:
+                        records = json.load(f)
+                        if records:
+                            record = records[0]
+                            contexts = record.get("context", [])
+                            if contexts:
+                                snippet = contexts[0].get("context", "")
+                                snippet = ILLEGAL_CHARACTERS_RE.sub("", snippet)
+                except Exception:
+                    pass
+                    
+        rows.append([
+            company_name,
+            ticker,
+            cik,
+            filing_type,
+            filing_date,
+            url,
+            snippet,
+        ])
 
     return rows
 
