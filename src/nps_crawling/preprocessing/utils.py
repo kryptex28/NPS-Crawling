@@ -183,6 +183,10 @@ class PreProcessingPipeline(Config):
                         record["metadata"]["Context Windows Accept"] = 0
                         record["metadata"]["Context Windows Reject"] = 0
                         continue
+                    # Skip embedding for filings outside the threshold scope:
+                    # their windows are auto-accepted regardless of score.
+                    if not file_apply_threshold:
+                        continue
                     for ctx_idx, ctx in enumerate(contexts):
                         all_texts.append(ctx["context"])
                         index_map.append((fr_idx, rec_idx, ctx_idx))
@@ -317,7 +321,12 @@ class PreProcessingPipeline(Config):
 
             title_main = f"Similarity Score Distribution (Experiment: {Config.PREPROCESSING_VERSION})"
             title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
-            plt.title(f"{title_main}\n{title_sub}", fontsize=12)
+            if Config.THRESHOLD_KEYWORD_SCOPE is not None:
+                scope_str = ", ".join(Config.THRESHOLD_KEYWORD_SCOPE)
+                title_scope = f"Threshold scope: {scope_str} (scored windows only)"
+                plt.title(f"{title_main}\n{title_sub}\n{title_scope}", fontsize=12)
+            else:
+                plt.title(f"{title_main}\n{title_sub}", fontsize=12)
 
             plt.axvline(Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW, color='darkred', linestyle='dashed', linewidth=2, label='Threshold')
             plt.legend()
