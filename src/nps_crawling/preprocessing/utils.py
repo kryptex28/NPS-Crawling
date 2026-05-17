@@ -136,6 +136,8 @@ class PreProcessingPipeline(Config):
         filings_rejected_fully = 0
         total_context_windows_accepted = 0
         total_context_windows_rejected = 0
+        scoped_context_windows_accepted = 0
+        scoped_context_windows_rejected = 0
         total_context_windows_excluded = 0
         filings_excluded_by_exclude_list = 0
         filings_skipped_no_context = 0
@@ -241,6 +243,9 @@ class PreProcessingPipeline(Config):
                     filings_total += 1
                     total_context_windows_accepted += cw_accept
                     total_context_windows_rejected += cw_reject
+                    if meta.get("threshold_applied", True):
+                        scoped_context_windows_accepted += cw_accept
+                        scoped_context_windows_rejected += cw_reject
 
                     if cw_accept > 0:
                         filings_accepted += 1
@@ -320,12 +325,13 @@ class PreProcessingPipeline(Config):
                     patches[i].set_facecolor('skyblue')
 
             title_main = f"Similarity Score Distribution (Experiment: {Config.PREPROCESSING_VERSION})"
-            title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
             if Config.THRESHOLD_KEYWORD_SCOPE is not None:
                 scope_str = ", ".join(Config.THRESHOLD_KEYWORD_SCOPE)
+                title_sub = f"context_windows_accepted: {scoped_context_windows_accepted}, context_windows_rejected: {scoped_context_windows_rejected}"
                 title_scope = f"Threshold scope: {scope_str} (scored windows only)"
                 plt.title(f"{title_main}\n{title_sub}\n{title_scope}", fontsize=12)
             else:
+                title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
                 plt.title(f"{title_main}\n{title_sub}", fontsize=12)
 
             plt.axvline(Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW, color='darkred', linestyle='dashed', linewidth=2, label='Threshold')
