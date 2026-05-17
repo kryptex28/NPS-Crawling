@@ -104,12 +104,12 @@ class Config:
     # Define Threshold for similarity search here. Context windows that fall below
     # this value will be filtered out. This means the higher you set this value, the
     # more strict the filtering will be, and more context windows will be rejected.
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.4
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
-                                                   "net promoter"]
+                                                   "net promoter", "net promotor"]
     
     # The reference text for the similarity search. This is the text that the
     # context windows are compared to. Each context window will receive a value,
