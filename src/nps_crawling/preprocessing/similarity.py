@@ -93,13 +93,19 @@ class SimilarityPipeline:
         """Compute per-record accept/reject counts and filing average.
 
         Expects ``similarity_score`` to already be set on each context dict.
+        Honors ``metadata['threshold_applied']`` — when False, every context
+        window is counted as accepted regardless of its similarity score.
         """
         for record in records:
             contexts = record.get("context", [])
             if not contexts:
                 continue
             scores = [ctx["similarity_score"] for ctx in contexts]
-            accepted_count = sum(1 for s in scores if s >= self.threshold_context)
+            apply_threshold = record.get("metadata", {}).get("threshold_applied", True)
+            if apply_threshold:
+                accepted_count = sum(1 for s in scores if s >= self.threshold_context)
+            else:
+                accepted_count = len(scores)
             record["metadata"]["Context Windows Accept"] = accepted_count
             record["metadata"]["Context Windows Reject"] = len(scores) - accepted_count
             record["filings_average"] = round(float(sum(scores) / len(scores)), 4)
@@ -119,15 +125,20 @@ class SimilarityPipeline:
 
         for record in records:
             contexts = record.get("context", [])
+            apply_threshold = record.get("metadata", {}).get("threshold_applied", True)
 
-            acc_ctx = [
-                ctx for ctx in contexts
-                if ctx.get("similarity_score", 0) >= self.threshold_context
-            ]
-            rej_ctx = [
-                ctx for ctx in contexts
-                if ctx.get("similarity_score", 0) < self.threshold_context
-            ]
+            if apply_threshold:
+                acc_ctx = [
+                    ctx for ctx in contexts
+                    if ctx.get("similarity_score", 0) >= self.threshold_context
+                ]
+                rej_ctx = [
+                    ctx for ctx in contexts
+                    if ctx.get("similarity_score", 0) < self.threshold_context
+                ]
+            else:
+                acc_ctx = list(contexts)
+                rej_ctx = []
 
             # Shallow copy the record, give each branch its own metadata dict
             # and its own context list.  All other values (strings, ints) are

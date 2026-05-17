@@ -84,10 +84,22 @@ class Config:
     # When set, only filings whose db keywords list matches the keywords in this list are preprocessed.
     # Set to None to disable this filter and process all filings.
     # It can be a single string (exact match) or a list of strings (any match).
-    SINGLE_KEYWORD_FILTER: str | list[str] | None = ["net promotor"]
+    SINGLE_KEYWORD_FILTER: str | list[str] | None = None
     # If STRICT is True, filings are only included if they contain EXACTLY ONE keyword and it matches.
     # If STRICT is False, filings are included if they contain at least one of the keywords (even if they have others).
     SINGLE_KEYWORD_FILTER_STRICT: bool = True
+
+    # Controls which filings have SIMILARITY_THRESHOLD_CONTEXT_WINDOW applied.
+    # Set to None to apply the threshold to every processed filing.
+    # When set, the threshold is applied only to filings whose DB keyword set matches this scope;
+    # filings outside the scope auto-accept all context windows (similarity scores are still
+    # computed and saved).
+    THRESHOLD_KEYWORD_SCOPE: list[str] | None = ["nps"]
+    # If STRICT is True, the threshold is applied only when the filing's DB keyword set is
+    # EXACTLY equal to THRESHOLD_KEYWORD_SCOPE (e.g. filing has only "nps" and nothing else).
+    # If STRICT is False, the threshold is applied whenever the filing's DB keywords intersect
+    # THRESHOLD_KEYWORD_SCOPE (e.g. filing has "nps" alongside other keywords).
+    THRESHOLD_KEYWORD_SCOPE_STRICT: bool = True
 
     # Define Threshold for similarity search here. Context windows that fall below
     # this value will be filtered out. This means the higher you set this value, the
