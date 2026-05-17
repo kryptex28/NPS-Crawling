@@ -56,25 +56,31 @@ class NpsMentionFilterPipeline(Config):
         for record in records:
             text = record.get("core_text", "")
             sentences = self._split_into_sentences(text)
-            hits, excluded_count = self._extract_context_windows_from_sentences(sentences)
+            hits, excluded_count, filing_excluded = (
+                self._extract_context_windows_from_sentences(sentences)
+            )
             hits = self._deduplicate_hits(hits)
             record["context"] = hits
             record["all_context_windows"] = self._build_concatenated_context(
                 sentences, hits,
             )
-            record.setdefault("metadata", {})["Context Windows Excluded"] = excluded_count
+            meta = record.setdefault("metadata", {})
+            meta["Context Windows Excluded"] = excluded_count
+            meta["Filing Excluded By Exclude List"] = filing_excluded
         return records
 
     def _extract_context_windows_from_sentences(self, sentences):
         """Extract all context windows from a list of sentences.
 
-        Returns ``(hits, excluded_count)`` where ``excluded_count`` is the
-        number of context windows that were dropped because at least one
-        phrase from LIST_OF_PHRASES_TO_EXCLUDE appeared anywhere inside the
-        built window.
+        Returns ``(hits, excluded_count, filing_excluded)``.
+
+        If any context window in the filing contains a phrase from
+        LIST_OF_PHRASES_TO_EXCLUDE, the entire filing is excluded: ``hits``
+        is returned empty and ``filing_excluded`` is True. ``excluded_count``
+        counts the windows that triggered exclusion.
         """
         if not sentences:
-            return [], 0
+            return [], 0, False
 
         n = len(sentences)
         hits = []
@@ -103,7 +109,9 @@ class NpsMentionFilterPipeline(Config):
                     "char_cutoff_applied": char_cutoff,
                 })
 
-        return hits, excluded_count
+        if excluded_count > 0:
+            return [], excluded_count, True
+        return hits, excluded_count, False
 
     @staticmethod
     def _deduplicate_hits(hits):
