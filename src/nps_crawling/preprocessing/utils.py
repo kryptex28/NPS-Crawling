@@ -137,6 +137,7 @@ class PreProcessingPipeline(Config):
         total_context_windows_accepted = 0
         total_context_windows_rejected = 0
         total_context_windows_excluded = 0
+        filings_excluded_by_exclude_list = 0
         all_similarity_scores = []
         all_filings_averages = []
 
@@ -224,6 +225,10 @@ class PreProcessingPipeline(Config):
 
                     total_context_windows_excluded += cw_excluded
 
+                    if meta.get("Filing Excluded By Exclude List"):
+                        filings_excluded_by_exclude_list += 1
+                        continue
+
                     if cw_total == 0:
                         continue
 
@@ -281,6 +286,7 @@ class PreProcessingPipeline(Config):
                 "context_windows_accepted": total_context_windows_accepted,
                 "context_windows_rejected": total_context_windows_rejected,
                 "context_windows_excluded_by_exclude_list": total_context_windows_excluded,
+                "filings_excluded_by_exclude_list": filings_excluded_by_exclude_list,
                 "lowest_similarity_context": round(min(all_similarity_scores), 4) if all_similarity_scores else None,
                 "highest_similarity_context": round(max(all_similarity_scores), 4) if all_similarity_scores else None,
                 "average_similarity_context": round(sum(all_similarity_scores) / len(all_similarity_scores), 4) if all_similarity_scores else None,
