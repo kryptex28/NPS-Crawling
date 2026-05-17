@@ -89,10 +89,28 @@ class Config:
     # If STRICT is False, filings are included if they contain at least one of the keywords (even if they have others).
     SINGLE_KEYWORD_FILTER_STRICT: bool = True
 
+    # Define Threshold for similarity search here. Context windows that fall below
+    # this value will be filtered out. This means the higher you set this value, the
+    # more strict the filtering will be, and more context windows will be rejected.
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
+
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = ['NPS', "net promoter score", "nps score", "nps of",
                                                    "net promoter"]
+    
+    # The reference text for the similarity search. This is the text that the
+    # context windows are compared to. Each context window will receive a value,
+    # the closer this value is to 1, the closer the text meaning of the context
+    # windows is to this text.
+    SIMILARITY_REFERENCE_TEXT: str = (
+        "Net Promoter Score (NPS) is a key performance indicator (KPI) and customer "
+        "loyalty metric used by management to measure customer satisfaction, brand "
+        "health, and the likelihood of customers to recommend a company's products "
+        "or services. Companies track NPS scores to predict customer retention and "
+        "churn, report NPS improvements to investors as an indicator of future organic "
+        "growth, and benchmark NPS against competitors to evaluate market position."
+    )
 
     # Define keywords/phrases here that should EXCLUDE a match even if they contain
     # one of the include phrases above. A sentence match is dropped when the include
@@ -142,23 +160,6 @@ class Config:
 
     # Similarity Search Model
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
-
-    # The reference text for the similarity search. This is the text that the
-    # context windows are compared to. Each context window will receive a value,
-    # the closer this value is to 1, the closer the text meaning of the context
-    # windows is to this text.
-    SIMILARITY_REFERENCE_TEXT: str = (
-        "Net Promoter Score (NPS) is a key performance indicator (KPI) and customer "
-        "loyalty metric used by management to measure customer satisfaction, brand "
-        "health, and the likelihood of customers to recommend a company's products "
-        "or services. Companies track NPS scores to predict customer retention and "
-        "churn, report NPS improvements to investors as an indicator of future organic "
-        "growth, and benchmark NPS against competitors to evaluate market position."
-    )
-    # Define Threshold for similarity search here. Context windows that fall below
-    # this value will be filtered out. This means the higher you set this value, the
-    # more strict the filtering will be, and more context windows will be rejected.
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
 
     """ Classification CONFIG """
     # OLLAMA
