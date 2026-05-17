@@ -316,16 +316,18 @@ class DbAdapter:
                 return dict(row)
             return None
 
-    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
         """
         Upserts a classification result for a specific filing and experiment version.
+        This also updates the main filings table with the classified path.
         
         Args:
             filing_id (str): The unique identifier for the filing.
             version (str): The classification experiment version.
+            path_to_classified (str | None): Path to the classified JSON file.
             **kwargs: Classification category flags mapping to db columns.
         """
-        self._db.upsert_classification(filing_id, version, **kwargs)
+        self._db.upsert_classification(filing_id, version, path_to_classified, **kwargs)
 
     def get_classifications(self, filing_id: str) -> list[dict]:
         """

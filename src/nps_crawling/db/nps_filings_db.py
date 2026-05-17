@@ -302,9 +302,10 @@ class NpsFilingsDB:
         with self.engine.connect() as conn:
             return conn.execute(stmt, {"id": id}).scalar_one_or_none()
 
-    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
         """
         Upserts classification results for a filing into nps_classification_results.
+        Also updates the main table with the path to the classified file.
         Only fields present in the table are allowed.
         """
         allowed_cols = {
@@ -350,8 +351,21 @@ class NpsFilingsDB:
         SET {update_str};
         """)
         
+        # 2. Update the main table
+        stmt_main = text(f"""
+        UPDATE {self.TABLE}
+        SET 
+            path_to_classified = COALESCE(:path_to_classified, {self.TABLE}.path_to_classified),
+            last_crawled = now()
+        WHERE id = :filing_id;
+        """)
+
         with self.engine.begin() as conn:
             conn.execute(stmt, params)
+            conn.execute(stmt_main, {
+                "filing_id": filing_id,
+                "path_to_classified": path_to_classified
+            })
 
     def get_classifications(self, filing_id: str) -> list[dict]:
         """
