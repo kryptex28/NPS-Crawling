@@ -160,7 +160,8 @@ class Config:
         "network processors",
         "NetApp Private Storage",
         "NPS Purchase Price",
-        "NPS 2.X"
+        "NPS 2.X",
+        "Netezza"
         ]
     
     # If any of the above keywords are found, define here the number of sentences
