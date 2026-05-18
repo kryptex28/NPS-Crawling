@@ -1,11 +1,12 @@
-"""
-Dimensions varied here:
-- length: short keyword string vs. one sentence vs. paragraph
-- register: dictionary definition vs. financial-disclosure prose vs. bag-of-keywords
-- topic focus: pure NPS vs. NPS + adjacent customer-experience metrics
-                vs. NPS in management/KPI/disclosure context (proxy-statement-like)
+# HuggingFace model IDs.
+MODELS: list[str] = [
+    "sentence-transformers/all-MiniLM-L6-v2",   # small/fast baseline (current production)
+    "BAAI/bge-small-en-v1.5",                   # modern, size-matched to MiniLM
+    "sentence-transformers/all-mpnet-base-v2",  # widely-used strong baseline
+    "BAAI/bge-base-en-v1.5",                    # modern base-size, MTEB top tier
+    "BAAI/bge-large-en-v1.5",                 # uncomment for upper-bound quality (slower)
+]
 
-"""
 
 REFERENCE_TEXTS: dict[str, str] = {
     # v1: current production default — paragraph, mixes definition + disclosure register.

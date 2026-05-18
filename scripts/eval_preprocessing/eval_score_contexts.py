@@ -1,22 +1,5 @@
-"""Score the frozen evaluation context windows with the current similarity model.
-
-Reads ``evaluation/preprocessing/contexts.jsonl`` (produced by
-``eval_export_for_labeling.py``) and embeds every context window once with the
-current ``SIMILARITY_EMBEDDING_MODEL``. The same embeddings are then scored
-against every reference text defined in ``reference_texts.py``, producing one
-JSONL per (model, reference text) pair:
-
-    evaluation/preprocessing/scores_<model_slug>__<ref_id>.jsonl
-
-To compare a different embedding model: edit ``SIMILARITY_EMBEDDING_MODEL`` in
-``src/nps_crawling/config.py`` and rerun this script. To compare different
-reference texts: edit ``reference_texts.py`` — no config change needed.
-
-No threshold is applied here — raw cosine scores are stored so the threshold
-sweep in ``eval_evaluate.py`` needs no re-embedding.
-"""
-
 import json
+import logging
 import re
 import sys
 import time
@@ -27,10 +10,14 @@ import numpy as np
 # Allow running as a plain script without installing the package
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from nps_crawling.config import Config
-from nps_crawling.preprocessing.similarity import SimilarityPipeline
+# silence transformers noise the same way SimilarityPipeline does
+import transformers
+transformers.utils.logging.set_verbosity_error()
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 
-from reference_texts import REFERENCE_TEXTS
+from langchain_huggingface import HuggingFaceEmbeddings
+
+from eval_config import MODELS, REFERENCE_TEXTS
 
 
 EVAL_DIR = Path(__file__).resolve().parents[2] / "evaluation" / "preprocessing"
@@ -39,6 +26,16 @@ CONTEXTS_JSONL = EVAL_DIR / "contexts.jsonl"
 
 def model_slug(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("_")
+
+
+def detect_device() -> str:
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+    except ImportError:
+        pass
+    return "cpu"
 
 
 def cosine_scores(context_embeddings: np.ndarray, ref_embedding: np.ndarray) -> np.ndarray:
@@ -50,39 +47,33 @@ def cosine_scores(context_embeddings: np.ndarray, ref_embedding: np.ndarray) -> 
     return dots / safe_divisor
 
 
-def main():
-    if not CONTEXTS_JSONL.exists():
-        print(f"Missing {CONTEXTS_JSONL}. Run eval_export_for_labeling.py first.")
-        return
-
+def load_contexts() -> list[dict]:
     rows = []
     with open(CONTEXTS_JSONL, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
                 rows.append(json.loads(line))
+    return rows
 
-    if not rows:
-        print("No context rows found.")
-        return
 
-    if not REFERENCE_TEXTS:
-        print("No reference texts defined in reference_texts.py.")
-        return
-
-    print(
-        f"Scoring {len(rows)} contexts with model '{Config.SIMILARITY_EMBEDDING_MODEL}' "
-        f"against {len(REFERENCE_TEXTS)} reference text(s) …"
-    )
-    sim = SimilarityPipeline()
+def score_with_model(model_name: str, rows: list[dict], device: str) -> None:
     texts = [row["context"] for row in rows]
+    batch_size = 512 if device == "cuda" else 64
 
-    # Warm-up call so model load + lazy init don't pollute the timed run.
-    sim.embeddings.embed_documents(texts[:1])
+    print(f"\n=== {model_name} (device={device}) ===")
+    print("Loading model …")
+    embeddings = HuggingFaceEmbeddings(
+        model_name=model_name,
+        model_kwargs={"device": device},
+        encode_kwargs={"batch_size": batch_size},
+    )
 
-    # Time the context embedding once — independent of reference text.
+    # Warm-up so model load + lazy init don't pollute the timed run.
+    embeddings.embed_documents(texts[:1])
+
     t0 = time.perf_counter()
-    context_embeddings = np.array(sim.embeddings.embed_documents(texts))
+    context_embeddings = np.array(embeddings.embed_documents(texts))
     embedding_seconds_total = time.perf_counter() - t0
     embedding_ms_per_context = (embedding_seconds_total / len(rows)) * 1000.0
 
@@ -93,9 +84,9 @@ def main():
         f"steady-state, excludes model load."
     )
 
-    mslug = model_slug(Config.SIMILARITY_EMBEDDING_MODEL)
+    mslug = model_slug(model_name)
     for ref_id, ref_text in REFERENCE_TEXTS.items():
-        ref_embedding = np.array(sim.embeddings.embed_query(ref_text))
+        ref_embedding = np.array(embeddings.embed_query(ref_text))
         scores = cosine_scores(context_embeddings, ref_embedding)
 
         out_path = EVAL_DIR / f"scores_{mslug}__{ref_id}.jsonl"
@@ -104,7 +95,8 @@ def main():
                 f.write(json.dumps({
                     "context_id": row["context_id"],
                     "similarity_score": round(float(score), 6),
-                    "model": Config.SIMILARITY_EMBEDDING_MODEL,
+                    "model": model_name,
+                    "device": device,
                     "reference_text_id": ref_id,
                     "reference_text": ref_text,
                     "embedding_seconds_total": round(embedding_seconds_total, 6),
@@ -112,6 +104,36 @@ def main():
                 }, ensure_ascii=False) + "\n")
 
         print(f"  [{ref_id}] wrote {len(rows)} scores to {out_path.name}")
+
+
+def main():
+    if not CONTEXTS_JSONL.exists():
+        print(f"Missing {CONTEXTS_JSONL}. Run eval_export_for_labeling.py first.")
+        return
+
+    rows = load_contexts()
+    if not rows:
+        print("No context rows found.")
+        return
+    if not MODELS:
+        print("No models defined in eval_config.MODELS.")
+        return
+    if not REFERENCE_TEXTS:
+        print("No reference texts defined in eval_config.REFERENCE_TEXTS.")
+        return
+
+    device = detect_device()
+    print(
+        f"Eval grid: {len(MODELS)} model(s) × {len(REFERENCE_TEXTS)} reference text(s) "
+        f"= {len(MODELS) * len(REFERENCE_TEXTS)} scores files. "
+        f"{len(rows)} contexts. Device: {device}."
+    )
+
+    for model_name in MODELS:
+        try:
+            score_with_model(model_name, rows, device)
+        except Exception as exc:
+            print(f"  !! Skipping {model_name}: {exc}")
 
 
 if __name__ == "__main__":
