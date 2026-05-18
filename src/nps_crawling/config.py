@@ -116,12 +116,8 @@ class Config:
     # the closer this value is to 1, the closer the text meaning of the context
     # windows is to this text.
     SIMILARITY_REFERENCE_TEXT: str = (
-        "Net Promoter Score (NPS) is a key performance indicator (KPI) and customer "
-        "loyalty metric used by management to measure customer satisfaction, brand "
-        "health, and the likelihood of customers to recommend a company's products "
-        "or services. Companies track NPS scores to predict customer retention and "
-        "churn, report NPS improvements to investors as an indicator of future organic "
-        "growth, and benchmark NPS against competitors to evaluate market position."
+        "net promoter score NPS customer loyalty customer satisfaction "
+        "recommend promoters detractors customer experience"
     )
 
     # Define keywords/phrases here that should EXCLUDE a match even if they contain
