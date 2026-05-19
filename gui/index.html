@@ -510,15 +510,15 @@
             <div id="query-control-menu">
               <button type="button" class="query-control" id="query-select-all">Select All</button>
               <button type="button" class="query-control" id="query-delete">Delete</button>
+              <form id="search-form" action="/services/hub-flask/crawl" method="post">
+                <input type="hidden" name="ids" id="ids-input" />
+                <button type="submit" class="primary">Start Crawl</button>
+              </form>
             </div>
             <div class="collapsible-content" id="queries-list">
               <div class="query-list" id="query-list"></div>
             </div>
           </div>
-          <form id="search-form" action="/services/hub-flask/crawl" method="post">
-            <input type="hidden" name="ids" id="ids-input" />
-            <button type="submit">Start Crawl</button>
-          </form>
       </section>
     </main>
     <script src="static/js/app.js"></script>

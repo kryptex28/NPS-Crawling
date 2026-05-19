@@ -276,7 +276,8 @@ fieldset {
   padding: 0.9rem 1rem;
   border-radius: 0.9rem;
   border: 1px solid var(--line);
-  background: #fff;
+  background-color: #d6d6d6;
+  color: black;
 }
 
 .result-meta {
@@ -470,4 +471,21 @@ button:hover {
   display: none;
   overflow: hidden;
   background-color: #f1f1f1;
+}
+
+#query-control-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#query-list {
+  padding: 12px;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+#search-form {
+  display: contents; /* or display: flex; */
 }

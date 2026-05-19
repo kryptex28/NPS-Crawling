@@ -24,6 +24,12 @@
     border-color: #9ca3af;
 }
 
+#navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 #site-navigation nav {
     display: inline-flex;
     border: 1px solid #d1d5db;
@@ -78,3 +84,4 @@
     background: #94e1c7;
     border: 1px solid #dcd4c6;
 }
+

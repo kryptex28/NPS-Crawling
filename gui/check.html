@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Check for New Files</title>
+    <title>Crawling</title>
     <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css"/>
@@ -11,12 +11,12 @@
   <body>
     <main class="page">
       <header class="topbar">
-        <h1 class="title">Check for New Files</h1>
+        <h1 class="title">Crawling</h1>
         <img class="logo" src="thu_logo.png" alt="THU logo" />
       </header>
-      <div id="navigation">
-      </div>
       <section class="panel">
+        <div id="navigation">
+        </div>
         <div id="crawl-control">
           <button type="button" id="start-crawl" class="primary"">Start new crawl</button>
           <button type="button" id="stop-crawl" class="ghost">Stop crawl</button>
@@ -38,7 +38,7 @@
             <span id="element-count">Elements: 0</span>
           </div>
           <div id="current-crawler-status-container">
-            <span id="current-crawler-status">Test</span>
+            <span id="current-crawler-status"></span>
           </div>
           <div id="control-container">
             <div class="paging-control" id="paging-control">
