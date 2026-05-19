@@ -12,11 +12,11 @@ def styles():
     return send_from_directory(".", "styles.css")
 
 @static_bp.route("/")
-@login_required
+
 def index():
     return send_from_directory(".", "index.html")
 
 @static_bp.route("/debug")
-@login_required
+
 def debug():
     return "Now you see me!"

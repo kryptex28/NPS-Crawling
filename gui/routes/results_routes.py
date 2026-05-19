@@ -14,7 +14,7 @@ results_bp: Blueprint = Blueprint("results_routes", __name__)
 
 
 @results_bp.post("/export-results")
-@login_required
+
 def export_results():
     data: dict = request.form.to_dict(flat=True)
     format: str = data.get("format", "csv")
@@ -23,6 +23,6 @@ def export_results():
 
 @results_bp.post("/results")
 @results_bp.get("/results")
-@login_required
+
 def results():
     return send_from_directory(".", "results.html")

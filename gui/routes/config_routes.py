@@ -10,7 +10,7 @@ config_bp: Blueprint = Blueprint("config_routes", __name__)
 
 
 @config_bp.post("/set-config")
-@login_required
+
 def set_config():
     data: dict = request.form.to_dict(flat=True)
 

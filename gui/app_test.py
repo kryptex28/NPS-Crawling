@@ -30,22 +30,22 @@ def styles():
     return send_from_directory(".", "styles.css")
 
 @application.route(f"{PREFIX}/")
-@login_required
+
 def index():
     return send_from_directory(".", "index.html")
 
 @application.get(f"{PREFIX}/results")
-@login_required
+
 def results():
     return send_from_directory(".", "results.html")
 
 @application.get(f"{PREFIX}/check")
-@login_required
+
 def check():
     return send_from_directory(".", "check.html")
 
 @application.post(f"{PREFIX}/search")
-@login_required
+
 def search():
     data = request.form.to_dict(flat=True)
     data["filing_types"] = request.form.getlist("filing_types")
