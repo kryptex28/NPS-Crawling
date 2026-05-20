@@ -302,9 +302,10 @@ class NpsFilingsDB:
         with self.engine.connect() as conn:
             return conn.execute(stmt, {"id": id}).scalar_one_or_none()
 
-    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
         """
         Upserts classification results for a filing into nps_classification_results.
+        Also updates the main table with the path to the classified file.
         Only fields present in the table are allowed.
         """
         allowed_cols = {
@@ -350,8 +351,21 @@ class NpsFilingsDB:
         SET {update_str};
         """)
         
+        # 2. Update the main table
+        stmt_main = text(f"""
+        UPDATE {self.TABLE}
+        SET 
+            path_to_classified = COALESCE(:path_to_classified, {self.TABLE}.path_to_classified),
+            last_crawled = now()
+        WHERE id = :filing_id;
+        """)
+
         with self.engine.begin() as conn:
             conn.execute(stmt, params)
+            conn.execute(stmt_main, {
+                "filing_id": filing_id,
+                "path_to_classified": path_to_classified
+            })
 
     def get_classifications(self, filing_id: str) -> list[dict]:
         """
@@ -361,3 +375,42 @@ class NpsFilingsDB:
         with self.engine.connect() as conn:
             rows = conn.execute(stmt, {"filing_id": filing_id}).mappings().all()
             return [dict(row) for row in rows]
+
+    def upsert_preprocessing_result(self, filing_id: str, version: str, nps_relevant: bool, path_to_preprocessed: str | None = None) -> None:
+        """
+        Upserts preprocessing results (relevance and path) for a filing and a specific version into the preprocessing table.
+        Also updates the main table with the latest state.
+        """
+        # 1. Upsert into the versioned table
+        stmt_versioned = text(f"""
+        INSERT INTO {self.TABLE}_preprocessing (filing_id, preprocessing_version, nps_relevant, path_to_preprocessed)
+        VALUES (:filing_id, :version, :nps_relevant, :path_to_preprocessed)
+        ON CONFLICT (filing_id, preprocessing_version) DO UPDATE
+        SET 
+            nps_relevant = EXCLUDED.nps_relevant,
+            path_to_preprocessed = EXCLUDED.path_to_preprocessed,
+            processed_at = now();
+        """)
+        
+        # 2. Update the main table
+        stmt_main = text(f"""
+        UPDATE {self.TABLE}
+        SET 
+            nps_relevant = :nps_relevant,
+            path_to_preprocessed = :path_to_preprocessed,
+            last_crawled = now()
+        WHERE id = :filing_id;
+        """)
+
+        with self.engine.begin() as conn:
+            conn.execute(stmt_versioned, {
+                "filing_id": filing_id,
+                "version": version,
+                "nps_relevant": nps_relevant,
+                "path_to_preprocessed": path_to_preprocessed
+            })
+            conn.execute(stmt_main, {
+                "filing_id": filing_id,
+                "nps_relevant": nps_relevant,
+                "path_to_preprocessed": path_to_preprocessed
+            })

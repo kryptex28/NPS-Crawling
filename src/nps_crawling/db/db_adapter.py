@@ -106,10 +106,25 @@ class DbAdapter:
             UNIQUE (filing_id, experiment_version)
         );
         """)
+        create_stmt_preprocessing = text(f"""
+        CREATE TABLE IF NOT EXISTS {self.table_name}_preprocessing (
+            id SERIAL PRIMARY KEY,
+            filing_id VARCHAR REFERENCES {self.table_name}(id) ON DELETE CASCADE,
+            preprocessing_version VARCHAR NOT NULL,
+            
+            nps_relevant BOOLEAN NOT NULL,
+            path_to_preprocessed VARCHAR,
+            
+            processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            UNIQUE (filing_id, preprocessing_version)
+        );
+        """)
+
         with self.engine.begin() as conn:
             conn.execute(create_stmt)
+            conn.execute(create_stmt_preprocessing)
             conn.execute(create_stmt_classifications)
-        print(f"Tabelle '{self.table_name}' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
+        print(f"Tabellen '{self.table_name}', '{self.table_name}_preprocessing' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """
@@ -242,19 +257,48 @@ class DbAdapter:
         rows_affected = self._db.update_fields(filing_id, touch_last_crawled=False, url=url)
         return rows_affected > 0
 
-    def get_all_filings(self, limit: int = 100) -> list[dict]:
+    def get_all_filings(self, limit: int | None = None) -> list[dict]:
         """
-        Retrieves a list of up to `limit` filings.
+        Retrieves a list of filings with all meta information.
 
         Args:
-            limit (int): The maximum number of filings to retrieve. Defaults to 100.
+            limit (int | None): The maximum number of filings to retrieve. If None, retrieves ALL filings. Defaults to None.
 
         Returns:
             list[dict]: A list of dictionary representations of the rows.
         """
-        stmt = text(f"SELECT * FROM {self.table_name} LIMIT :limit")
+        if limit is not None:
+            stmt = text(f"SELECT * FROM {self.table_name} LIMIT :limit")
+            params = {"limit": limit}
+        else:
+            stmt = text(f"SELECT * FROM {self.table_name}")
+            params = {}
+            
         with self.engine.connect() as conn:
-            rows = conn.execute(stmt, {"limit": limit}).mappings().all()
+            rows = conn.execute(stmt, params).mappings().all()
+            return [dict(row) for row in rows]
+
+    def get_filings_by_keyword(self, keyword: str, strict: bool = False) -> list[dict]:
+        """
+        Retrieves all filings that contain a specific keyword, including all meta information.
+
+        Args:
+            keyword (str): The keyword to search for.
+            strict (bool): If True, only returns filings where this is the ONLY keyword. 
+                           If False, returns all filings containing this keyword.
+
+        Returns:
+            list[dict]: A list of dictionary representations of the rows.
+        """
+        quoted_keyword = f'"{keyword}"'
+        
+        if strict:
+            stmt = text(f"SELECT * FROM {self.table_name} WHERE array_length(keywords, 1) = 1 AND (keywords[1] = :keyword OR keywords[1] = :quoted_keyword)")
+        else:
+            stmt = text(f"SELECT * FROM {self.table_name} WHERE :keyword = ANY(keywords) OR :quoted_keyword = ANY(keywords)")
+            
+        with self.engine.connect() as conn:
+            rows = conn.execute(stmt, {"keyword": keyword, "quoted_keyword": quoted_keyword}).mappings().all()
             return [dict(row) for row in rows]
 
     def get_filing_paths(self, filing_id: str) -> dict | None:
@@ -272,19 +316,34 @@ class DbAdapter:
                 return dict(row)
             return None
 
-    def upsert_classification(self, filing_id: str, version: str, **kwargs) -> None:
+    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
         """
         Upserts a classification result for a specific filing and experiment version.
+        This also updates the main filings table with the classified path.
         
         Args:
             filing_id (str): The unique identifier for the filing.
             version (str): The classification experiment version.
+            path_to_classified (str | None): Path to the classified JSON file.
             **kwargs: Classification category flags mapping to db columns.
         """
-        self._db.upsert_classification(filing_id, version, **kwargs)
+        self._db.upsert_classification(filing_id, version, path_to_classified, **kwargs)
 
     def get_classifications(self, filing_id: str) -> list[dict]:
         """
         Retrieves all classification results for a specific filing.
         """
         return self._db.get_classifications(filing_id)
+
+    def upsert_preprocessing_result(self, filing_id: str, version: str, nps_relevant: bool, path_to_preprocessed: str | None = None) -> None:
+        """
+        Upserts preprocessing results for a specific filing and experiment version.
+        This updates both the versioned preprocessing table and the main filings table.
+        
+        Args:
+            filing_id (str): The unique identifier for the filing.
+            version (str): The preprocessing experiment version.
+            nps_relevant (bool): Whether the filing is considered relevant.
+            path_to_preprocessed (str | None): Path to the preprocessed JSON file.
+        """
+        self._db.upsert_preprocessing_result(filing_id, version, nps_relevant, path_to_preprocessed)

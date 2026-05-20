@@ -19,10 +19,15 @@ def test_scenarios() -> None:
     of the new relational Classification table (multiple versions, updates, cascading deletes).
     """
     print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
+    
+    from nps_crawling.db.ensure_docker import ensure_docker_db_running
+    ensure_docker_db_running()
+
     try:
         adapter = DbAdapter()
+        adapter.ensure_table_exists()
     except Exception as e:
-        print(f"Failed to connect to DB: {e}")
+        print(f"Failed to connect to DB or create tables: {e}")
         return
 
     test_id = "test_scenario_comprehensive"
@@ -65,6 +70,40 @@ def test_scenarios() -> None:
     all_present = all(kw in retrieved_kws for kw in expected_kws)
     print(f"Verification - Expected keywords present: {all_present}")
 
+    # --- SCENARIO 1.6: Preprocessing Versioning ---
+    print("\n--- Scenario 1.6: Preprocessing Version 1 (Insert) ---")
+    adapter.upsert_preprocessing_result(
+        filing_id=test_id,
+        version="prep_v1",
+        nps_relevant=True,
+        path_to_preprocessed="/dummy/path/v1.json"
+    )
+    print("Upserted preprocessing result for 'prep_v1'")
+    
+    filing_prep = adapter.get_filing(test_id)
+    print(f"Verification (Main Table) - nps_relevant: {filing_prep.get('nps_relevant')} (Should be True)")
+    print(f"Verification (Main Table) - path_to_preprocessed: {filing_prep.get('path_to_preprocessed')} (Should be /dummy/path/v1.json)")
+    
+    print("\n--- Scenario 1.7: Preprocessing Version 2 (Overwrite Main Table) ---")
+    adapter.upsert_preprocessing_result(
+        filing_id=test_id,
+        version="prep_v2",
+        nps_relevant=False,
+        path_to_preprocessed=None
+    )
+    print("Upserted preprocessing result for 'prep_v2'")
+    
+    filing_prep_v2 = adapter.get_filing(test_id)
+    print(f"Verification (Main Table) - nps_relevant: {filing_prep_v2.get('nps_relevant')} (Should be False)")
+    print(f"Verification (Main Table) - path_to_preprocessed: {filing_prep_v2.get('path_to_preprocessed')} (Should be None)")
+    
+    # Check versioned table using raw SQL as we don't have a specific get_preprocessing method
+    from sqlalchemy import text
+    stmt_check = text(f"SELECT * FROM {adapter.table_name}_preprocessing WHERE filing_id = :id")
+    with adapter.engine.connect() as conn:
+        prep_rows = conn.execute(stmt_check, {"id": test_id}).mappings().all()
+    print(f"Verification (Versioned Table) - Total Preprocessing versions found: {len(prep_rows)} (Should be 2)")
+
 
     # --- SCENARIO 2: Classification Version 1 (Insert) ---
     print("\n--- Scenario 2: First Classification Run (Version: ollama_v1) ---")
@@ -72,6 +111,7 @@ def test_scenarios() -> None:
     adapter.upsert_classification(
         filing_id=test_id,
         version="ollama_v1",
+        path_to_classified="/dummy/path/class_v1.json",
         BENCHMARK_COMPARISON_POSITIVE=True,
         KPI_CURRENT_VALUE=True,
         has_numeric_nps=True,

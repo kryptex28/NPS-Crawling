@@ -95,8 +95,13 @@ class PreProcessingPipeline(Config):
         self.storage = SaveToJSONPipeline()
 
         self._keyword_filter = Config.SINGLE_KEYWORD_FILTER
-        self._keyword_filter_exclude = Config.SINGLE_KEYWORD_FILTER_EXCLUDE
-        self._db = DbAdapter() if self._keyword_filter else None
+        self._keyword_filter_strict = Config.SINGLE_KEYWORD_FILTER_STRICT
+        self._threshold_scope = Config.THRESHOLD_KEYWORD_SCOPE
+        self._threshold_scope_strict = Config.THRESHOLD_KEYWORD_SCOPE_STRICT
+        # DB needed whenever any per-filing keyword decision is active.
+        self._db = (
+            DbAdapter() if (self._keyword_filter or self._threshold_scope) else None
+        )
 
     def pre_processing_workflow(self):
         """Run the full pre-processing workflow over all raw JSON files."""
@@ -107,10 +112,11 @@ class PreProcessingPipeline(Config):
             logger.info("No raw JSON files found to process")
             return None
 
-        # Pre-filter files when the single-keyword filter is active.
-        # This path is sequential (needs DB access) but is a rare-use option.
-        if self._keyword_filter and self._db:
-            json_files = self._pre_filter_files(json_files)
+        # Resolve per-file inclusion and threshold-scope flag (sequential DB pass).
+        # Only runs when SINGLE_KEYWORD_FILTER or THRESHOLD_KEYWORD_SCOPE is set.
+        apply_threshold_map: dict = {}
+        if self._db:
+            json_files, apply_threshold_map = self._resolve_files_and_scopes(json_files)
             if not json_files:
                 logger.info("No files passed the keyword filter")
                 return None
@@ -130,6 +136,11 @@ class PreProcessingPipeline(Config):
         filings_rejected_fully = 0
         total_context_windows_accepted = 0
         total_context_windows_rejected = 0
+        scoped_context_windows_accepted = 0
+        scoped_context_windows_rejected = 0
+        total_context_windows_excluded = 0
+        filings_excluded_by_exclude_list = 0
+        filings_skipped_no_context = 0
         all_similarity_scores = []
         all_filings_averages = []
 
@@ -161,16 +172,22 @@ class PreProcessingPipeline(Config):
             all_texts = []
             index_map = []  # (file_result_idx, record_idx, context_idx)
 
-            for fr_idx, (_path, records) in enumerate(file_results):
+            for fr_idx, (path, records) in enumerate(file_results):
+                file_apply_threshold = apply_threshold_map.get(path, True)
                 for rec_idx, record in enumerate(records):
                     if "metadata" not in record:
                         record["metadata"] = {}
                     record["metadata"]["experiment"] = Config.PREPROCESSING_VERSION
+                    record["metadata"]["threshold_applied"] = file_apply_threshold
                     contexts = record.get("context", [])
                     record["metadata"]["Context Windows total"] = len(contexts)
                     if not contexts:
                         record["metadata"]["Context Windows Accept"] = 0
                         record["metadata"]["Context Windows Reject"] = 0
+                        continue
+                    # Skip embedding for filings outside the threshold scope:
+                    # their windows are auto-accepted regardless of score.
+                    if not file_apply_threshold:
                         continue
                     for ctx_idx, ctx in enumerate(contexts):
                         all_texts.append(ctx["context"])
@@ -211,13 +228,24 @@ class PreProcessingPipeline(Config):
                     cw_accept = meta.get("Context Windows Accept", 0)
                     cw_reject = meta.get("Context Windows Reject", 0)
                     cw_total = meta.get("Context Windows total", 0)
+                    cw_excluded = meta.get("Context Windows Excluded", 0)
+
+                    total_context_windows_excluded += cw_excluded
+
+                    if meta.get("Filing Excluded By Exclude List"):
+                        filings_excluded_by_exclude_list += 1
+                        continue
 
                     if cw_total == 0:
+                        filings_skipped_no_context += 1
                         continue
 
                     filings_total += 1
                     total_context_windows_accepted += cw_accept
                     total_context_windows_rejected += cw_reject
+                    if meta.get("threshold_applied", True):
+                        scoped_context_windows_accepted += cw_accept
+                        scoped_context_windows_rejected += cw_reject
 
                     if cw_accept > 0:
                         filings_accepted += 1
@@ -247,15 +275,21 @@ class PreProcessingPipeline(Config):
             "experiment_setup": {
                 "preprocessing_version": Config.PREPROCESSING_VERSION,
                 "filter_phrases": Config.LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR,
+                "phrases_to_exclude": Config.LIST_OF_PHRASES_TO_EXCLUDE,
                 "context_sentences_before": Config.AMOUNT_SENTENCES_INCLUDED_BEFORE,
                 "context_sentences_after": Config.AMOUNT_SENTENCES_INCLUDED_AFTER,
                 "embedding_model": Config.SIMILARITY_EMBEDDING_MODEL,
                 "similarity_reference_text": Config.SIMILARITY_REFERENCE_TEXT,
                 "similarity_threshold": Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW,
                 "single_keyword_filter": Config.SINGLE_KEYWORD_FILTER,
-                "single_keyword_filter_exclude": Config.SINGLE_KEYWORD_FILTER_EXCLUDE,
+                "single_keyword_filter_strict": Config.SINGLE_KEYWORD_FILTER_STRICT,
+                "threshold_keyword_scope": Config.THRESHOLD_KEYWORD_SCOPE,
+                "threshold_keyword_scope_strict": Config.THRESHOLD_KEYWORD_SCOPE_STRICT,
             },
             "processed_filings": {
+                "filings_to_be_processed_total": filings_total + filings_excluded_by_exclude_list + filings_skipped_no_context,
+                "filings_excluded_by_exclude_list": filings_excluded_by_exclude_list,
+                "filings_skipped_no_context": filings_skipped_no_context,
                 "filings_processed_total": filings_total,
                 "filings_accepted_total": filings_accepted,
                 "filings_accepted_full": filings_accepted_fully,
@@ -265,6 +299,7 @@ class PreProcessingPipeline(Config):
                 "filings_rejected_partial": filings_rejected - filings_rejected_fully,
                 "context_windows_accepted": total_context_windows_accepted,
                 "context_windows_rejected": total_context_windows_rejected,
+                "context_windows_excluded_by_exclude_list": total_context_windows_excluded,
                 "lowest_similarity_context": round(min(all_similarity_scores), 4) if all_similarity_scores else None,
                 "highest_similarity_context": round(max(all_similarity_scores), 4) if all_similarity_scores else None,
                 "average_similarity_context": round(sum(all_similarity_scores) / len(all_similarity_scores), 4) if all_similarity_scores else None,
@@ -290,8 +325,14 @@ class PreProcessingPipeline(Config):
                     patches[i].set_facecolor('skyblue')
 
             title_main = f"Similarity Score Distribution (Experiment: {Config.PREPROCESSING_VERSION})"
-            title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
-            plt.title(f"{title_main}\n{title_sub}", fontsize=12)
+            if Config.THRESHOLD_KEYWORD_SCOPE is not None:
+                scope_str = ", ".join(Config.THRESHOLD_KEYWORD_SCOPE)
+                title_sub = f"context_windows_accepted: {scoped_context_windows_accepted}, context_windows_rejected: {scoped_context_windows_rejected}"
+                title_scope = f"Threshold scope: {scope_str} (scored windows only)"
+                plt.title(f"{title_main}\n{title_sub}\n{title_scope}", fontsize=12)
+            else:
+                title_sub = f"context_windows_accepted: {total_context_windows_accepted}, context_windows_rejected: {total_context_windows_rejected}"
+                plt.title(f"{title_main}\n{title_sub}", fontsize=12)
 
             plt.axvline(Config.SIMILARITY_THRESHOLD_CONTEXT_WINDOW, color='darkred', linestyle='dashed', linewidth=2, label='Threshold')
             plt.legend()
@@ -323,13 +364,39 @@ class PreProcessingPipeline(Config):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _pre_filter_files(self, json_files):
-        """Filter files by single-keyword DB check (sequential).
+    def _resolve_files_and_scopes(self, json_files):
+        """Decide per-file inclusion AND whether the similarity threshold applies.
 
-        Only used when ``SINGLE_KEYWORD_FILTER`` is set.  Loads each file to
-        extract the filing ID, then queries the DB for its keywords.
+        Single sequential DB pass. Two independent decisions per file:
+          * Inclusion via ``SINGLE_KEYWORD_FILTER`` (+ STRICT) — drops files
+            whose DB keywords don't match. If the filter is ``None`` every file
+            is kept.
+          * Threshold scope via ``THRESHOLD_KEYWORD_SCOPE`` (+ STRICT) — marks
+            whether ``SIMILARITY_THRESHOLD_CONTEXT_WINDOW`` should be enforced
+            on this filing's context windows. If the scope is ``None`` the
+            threshold applies to every kept file (legacy behavior).
+
+        Returns:
+            tuple[list[Path], dict[Path, bool]]: kept files, and a
+            ``{path: apply_threshold}`` map. Paths not present in the map
+            default to ``True`` (apply threshold).
         """
+        if isinstance(self._keyword_filter, list):
+            filter_lower = [k.strip("\"'").lower() for k in self._keyword_filter]
+        elif isinstance(self._keyword_filter, str):
+            filter_lower = [self._keyword_filter.strip("\"'").lower()]
+        else:
+            filter_lower = None
+
+        if self._threshold_scope is not None:
+            scope_lower = {k.strip("\"'").lower() for k in self._threshold_scope}
+        else:
+            scope_lower = None
+
         filtered = []
+        apply_threshold_map: dict = {}
+        scope_apply_count = 0
+
         for json_file in tqdm(json_files, desc="Checking keyword filter", unit="file"):
             try:
                 with open(json_file, "r", encoding="utf-8") as f:
@@ -344,19 +411,50 @@ class PreProcessingPipeline(Config):
                 continue
             raw_keywords = self._db.return_keywords(filing_id)
             cleaned_keywords = [k.strip("\"'").lower() for k in raw_keywords]
-            matches = cleaned_keywords == [self._keyword_filter.lower()]
-            if self._keyword_filter_exclude:
-                matches = not matches
-            if matches:
-                filtered.append(json_file)
+
+            # --- Inclusion decision (SINGLE_KEYWORD_FILTER) ---
+            if filter_lower is None:
+                include = True
+            elif self._keyword_filter_strict:
+                if isinstance(self._keyword_filter, list):
+                    include = (
+                        len(cleaned_keywords) == 1
+                        and cleaned_keywords[0] in filter_lower
+                    )
+                else:
+                    include = cleaned_keywords == filter_lower
             else:
+                include = any(k in cleaned_keywords for k in filter_lower)
+
+            if not include:
                 logger.debug(
-                    "Skipping %s — keywords %s %s single-keyword filter '%s'",
-                    json_file.name, cleaned_keywords,
-                    "match excluded keyword" if self._keyword_filter_exclude else "don't match",
-                    self._keyword_filter,
+                    "Skipping %s — keywords %s don't match single-keyword filter '%s'",
+                    json_file.name, cleaned_keywords, self._keyword_filter,
                 )
+                continue
+
+            # --- Threshold scope decision (THRESHOLD_KEYWORD_SCOPE) ---
+            if scope_lower is None:
+                apply_threshold = True
+            elif self._threshold_scope_strict:
+                apply_threshold = (
+                    len(cleaned_keywords) > 0
+                    and set(cleaned_keywords) == scope_lower
+                )
+            else:
+                apply_threshold = any(k in scope_lower for k in cleaned_keywords)
+
+            filtered.append(json_file)
+            apply_threshold_map[json_file] = apply_threshold
+            if apply_threshold:
+                scope_apply_count += 1
+
         logger.info(
             "Keyword filter: %d / %d files passed", len(filtered), len(json_files),
         )
-        return filtered
+        if scope_lower is not None:
+            logger.info(
+                "Threshold scope: applying SIMILARITY_THRESHOLD_CONTEXT_WINDOW to %d / %d kept files",
+                scope_apply_count, len(filtered),
+            )
+        return filtered, apply_threshold_map

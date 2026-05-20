@@ -95,10 +95,25 @@ def create_table() -> None:
     );
     """)
 
+    create_stmt_preprocessing = text(f"""
+    CREATE TABLE IF NOT EXISTS {table_name}_preprocessing (
+        id SERIAL PRIMARY KEY,
+        filing_id VARCHAR REFERENCES {table_name}(id) ON DELETE CASCADE,
+        preprocessing_version VARCHAR NOT NULL,
+        
+        nps_relevant BOOLEAN NOT NULL,
+        path_to_preprocessed VARCHAR,
+        
+        processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE (filing_id, preprocessing_version)
+    );
+    """)
+
     with engine.begin() as conn:
         conn.execute(create_stmt)
+        conn.execute(create_stmt_preprocessing)
         conn.execute(create_stmt_classifications)
-        print(f"Tables '{table_name}' and '{table_name}_classifications' checked/created successfully.")
+        print(f"Tables '{table_name}', '{table_name}_preprocessing', and '{table_name}_classifications' checked/created successfully.")
 
 
 if __name__ == "__main__":

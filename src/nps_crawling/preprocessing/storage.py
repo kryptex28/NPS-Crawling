@@ -64,11 +64,16 @@ class SaveToJSONPipeline(Config):
                         filing_relevances[filing_id] = filing_relevances[filing_id] or has_contexts
 
             # Now update the database for each unique filing_id
+            version = Config.PREPROCESSING_VERSION
             for filing_id, is_relevant in filing_relevances.items():
                 try:
-                    if is_relevant:
-                        self.db.update_path_to_preprocessed(filing_id, str(out_path.absolute()))
-                    self.db.update_filing(filing_id, nps_relevant=is_relevant)
+                    path_str = str(out_path.absolute()) if is_relevant else None
+                    self.db.upsert_preprocessing_result(
+                        filing_id=filing_id,
+                        version=version,
+                        nps_relevant=is_relevant,
+                        path_to_preprocessed=path_str
+                    )
                 except Exception:
                     pass
 
