@@ -111,6 +111,7 @@ def test_scenarios() -> None:
     adapter.upsert_classification(
         filing_id=test_id,
         version="ollama_v1",
+        path_to_classified="/dummy/path/class_v1.json",
         BENCHMARK_COMPARISON_POSITIVE=True,
         KPI_CURRENT_VALUE=True,
         has_numeric_nps=True,

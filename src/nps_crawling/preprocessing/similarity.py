@@ -93,10 +93,18 @@ class SimilarityPipeline:
         """Compute per-record accept/reject counts and filing average.
 
         Expects ``similarity_score`` to already be set on each context dict.
+        Honors ``metadata['threshold_applied']`` — when False, every context
+        window is counted as accepted regardless of its similarity score.
         """
         for record in records:
             contexts = record.get("context", [])
             if not contexts:
+                continue
+            apply_threshold = record.get("metadata", {}).get("threshold_applied", True)
+            if not apply_threshold:
+                # Out-of-scope filings skip embedding entirely — no scores, all accepted.
+                record["metadata"]["Context Windows Accept"] = len(contexts)
+                record["metadata"]["Context Windows Reject"] = 0
                 continue
             scores = [ctx["similarity_score"] for ctx in contexts]
             accepted_count = sum(1 for s in scores if s >= self.threshold_context)
@@ -119,15 +127,20 @@ class SimilarityPipeline:
 
         for record in records:
             contexts = record.get("context", [])
+            apply_threshold = record.get("metadata", {}).get("threshold_applied", True)
 
-            acc_ctx = [
-                ctx for ctx in contexts
-                if ctx.get("similarity_score", 0) >= self.threshold_context
-            ]
-            rej_ctx = [
-                ctx for ctx in contexts
-                if ctx.get("similarity_score", 0) < self.threshold_context
-            ]
+            if apply_threshold:
+                acc_ctx = [
+                    ctx for ctx in contexts
+                    if ctx.get("similarity_score", 0) >= self.threshold_context
+                ]
+                rej_ctx = [
+                    ctx for ctx in contexts
+                    if ctx.get("similarity_score", 0) < self.threshold_context
+                ]
+            else:
+                acc_ctx = list(contexts)
+                rej_ctx = []
 
             # Shallow copy the record, give each branch its own metadata dict
             # and its own context list.  All other values (strings, ints) are
