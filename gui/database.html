@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Database</title>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css"/>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <h1 class="title">Database</h1>
+        <img class="logo" src="thu_logo.png" alt="THU logo" />
+      </header>
+
+      <section class="panel">
+        <div id="navigation">
+        </div>
+        <div class="results-header">
+          <h2>Database</h2>
+          <form class="results-actions" action="/services/hub-flask/database-entries" method="post">
+            <div class="results-toolbar">
+            <button type="submit" class="primary">Show database entries</button>
+          </form>
+        </div>
+
+        <div class="results-table-container">
+          <table id="results-table">
+            
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="/services/hub-flask/static/js/navigation.js"></script>
+    <script src="/services/hub-flask/static/js/database.js"></script>
+  </body>
+</html>

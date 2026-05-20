@@ -22,6 +22,7 @@ from routes.config_routes import config_bp
 from routes.preprocessing_routes import preprocessing_bp
 from routes.classification_routes import classification_bp
 from routes.results_routes import results_bp
+from routes.db_routes import db_bp
 
 application.register_blueprint(static_bp, url_prefix=PREFIX)
 application.register_blueprint(crawl_bp, url_prefix=PREFIX)
@@ -30,6 +31,7 @@ application.register_blueprint(config_bp, url_prefix=PREFIX)
 application.register_blueprint(preprocessing_bp, url_prefix=PREFIX)
 application.register_blueprint(classification_bp, url_prefix=PREFIX)
 application.register_blueprint(results_bp, url_prefix=PREFIX)
+application.register_blueprint(db_bp, url_prefix=PREFIX)
 
 application.secret_key = Config.FLASK_APPLICATION_SECRET
 
