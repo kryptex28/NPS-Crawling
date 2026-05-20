@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from nps_crawling.classification.model import ClassificationClass
+from nps_crawling.classification.options import ClassificationOptionName
 
 load_dotenv()
 
@@ -162,23 +163,18 @@ class Config:
     SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.2
 
     """ Classification CONFIG """
-    PERSONA: str = ("You are a corporate-disclosure text classifier.\n"
-            "Task: Given an input context window, assign exactly ONE category describing how NPS is referenced:\n"
-            "1) BENCHMARK_COMPARISON: The text compares the company’s Net Promoter Score with external or industry benchmarks.\n"
-            "2) CUSTOMER_CASE_EVIDENCE: The text uses the Net Promoter Score as evidence in customer examples or use cases..\n"
-            "3) KPI_DISCLOSURE: The text reports the Net Promoter Score as a quantitative performance metric.\n"
-            "4) METHODOLOGY_DEFINITION: The text defines or explains what the Net Promoter Score is or how it is calculated."
-            "5) MGMT_COMPENSATION_GOVERNANCE: The text links the Net Promoter Score to management compensation, incentives, or governance.\n"
-            "6) QUALITATIVE_ONLY: The text mentions the Net Promoter Score only in a qualitative or descriptive way without numbers.\n"
-            "7) TARGET_OUTLOOK: The text discusses targets, goals, or future expectations for the Net Promoter Score.\n"
-            "Output: The chosen category label and nothing else."
-        )
-    model='mistralai/Mistral-7B-Instruct-v0.3'
-    temperature=0.0,
-    top_p=1.0,
-    top_k=1,
-    num_predict=128,
-    seed=42,
-    repeat_penalty=1.0,    
-
-    CLASSIFICATION_CLASS = ClassificationClass.SVM
+    CLASSIFICATION_CONFIG = {
+        ClassificationOptionName.NPS_CATEGORY: {
+            "model_class": ClassificationClass.QAHUGGINGFACE,
+            "model_config": {"model": "distilbert-base-cased-distilled-squad"},
+        },
+        ClassificationOptionName.NPS_VALUE: {
+            "model_class": ClassificationClass.QAHUGGINGFACE,
+            "model_config": {"model": "distilbert-base-cased-distilled-squad"},
+        },
+         ClassificationOptionName.HAS_NUMERIC_NPS: {
+            "model_class": ClassificationClass.QAHUGGINGFACE,
+            "model_config": {"model": "distilbert-base-cased-distilled-squad"},
+        }
+    }
+    

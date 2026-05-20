@@ -3,8 +3,8 @@
 import json
 import logging
 
-from nps_crawling.classification.data_processing.preprocess_data import ClassificationDataProcessing
-from nps_crawling.classification.model.classification import ClassificationModelPipeline
+from nps_crawling.classification.preprocess_data import ClassificationDataProcessing
+from nps_crawling.classification.model_pipeline import ClassificationModelPipeline
 from nps_crawling.config import Config
 
 logger = logging.getLogger(__name__)

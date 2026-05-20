@@ -1,12 +1,12 @@
 """LLMBase abstract class."""
 from abc import ABC, abstractmethod
 from enum import Enum
+from multiprocessing import context
 from pathlib import Path
 import re
 
 from typing import List
 import joblib
-from sympy import re
 from sentence_transformers import SentenceTransformer
 import torch
 from transformers import AutoModelForCausalLM, AutoModelForQuestionAnswering, AutoTokenizer, pipeline
@@ -59,6 +59,25 @@ class ModelBase(ABC):
         """Base abstract classify function."""
         pass
 
+    def _convert_float_to_flag(self, labels: List[float], predictions: List[float]) -> tuple[List[int], List[int]]:
+        # Convert float labels and predictions to binary flags
+        converted_labels = []
+        for label in labels:
+            if label > 0.0:
+                converted_labels.append(1)
+            else:
+                converted_labels.append(0)
+        for i, label in enumerate(labels):
+            print(f"Label before: {label}, converted label: {converted_labels[i]}")
+        converted_predictions = []
+        for i, prediction in enumerate(predictions):
+            print(f"Prediction: {prediction} Label: {labels[i]}")
+            if prediction == labels[i]:
+                converted_predictions.append(converted_labels[i])
+            else:
+                converted_predictions.append(1 if converted_labels[i] == 0 else 0)
+        return converted_labels, converted_predictions
+
     def evaluate(
         self,
         classification_option: ClassificationOption,
@@ -75,19 +94,24 @@ class ModelBase(ABC):
                     predictions.append(data_entry.entry)
                     break
 
+        if isinstance(labels[0], float) and isinstance(predictions[0], float):
+            labels, predictions = self._convert_float_to_flag(labels, predictions)
+
         evaluation_results = classification_report(labels, predictions, output_dict=True)
         print(classification_report(labels, predictions))
         return evaluation_results
 
 class LLMBase(ModelBase):
 
-    def _generate_response(self, classification_option: ClassificationOption, text: str) -> str:
-        """Generate response for given classification option and text."""
+    def _generate_response(self, classification_property: ClassificationProperty, text: str) -> str:
+        """Generate response for given classification property and text."""
         pass
 
     def _classify_nps_category(self, classification_option: NPSCategory, text: str) -> List[DataEntry]:
         """Classify given text."""
-        response = self._generate_response(classification_option, text)
+        # Since persona is the same for all classification properties in NPSCategory, we can use the first one to generate the response
+        classification_property = classification_option.get_classification_properties()[0]
+        response = self._generate_response(classification_property, text)
 
         data_entries = []
         for option in classification_option.get_classification_properties():
@@ -100,7 +124,9 @@ class LLMBase(ModelBase):
     
     def _classify_has_numeric_nps(self, classification_option: HasNumericNPS, text: str) -> List[DataEntry]:
         """Classify given text."""
-        response = self._generate_response(classification_option, text)
+        # Since there is only one classification property for HasNumericNPS, we can use the first one to generate the response
+        classification_property = classification_option.get_classification_properties()[0]
+        response = self._generate_response(classification_property, text)
         class_properties = classification_option.get_classification_properties()
         for class_property in class_properties:
             for property_value in class_property.options:
@@ -111,14 +137,17 @@ class LLMBase(ModelBase):
     
     def _classify_nps_value(self, classification_option: NPSValue, text: str) -> List[DataEntry]:
         """Classify given text."""
-        response = self._generate_response(classification_option, text)
-        class_properties = classification_option.get_classification_properties()
-        for class_property in class_properties:
+        data_entries = []
+        for class_property in classification_option.get_classification_properties():
+            response = self._generate_response(class_property, text)
             match = re.search(class_property.options, response)
             if match:
                 property_value = float(match.group().replace(',', '.'))
-                return [DataEntry(column_name=class_property.name, entry=property_value)]
-        return [DataEntry(column_name=class_properties[0].name, entry=-1)]
+                data_entries.append(DataEntry(column_name=class_property.name, entry=property_value))
+            else:
+                data_entries.append(DataEntry(column_name=class_property.name, entry=0.0))
+
+        return data_entries
 
     def classify(self, classification_option: ClassificationOption, text: str) -> List[DataEntry]:
         """Classify given text."""
@@ -175,10 +204,10 @@ class LLMHuggingFace(LLMBase):
             tokenizer=self.tokenizer,
         )
 
-    def _generate_response(self, classification_option: ClassificationOption, text: str) -> str:
+    def _generate_response(self, classification_property: ClassificationProperty, text: str) -> str:
         """Generate response for given classification option and text."""
         messages = [
-            {"role": "system", "content": classification_option.get_persona()},
+            {"role": "system", "content": classification_property.persona},
             {"role": "user", "content": text},
         ]
 
@@ -229,13 +258,13 @@ class LLMOllama(LLMBase):
         self.host = host
         self.port = port
 
-    def _generate_response(self, classification_option: ClassificationOption, text: str) -> str:
-        """Generate response for given classification option and text."""
+    def _generate_response(self, classification_property: ClassificationProperty, text: str) -> str:
+        """Generate response for given classification property and text."""
         client = Client(host=f"{self.host}:{self.port}")
         response: ChatResponse = client.chat(
             model=self.model,
             messages=[
-                {'role': 'system', 'content': classification_option.get_persona()},
+                {'role': 'system', 'content': classification_property.persona},
                 {'role': 'user', 'content': text},
             ],
             options=self.options,
@@ -325,6 +354,11 @@ class QAHuggingface(LLMBase):
             model=self.model,
             tokenizer=self.tokenizer,
         )
+
+    def _generate_response(self, classification_property: ClassificationProperty, text: str) -> str:
+        """Generate response for given classification property and text."""
+        result = self.pipe(question = classification_property.persona, context = text)
+        return result["answer"].strip()
 
 class ClassificationClass(str, Enum):
     """Enum for classification classes."""

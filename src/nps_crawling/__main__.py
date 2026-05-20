@@ -86,7 +86,7 @@ def main(argv=None):
     log_level = min(logging.INFO, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
 
-    from nps_crawling.classification.utils import ClassificationPipeline
+    from nps_crawling.classification.classification_pipeline import ClassificationPipeline
     from nps_crawling.crawler import CrawlerPipeline
     from nps_crawling.preprocessing import PreProcessingPipeline
     from nps_crawling.results import ResultsPipeline
