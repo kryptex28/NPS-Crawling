@@ -4,8 +4,7 @@ import subprocess
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from nps_crawling.classification.model import ClassificationClass
-from nps_crawling.classification.options import ClassificationOptionName
+from nps_crawling.classification.categories.registry import ClassificationTask
 
 load_dotenv()
 
@@ -173,17 +172,18 @@ class Config:
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     """ Classification CONFIG """
+    CLASSIFICATION_CONFIG_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations"
     CLASSIFICATION_CONFIG = {
-        ClassificationOptionName.NPS_CATEGORY: {
-            "model_class": ClassificationClass.QAHUGGINGFACE,
+        ClassificationTask.NPS_CATEGORY: {
+            "config_file": CLASSIFICATION_CONFIG_DIR / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json",
             "model_config": {"model": "distilbert-base-cased-distilled-squad"},
         },
-        ClassificationOptionName.NPS_VALUE: {
-            "model_class": ClassificationClass.QAHUGGINGFACE,
+        ClassificationTask.HAS_NUMERIC_NPS: {
+            "config_file": CLASSIFICATION_CONFIG_DIR / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json",
             "model_config": {"model": "distilbert-base-cased-distilled-squad"},
         },
-         ClassificationOptionName.HAS_NUMERIC_NPS: {
-            "model_class": ClassificationClass.QAHUGGINGFACE,
+        ClassificationTask.NPS_VALUE_CATEGORY: {
+            "config_file": CLASSIFICATION_CONFIG_DIR / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json",
             "model_config": {"model": "distilbert-base-cased-distilled-squad"},
         }
     }
