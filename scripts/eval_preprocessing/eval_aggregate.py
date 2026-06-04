@@ -225,10 +225,6 @@ def write_heatmap(records: list[dict], path: Path) -> None:
             ax.text(j, i, f"{val:.3f}", ha="center", va="center",
                     color="black", fontsize=9)
 
-    cbar = fig.colorbar(im, ax=ax, shrink=0.85)
-    cbar.set_label("Best F1")
-
-    ax.set_xlabel("Reference text")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -327,7 +323,7 @@ def write_separation_histograms(records: list[dict], path: Path) -> None:
         ax.set_xlabel("Cosine similarity")
         ax.set_xlim(0.0, 1.0)
         ax.set_title(
-            f"{rec['model']}\nReference text: {format_ref_id(rec['reference_text_id'])}  |  "
+            f"{rec['model']}\n{format_ref_id(rec['reference_text_id'])}  |  "
             f"F1 = {rec['F1']:.3f}  (P={rec['precision']:.2f}, R={rec['recall']:.2f})"
         )
         ax.legend(loc="upper left", fontsize=8)
