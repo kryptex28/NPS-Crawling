@@ -1,0 +1,250 @@
+================================================================================
+EVALUATION OF THE PREPROCESSING STAGE
+================================================================================
+
+
+1. WHY WE PREPROCESS
+--------------------------------------------------------------------------------
+
+The project's goal is to classify SEC EDGAR filings by how they reference the
+Net Promoter Score (NPS). Finding candidate passages relies on a keyword search,
+which is high recall but low precision: the keywords also occur in boilerplate,
+tables, and unrelated contexts. Preprocessing therefore acts as a semantic
+relevance filter that drops the irrelevant hits before the expensive classifier,
+keeping the accepted set small and clean.
+
+
+2. HOW WE PREPROCESS
+--------------------------------------------------------------------------------
+
+Around every keyword hit the pipeline extracts a short context window, embeds it
+with a sentence-transformer model, and measures its cosine similarity to a fixed
+reference text describing an NPS-relevant passage. Windows scoring above a
+threshold are accepted; the rest are rejected. The filter's quality thus depends
+on two choices - the embedding model and the reference text - and the evaluation
+below sweeps both.
+
+
+3. HOW THE PREPROCESSING WAS EVALUATED
+--------------------------------------------------------------------------------
+
+We froze a labelling set of 621 context windows that the pipeline actually
+produced, and labelled each one by hand as relevant (positive) or not relevant
+(negative). The set contains 126 positives and 495 negatives, i.e. roughly a
+20% positive rate. Because of this class imbalance, accuracy is misleading and
+we report precision, recall, and their harmonic mean, the F1 score, instead.
+
+For each combination of embedding model and reference text, every one of the 621
+windows is re-embedded, scored by cosine similarity against the reference text,
+and then thresholded. We sweep the acceptance threshold from 0.00 to 0.80 in
+steps of 0.02 and, for each (model, reference text) pair, report the best F1
+reached over that sweep together with the threshold at which it occurs. We also
+record the steady-state embedding time per context window (ms/ctx, measured on
+the same hardware and excluding the one-time model load) so that quality can be
+weighed against cost.
+
+The grid is 5 models x 6 reference texts = 30 configurations. The six reference
+texts are:
+
+  +-----+----------------------+-------------------------------------------------+
+  | ID  | Name                 | Reference text                                  |
+  +-----+----------------------+-------------------------------------------------+
+  | V1  | Default paragraph    | "Net Promoter Score (NPS) is a key performance  |
+  |     |                      | indicator (KPI) and customer loyalty metric     |
+  |     |                      | used by management to measure customer          |
+  |     |                      | satisfaction, brand health, and the likelihood  |
+  |     |                      | of customers to recommend a company's products  |
+  |     |                      | or services. Companies track NPS scores to      |
+  |     |                      | predict customer retention and churn, report    |
+  |     |                      | NPS improvements to investors ..., and          |
+  |     |                      | benchmark NPS against competitors."             |
+  +-----+----------------------+-------------------------------------------------+
+  | V2  | Short definition     | "Net Promoter Score (NPS) is a customer loyalty |
+  |     |                      | metric measuring how likely customers are to    |
+  |     |                      | recommend a company's products or services."    |
+  +-----+----------------------+-------------------------------------------------+
+  | V3  | Keywords             | "net promoter score NPS customer loyalty        |
+  |     | (production default)  | customer satisfaction recommend promoters       |
+  |     |                      | detractors customer experience"                 |
+  +-----+----------------------+-------------------------------------------------+
+  | V4  | KPI / management     | "Net Promoter Score is used by management as a  |
+  |     |                      | key performance indicator tied to executive     |
+  |     |                      | compensation and short-term incentive plans.    |
+  |     |                      | The Company tracks NPS as a non-financial       |
+  |     |                      | performance measure, sets annual NPS targets,   |
+  |     |                      | and reports NPS results to the Board ..."        |
+  +-----+----------------------+-------------------------------------------------+
+  | V5  | NPS + adjacent       | "Customer experience metrics including Net      |
+  |     |                      | Promoter Score (NPS), customer satisfaction     |
+  |     |                      | (CSAT), customer effort score, customer         |
+  |     |                      | retention, churn rate, and brand loyalty ..."   |
+  +-----+----------------------+-------------------------------------------------+
+  | V6  | Definition minimal   | "Net Promoter Score is a metric calculated from |
+  |     |                      | a survey question asking customers how likely   |
+  |     |                      | they are, on a scale from 0 to 10, to recommend |
+  |     |                      | a company to a friend or colleague."            |
+  +-----+----------------------+-------------------------------------------------+
+
+The five embedding models span a wide range of sizes (the small/fast end to the
+large/slow end of the sentence-transformer / BGE families):
+
+  +---------------------+----------+-----------+----------+----------------------+
+  | Model               | Params   | Embed dim | ms/ctx   | Best F1 (ref text)   |
+  +---------------------+----------+-----------+----------+----------------------+
+  | all-MiniLM-L6-v2    | ~22 M    | 384       |   11.2   | 0.917  (V3)          |
+  | bge-small-en-v1.5   | ~33 M    | 384       |   27.0   | 0.870  (V3)          |
+  | all-mpnet-base-v2   | ~110 M   | 768       |   88.1   | 0.863  (V3)          |
+  | bge-base-en-v1.5    | ~109 M   | 768       |  115.8   | 0.917  (V6)          |
+  | bge-large-en-v1.5   | ~335 M   | 1024      |  394.2   | 0.858  (V6)          |
+  +---------------------+----------+-----------+----------+----------------------+
+
+
+4. THE HEATMAP (heatmap_best_f1.png)
+--------------------------------------------------------------------------------
+
+The heatmap shows the best achievable F1 for every (model, reference text) cell;
+each row label also carries that model's embedding cost in ms/ctx. The full grid
+of best F1 @ best threshold is:
+
+  +---------------------+--------+--------+--------+--------+--------+--------+
+  | Model               |   V1   |   V2   |   V3   |   V4   |   V5   |   V6   |
+  +---------------------+--------+--------+--------+--------+--------+--------+
+  | bge-base-en-v1.5    | .837   | .850   | .826   | .775   | .818   | .917   |
+  |   @ threshold       | 0.62   | 0.62   | 0.58   | 0.60   | 0.60   | 0.52   |
+  | bge-large-en-v1.5   | .802   | .804   | .819   | .702   | .833   | .858   |
+  |   @ threshold       | 0.62   | 0.62   | 0.60   | 0.62   | 0.56   | 0.52   |
+  | bge-small-en-v1.5   | .843   | .838   | .870   | .748   | .833   | .867   |
+  |   @ threshold       | 0.68   | 0.68   | 0.64   | 0.68   | 0.66   | 0.60   |
+  | all-MiniLM-L6-v2    | .832   | .783   | .917   | .807   | .869   | .906   |
+  |   @ threshold       | 0.36   | 0.40   | 0.34   | 0.42   | 0.38   | 0.24   |
+  | all-mpnet-base-v2   | .672   | .669   | .863   | .638   | .803   | .833   |
+  |   @ threshold       | 0.44   | 0.42   | 0.40   | 0.44   | 0.42   | 0.34   |
+  +---------------------+--------+--------+--------+--------+--------+--------+
+
+Three things stand out.
+
+Best cells. The two best configurations of the whole grid are tied at F1 = 0.917:
+all-MiniLM-L6-v2 with the V3 keyword anchor, and bge-base-en-v1.5 with the V6
+minimal definition. No other configuration beats either of them.
+
+Reference text matters more than model. Moving along a row (changing the
+reference text) shifts F1 by far more than moving down a column (changing the
+model). The reference text is the semantic anchor: its embedding defines the
+direction in vector space that "relevant" points toward, so a poorly chosen
+anchor hurts every model. V4 (the narrow executive-compensation / KPI register)
+is the weakest column everywhere (0.638-0.807): it is too specific, so it pulls
+the anchor away from the general notion of "this passage is about NPS" and
+collapses recall. The broad, well-formed definitions (V1, V2, V6) and the
+keyword bag (V3) are the strong anchors.
+
+Different models prefer different anchors. This is the most interesting pattern.
+all-MiniLM-L6-v2 and all-mpnet-base-v2 peak on V3 (the ungrammatical keyword
+bag): 0.917 and 0.863. The BGE models do the opposite - they are weak on V3
+(0.826 / 0.819 / 0.870) and peak on V6, a clean grammatical definition sentence
+(0.917 / 0.858 / 0.867). The reason is how the models were trained. The BGE
+family is trained as retrieval models on a query->passage objective with
+natural-language queries; a well-formed sentence like V6 is close to their
+training distribution, whereas a grammar-free pile of keywords is not. The
+sentence-transformers MiniLM / MPNet models are general sentence-similarity
+encoders and are robust to (indeed, here favour) a dense keyword anchor that
+front-loads the discriminative vocabulary. In short, you must match the *style*
+of the reference text to the family of the model, not just pick "the best model".
+
+Size and speed. Reading the ms/ctx labels top to bottom shows that cost grows
+steeply with model size while quality does not. bge-large (335 M params,
+1024-dim) is ~35x slower than all-MiniLM (394.2 vs 11.2 ms/ctx) and yet its best
+F1 (0.858) is *lower*. all-mpnet (110 M) costs ~8x and never beats the small
+models. The two 384-dim models (all-MiniLM at 11.2 ms/ctx, bge-small at
+27.0 ms/ctx) are both the cheapest and among the most accurate. On this task the
+extra parameters of the large models are not buying relevance discrimination -
+they are buying latency.
+
+
+5. SCORE SEPARATION OF THE TWO BEST MODELS (score_separation_top_models.png)
+--------------------------------------------------------------------------------
+
+This figure takes the two F1-tied top configurations from the heatmap and plots,
+for each, the distribution of cosine similarities for the 495 negative windows
+(red) against the 126 positive windows (green), with the best threshold marked.
+
+  Left  - bge-base-en-v1.5, V6 definition: F1 = 0.917, P = 0.91, R = 0.92,
+          best threshold = 0.52.
+  Right - all-MiniLM-L6-v2, V3 keywords:  F1 = 0.917, P = 0.96, R = 0.87,
+          best threshold = 0.34.
+
+The two models reach the *same* F1 but get there with very differently shaped
+distributions, and this is the key to choosing between them.
+
+bge-base produces a narrow, high-sitting distribution. Its negatives are not
+spread out near zero; instead they pile up sharply in a tall band around
+0.40-0.48, and the positives sit just above, around 0.55-0.75. The whole used
+range is compressed roughly into 0.35-0.85. This is the well-known anisotropy of
+BGE-style embeddings: the vectors occupy a narrow cone of the space, so the
+cosine similarity between *any* two pieces of English text is already high and
+the dynamic range is squeezed into a narrow high band. Even an unrelated
+negative therefore scores ~0.4. Because the positive and negative humps sit
+close together, the separating threshold has to be pushed up to ~0.52, and it
+lands right in the steep flank of the dense negative pile - a small change in the
+threshold sweeps a large number of negatives across the boundary, so the
+operating point is sensitive.
+
+all-MiniLM produces a wide, low-baseline distribution. Its negatives spread from
+~0.0 up to ~0.3 and its positives form a long tail running from ~0.3 out to
+~0.75. The embedding space is far less anisotropic, so the cosine score uses much
+more of the [0,1] range and the two classes are visually well separated with a
+genuine valley between them. The best threshold (0.34) falls in that sparse
+valley rather than in the middle of a dense mass, which makes the operating point
+robust: there is a comfortable margin in which the threshold can move without
+flipping many windows.
+
+Two consequences follow directly:
+
+  - The absolute cosine values are NOT comparable across models. A score of 0.45
+    is a strong negative for bge-base but a strong positive for all-MiniLM. The
+    threshold is a per-model quantity and must be tuned for each model; it cannot
+    be transferred. This is exactly why the optimal threshold for bge-base (0.52)
+    is so much higher than for all-MiniLM (0.34) - it is the scale/anisotropy of
+    the space talking, not a difference in "how relevant" the windows are.
+
+  - At its best operating point all-MiniLM achieves the higher precision (0.96
+    vs 0.91) at slightly lower recall (0.87 vs 0.92). For a relevance *filter*
+    feeding a downstream classifier, high precision is the more valuable property:
+    it keeps the accepted set clean and avoids passing noise on to the expensive
+    classification step.
+
+
+6. WHY WE CHOSE all-MiniLM-L6-v2
+--------------------------------------------------------------------------------
+
+all-MiniLM-L6-v2 (with the V3 keyword reference text) was selected for the
+production pipeline because it dominates the speed/quality trade-off:
+
+  - Best-in-grid quality. Its 0.917 F1 ties for the single best result of all 30
+    configurations; nothing tested is more accurate.
+
+  - Highest precision at that quality. At the chosen operating point it reaches
+    P = 0.96, the cleanest accepted set of any top configuration - ideal for a
+    pre-classifier filter.
+
+  - Fastest by a wide margin. At 11.2 ms/ctx it is ~2.4x faster than the next
+    small model (bge-small, 27.0), ~8x faster than all-mpnet, ~10x faster than
+    bge-base, and ~35x faster than bge-large - while matching or beating all of
+    them on F1. It is also the smallest model (~22 M params), so it has the
+    lowest memory footprint and runs comfortably on CPU, which matters when
+    embedding has to scale to the full corpus.
+
+  - More robust threshold. Its wide, well-separated score distribution puts the
+    decision boundary in a sparse valley, so the filter is forgiving to small
+    threshold drift, unlike bge-base whose boundary sits inside its dense
+    negative band.
+
+  - Cheapest, most maintainable anchor. Its best reference text, V3, is just a
+    short keyword bag, which is the simplest reference to write and maintain.
+
+In other words, no model beats its F1, and nothing close to its F1 comes close
+to its speed; the larger BGE/MPNet models cost up to 35x the compute for equal or
+worse relevance. all-MiniLM-L6-v2 sits alone on the favourable corner of the
+Pareto frontier - very good and very fast at the same time - which is why it is
+the production model. (The deployed pipeline runs it at threshold 0.4, slightly
+above the F1-optimal 0.34, deliberately trading a little recall for extra
+precision so the accepted set stays clean for the classifier.)

@@ -15,6 +15,17 @@ LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 FILENAME_RE = re.compile(r"^scores_(?P<model>.+?)__(?P<ref>[^.]+)_metrics\.csv$")
 
 
+def format_ref_id(ref_id: str) -> str:
+    """Turn 'V2_short_definition' into 'V2: Short definition' for display."""
+    if "_" not in ref_id:
+        return ref_id
+    prefix, _, rest = ref_id.partition("_")
+    rest = rest.replace("_", " ")
+    if rest:
+        rest = rest[0].upper() + rest[1:]
+    return f"{prefix}: {rest}"
+
+
 def short_model_name(model_slug: str) -> str:
     """Strip vendor prefix and common 'sentence-transformers_' clutter."""
     name = model_slug
@@ -197,29 +208,27 @@ def write_heatmap(records: list[dict], path: Path) -> None:
     fig_h = max(3.0, 0.7 * len(models) + 1.5)
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
-    im = ax.imshow(matrix, aspect="auto", cmap="viridis", vmin=0.0, vmax=1.0)
+    im = ax.imshow(matrix, aspect="auto", cmap="RdYlGn", vmin=0.0, vmax=1.0)
 
     ax.set_xticks(range(len(cols)))
-    ax.set_xticklabels(cols, rotation=30, ha="right")
+    ax.set_xticklabels([format_ref_id(c) for c in cols], rotation=30, ha="right")
     ax.set_yticks(range(len(models)))
     ax.set_yticklabels(row_labels)
 
-    # Annotate each cell with its F1 value; pick text colour for contrast.
+    # Annotate each cell with its F1 value (black on the red→green ramp stays readable).
     for i in range(len(models)):
         for j in range(len(cols)):
             val = matrix[i, j]
             if np.isnan(val):
-                ax.text(j, i, "—", ha="center", va="center", color="white", fontsize=9)
+                ax.text(j, i, "—", ha="center", va="center", color="black", fontsize=9)
                 continue
-            colour = "white" if val < 0.55 else "black"
             ax.text(j, i, f"{val:.3f}", ha="center", va="center",
-                    color=colour, fontsize=9)
+                    color="black", fontsize=9)
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.85)
     cbar.set_label("Best F1")
 
     ax.set_xlabel("Reference text")
-    ax.set_title("Best F1 per (model, reference text)")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -318,14 +327,13 @@ def write_separation_histograms(records: list[dict], path: Path) -> None:
         ax.set_xlabel("Cosine similarity")
         ax.set_xlim(0.0, 1.0)
         ax.set_title(
-            f"{rec['model']}\nref: {rec['reference_text_id']}  |  "
+            f"{rec['model']}\nReference text: {format_ref_id(rec['reference_text_id'])}  |  "
             f"F1 = {rec['F1']:.3f}  (P={rec['precision']:.2f}, R={rec['recall']:.2f})"
         )
         ax.legend(loc="upper left", fontsize=8)
         ax.grid(axis="y", alpha=0.25)
 
     axes[0].set_ylabel("Number of context windows")
-    fig.suptitle("Similarity score distributions for top models (labeled set)", y=1.02)
     fig.tight_layout()
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
