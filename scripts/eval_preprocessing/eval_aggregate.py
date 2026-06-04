@@ -1,4 +1,5 @@
 import csv
+import json
 import re
 import sys
 from collections import defaultdict
@@ -6,11 +7,23 @@ from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parents[2] / "evaluation" / "preprocessing"
 RESULTS_DIR = EVAL_DIR / "results"
+LABELING_XLSX = EVAL_DIR / "labeling.xlsx"
 
 # Filename pattern: scores_<model_slug>__<ref_id>_metrics.csv
 # The model slug itself can contain single underscores (e.g. "BAAI_bge-small-en-v1.5"),
 # but the ``__`` (double underscore) before the ref_id is the unambiguous separator.
 FILENAME_RE = re.compile(r"^scores_(?P<model>.+?)__(?P<ref>[^.]+)_metrics\.csv$")
+
+
+def format_ref_id(ref_id: str) -> str:
+    """Turn 'V2_short_definition' into 'V2: Short definition' for display."""
+    if "_" not in ref_id:
+        return ref_id
+    prefix, _, rest = ref_id.partition("_")
+    rest = rest.replace("_", " ")
+    if rest:
+        rest = rest[0].upper() + rest[1:]
+    return f"{prefix}: {rest}"
 
 
 def short_model_name(model_slug: str) -> str:
@@ -195,31 +208,130 @@ def write_heatmap(records: list[dict], path: Path) -> None:
     fig_h = max(3.0, 0.7 * len(models) + 1.5)
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
-    im = ax.imshow(matrix, aspect="auto", cmap="viridis", vmin=0.0, vmax=1.0)
+    im = ax.imshow(matrix, aspect="auto", cmap="RdYlGn", vmin=0.0, vmax=1.0)
 
     ax.set_xticks(range(len(cols)))
-    ax.set_xticklabels(cols, rotation=30, ha="right")
+    ax.set_xticklabels([format_ref_id(c) for c in cols], rotation=30, ha="right")
     ax.set_yticks(range(len(models)))
     ax.set_yticklabels(row_labels)
 
-    # Annotate each cell with its F1 value; pick text colour for contrast.
+    # Annotate each cell with its F1 value (black on the red→green ramp stays readable).
     for i in range(len(models)):
         for j in range(len(cols)):
             val = matrix[i, j]
             if np.isnan(val):
-                ax.text(j, i, "—", ha="center", va="center", color="white", fontsize=9)
+                ax.text(j, i, "—", ha="center", va="center", color="black", fontsize=9)
                 continue
-            colour = "white" if val < 0.55 else "black"
             ax.text(j, i, f"{val:.3f}", ha="center", va="center",
-                    color=colour, fontsize=9)
+                    color="black", fontsize=9)
 
-    cbar = fig.colorbar(im, ax=ax, shrink=0.85)
-    cbar.set_label("Best F1")
-
-    ax.set_xlabel("Reference text")
-    ax.set_title("Best F1 per (model, reference text)")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def load_labels() -> dict[str, int]:
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        print("  Skipping separation histogram (openpyxl not installed).")
+        return {}
+    if not LABELING_XLSX.exists():
+        print(f"  Skipping separation histogram (missing {LABELING_XLSX.name}).")
+        return {}
+    wb = load_workbook(LABELING_XLSX, read_only=True, data_only=True)
+    ws = wb.active
+    rows = ws.iter_rows(values_only=True)
+    headers = list(next(rows))
+    cid_col = headers.index("context_id")
+    label_col = headers.index("label")
+    labels: dict[str, int] = {}
+    for r in rows:
+        cid = r[cid_col]
+        lbl = r[label_col]
+        if cid is None or lbl is None or str(lbl).strip() == "":
+            continue
+        try:
+            labels[str(cid)] = int(lbl)
+        except (TypeError, ValueError):
+            continue
+    return labels
+
+
+def load_scores_jsonl(path: Path) -> dict[str, float]:
+    out: dict[str, float] = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            obj = json.loads(line)
+            out[obj["context_id"]] = float(obj["similarity_score"])
+    return out
+
+
+def pick_top_models(records: list[dict], n: int = 2) -> list[dict]:
+    """For each model, find its best (ref_text, F1, threshold). Return top-n by F1."""
+    best_per_model: dict[str, dict] = {}
+    for r in records:
+        cur = best_per_model.get(r["model"])
+        if cur is None or r["F1"] > cur["F1"]:
+            best_per_model[r["model"]] = r
+    return sorted(best_per_model.values(), key=lambda x: x["F1"], reverse=True)[:n]
+
+
+def write_separation_histograms(records: list[dict], path: Path) -> None:
+    """Plot positive-vs-negative score distributions for the top-N models."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError as exc:
+        print(f"  Skipping separation histogram ({exc}).")
+        return
+
+    labels = load_labels()
+    if not labels:
+        return
+
+    top = pick_top_models(records, n=2)
+    if not top:
+        return
+
+    fig, axes = plt.subplots(1, len(top), figsize=(6.0 * len(top), 4.2), sharey=True)
+    if len(top) == 1:
+        axes = [axes]
+
+    bins = np.linspace(0.0, 1.0, 41)
+
+    for ax, rec in zip(axes, top):
+        scores_file = EVAL_DIR / f"scores_{rec['model_slug']}__{rec['reference_text_id']}.jsonl"
+        if not scores_file.exists():
+            ax.set_title(f"{rec['model']} (scores file missing)")
+            continue
+        scores = load_scores_jsonl(scores_file)
+        pos = [scores[cid] for cid, lbl in labels.items() if lbl == 1 and cid in scores]
+        neg = [scores[cid] for cid, lbl in labels.items() if lbl == 0 and cid in scores]
+
+        ax.hist(neg, bins=bins, alpha=0.55, color="#d62728",
+                label=f"Negative (n={len(neg)})", edgecolor="white", linewidth=0.3)
+        ax.hist(pos, bins=bins, alpha=0.55, color="#2ca02c",
+                label=f"Positive (n={len(pos)})", edgecolor="white", linewidth=0.3)
+        ax.axvline(rec["threshold"], color="black", linestyle="--", linewidth=1.2,
+                   label=f"Best threshold = {rec['threshold']:.2f}")
+        ax.set_xlabel("Cosine similarity")
+        ax.set_xlim(0.0, 1.0)
+        ax.set_title(
+            f"{rec['model']}\n{format_ref_id(rec['reference_text_id'])}  |  "
+            f"F1 = {rec['F1']:.3f}  (P={rec['precision']:.2f}, R={rec['recall']:.2f})"
+        )
+        ax.legend(loc="upper left", fontsize=8)
+        ax.grid(axis="y", alpha=0.25)
+
+    axes[0].set_ylabel("Number of context windows")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -235,6 +347,7 @@ def main():
     f1_path = RESULTS_DIR / "summary_best_f1.csv"
     f1_thr_path = RESULTS_DIR / "summary_best_f1_at_threshold.csv"
     heatmap_path = RESULTS_DIR / "heatmap_best_f1.png"
+    hist_path = RESULTS_DIR / "score_separation_top_models.png"
 
     write_long_csv(records, long_path)
     write_pivot_csv(records, f1_path, value_fn=lambda r: f"{r['F1']:.3f}")
@@ -243,10 +356,11 @@ def main():
         value_fn=lambda r: f"{r['F1']:.3f} @ {r['threshold']:.2f}",
     )
     write_heatmap(records, heatmap_path)
+    write_separation_histograms(records, hist_path)
 
     print(
         f"Wrote {long_path.name}, {f1_path.name}, {f1_thr_path.name}, "
-        f"{heatmap_path.name} → {RESULTS_DIR}"
+        f"{heatmap_path.name}, {hist_path.name} → {RESULTS_DIR}"
     )
 
     print_markdown_table(
