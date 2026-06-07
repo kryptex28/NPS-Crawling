@@ -11,20 +11,17 @@ classification_bp: Blueprint = Blueprint("classification_routes", __name__)
 
 
 @classification_bp.post("/start-classification")
-
 def start_classification():
     svc_start_classification()
     return {}
 
 @classification_bp.post("/classification")
 @classification_bp.get("/classification")
-
 def classification():
     return send_from_directory(".", "classification.html")
 
 
 @classification_bp.get("/stream-classification")
-
 def stream_classification():
     logging.info(f"SSE client connected")
     return Response(svc_stream_classification(), mimetype='text/event-stream',

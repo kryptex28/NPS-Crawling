@@ -12,11 +12,9 @@ def styles():
     return send_from_directory(".", "styles.css")
 
 @static_bp.route("/")
-
 def index():
     return send_from_directory(".", "index.html")
 
 @static_bp.route("/debug")
-
 def debug():
     return "Now you see me!"

@@ -66,3 +66,4 @@ def svc_stream_preprocessing():
         except Exception as e:
             logger.error(f"Error in event stream: {e}", exc_info=True)
             yield f"data: { json.dumps({"__error": str(e)} )}\n\n"
+

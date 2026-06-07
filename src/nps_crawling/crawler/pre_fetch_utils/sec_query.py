@@ -31,6 +31,13 @@ class SecQuery:
         self.results = -1
         self.keyword_filings = []
 
+        self.stop_querying: bool = False
+
+        bus.subscribe("crawler.stop", self._stop_prefetch)
+
+    def _stop_prefetch(self):
+        self.stop_querying = True
+
     def query_request(self, page: int) -> dict:
         """Queries the requested filings page."""
         headers = {
@@ -98,6 +105,9 @@ class SecQuery:
         retries: int = 0
 
         while True:
+            if self.stop_querying:
+                return []
+
             if retries > maximum_retries:
                 logger.error(f"Unable to fetch filings after {retries} retries!")
                 exit(-1)

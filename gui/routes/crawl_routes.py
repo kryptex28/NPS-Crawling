@@ -13,17 +13,14 @@ logging.basicConfig(level=logging.INFO)
 crawl_bp: Blueprint = Blueprint("crawl_routes", __name__)
 
 @crawl_bp.get("/results")
-
 def results():
     return send_from_directory(".", "results.html")
 
 @crawl_bp.get("/crawl")
-
 def check():
     return send_from_directory(".", "check.html")
 
 @crawl_bp.post("/start-crawl")
-
 def start_crawl():
     id_list: list[str] = json.loads(session.get("selected_ids", []))
     parameters: list[str] = []
@@ -38,13 +35,11 @@ def start_crawl():
     return jsonify({"status": "started"})
 
 @crawl_bp.post("/stop-crawl")
-
 def stop_crawl():
     bus.publish("crawler.stop")
     return jsonify({"status": "stopped"})
 
 @crawl_bp.post("/start-search")
-
 def start_search():
     data: dict = request.form.to_dict(flat=True)
     print(data)
@@ -54,7 +49,6 @@ def start_search():
     return redirect(url_for("crawl_routes.check"))
 
 @crawl_bp.post("/crawl")
-
 def search():
     data: dict = request.form.to_dict(flat=True)
     print(data)
@@ -64,7 +58,6 @@ def search():
     return redirect(url_for("crawl_routes.check"))
 
 @crawl_bp.get("/stream-crawl")
-
 def stream_crawl():
     logging.info(f"SSE client connected")
     return Response(event_stream(), mimetype='text/event-stream',

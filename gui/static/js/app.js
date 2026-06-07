@@ -12,27 +12,6 @@ document.querySelectorAll(".collapsible").forEach(button => {
   });
 });
 
-const dummyResults = [
-  {
-    cik: "0000320193",
-    filingId: "0000320193-26-000001",
-    url: "https://www.sec.gov/Archives/edgar/data/320193/000032019326000001/filing-index.html",
-    status: "Crawled",
-  },
-  {
-    cik: "0000789019",
-    filingId: "0000789019-26-000002",
-    url: "https://www.sec.gov/Archives/edgar/data/789019/000078901926000002/filing-index.html",
-    status: "Crawled",
-  },
-  {
-    cik: "0001652044",
-    filingId: "0001652044-26-000003",
-    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000003/filing-index.html",
-    status: "Crawled",
-  },
-];
-
 function renderResults(items) {
   resultsList.innerHTML = "";
 
