@@ -27,7 +27,8 @@ class BetterSpider(scrapy.Spider):
         self.logger.info("Initializes spider.")
 
         self.filings: list[Filing] = filings
-
+        self._stop_requested: bool = False
+        bus.subscribe("crawler.stop", self._on_stop_requested)
 
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
@@ -35,6 +36,7 @@ class BetterSpider(scrapy.Spider):
         bus.publish("crawler.status", "Starting", "")
 
         for i, filing in enumerate(self.filings):
+            
             self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
             url: str = filing.get_url()[0]
             bus.publish("crawler.status", "Dispatching", url)
@@ -55,6 +57,11 @@ class BetterSpider(scrapy.Spider):
         filing: Filing = response.meta['filing']
         keyword: str = filing.keyword
         url: str = response.meta['url']
+
+        if self._stop_requested:
+                self.logger.info("Stopping spider before parsing.")
+                bus.publish("crawler.status", "Stopped", "")
+                raise CloseSpider("stop_requested")
 
         # bus.publish("crawler.status", "Parsing", url)
 
@@ -87,3 +94,7 @@ class BetterSpider(scrapy.Spider):
         # Connect the spider.item_scraped method to the item_scraped signal
         crawler.signals.connect(spider.item_scraped, signal=signals.item_scraped)
         return spider
+    
+    def _on_stop_requested(self, *args, **kwargs):
+        self.logger.info("Stop requested via event bus.")
+        self._stop_requested = True

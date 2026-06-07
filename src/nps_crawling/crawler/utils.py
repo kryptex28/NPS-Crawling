@@ -34,9 +34,7 @@ def _run_crawl_sequentially(runner: CrawlerRunner,
             logger.info(f"Finished: {query_file}")
     except Exception as e:
         logger.error(f"Crawl error: {e}", exc_info=True)
-    finally:
-        reactor.stop()  # type: ignore[attr-defined]
-
+        
 class CrawlerPipeline(Config):
     """Crawler pipeline to run the NPS Crawling spider."""
     def __init__(self):

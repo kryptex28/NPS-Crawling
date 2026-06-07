@@ -190,3 +190,4 @@ class Config:
 
 
     FLASK_APPLICATION_SECRET: str = os.getenv("FLASK_APPLICATION_SECRET", "nps-crawler-secret")
+    CRAWLER_GLOBAL_LIMIT: int = -1
