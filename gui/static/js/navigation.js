@@ -32,7 +32,10 @@ const buildNavigationBar = () => {
 
     const links = NAVIGATION_ITEMS.map(item => {
         const href = item.href.replace(/\/$/, '') || '/';
-        const isActive = currentPath === href || currentPath.startsWith(href + '/');
+        const isRoot = href === `${HREF_PREFIX}` || href === `${HREF_PREFIX}/`;
+        const isActive = isRoot
+            ? currentPath === '' || currentPath === `${HREF_PREFIX}` || currentPath === `${HREF_PREFIX}/`
+            : currentPath === href || currentPath.startsWith(href + '/');
         return `<a href="${item.href}" class="${isActive ? 'active' : ''}">${item.label}</a>`;
     }).join('');
 

@@ -8,7 +8,6 @@ const pagingInfo = document.getElementById("paging-info");
 
 const startPreprocessingBtn = document.getElementById("start-preprocessing");
 const stopPreprocessingBtn = document.getElementById("stop-preprocessing");
-const clearResultsBtn = document.getElementById("clear-results");
 
 const elementCount = document.getElementById("element-count");
 
@@ -97,8 +96,7 @@ sseStream.onmessage = (e) => {
     const elapsed = Math.round((Date.now() - start) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
     const ss = String(elapsed % 60).padStart(2, "0");
-    statusComplete.querySelector("p").textContent =
-      `Preprocessing complete! Time taken: ${mm}:${ss}. Total elements: ${totalCount}`;
+
     statusBlock.style.display = "none";
     statusComplete.hidden = false;
     sseStream.close();
@@ -140,7 +138,6 @@ const addResults = (items) => {
   });
 
   renderPage(currentPage);
-  elementCount.textContent = `Elements: ${totalCount}`;
   updatePaging();
 };
 
@@ -179,14 +176,6 @@ stopPreprocessingBtn.addEventListener("click", () => {
     });
 });
 
-clearResultsBtn.addEventListener("click", () => {
-  allItems = [];
-  totalCount = 0;
-  currentPage = 0;
-  renderPage(currentPage);
-  updatePaging();
-  elementCount.textContent = `Elements: ${totalCount}`;
-});
 
 preprocessingForm.addEventListener("submit", (e) => {
   // Collect checked IDs and stuff them into the hidden input

@@ -18,6 +18,7 @@ def database_entries():
 
 @db_bp.get("/database-stream")
 def database_stream():
+    svc_show_entries()
     logging.info(f"SSE client connected")
     return Response(svc_stream_entries(), mimetype='text/event-stream',
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

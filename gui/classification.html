@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Classification</title>
     <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
-    <link rel="stylesheet" href="/services/hub-flask/static/css/classification.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css"/>
   </head>
   <body>
@@ -21,7 +21,6 @@
         <div id="classification-control">
           <button type="button" id="start-classification" class="primary"">Start new classification</button>
           <button type="button" id="stop-classification" class="ghost">Stop classification</button>
-          <button type="button" id="clear-results" class="ghost">Clear results</button>
         </div>
         <div>
           <form id="start-result-form" action="/services/hub-flask/results" method="post">
@@ -67,11 +66,7 @@
           </div>
         </div>
         <div class="status-complete" id="status-complete" hidden>
-          <p>Process completed. Duration: 00:10. Newly crawled files: 12.</p>
-          <div class="form-actions">
-            <a class="primary button-link" href="/results">Show results</a>
-            <a class="ghost button-link" href="/">Back to search</a>
-          </div>
+          <p>Process completed.</p>
         </div>
         <div class="results-list" id="results-list"></div>
       </section>

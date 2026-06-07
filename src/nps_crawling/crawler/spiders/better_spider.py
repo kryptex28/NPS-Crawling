@@ -56,7 +56,7 @@ class BetterSpider(scrapy.Spider):
         keyword: str = filing.keyword
         url: str = response.meta['url']
 
-        bus.publish("crawler.status", "Parsing", url)
+        # bus.publish("crawler.status", "Parsing", url)
 
         # Extract text from response content
         try:

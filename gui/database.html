@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/services/hub-flask/static/css/styles.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/check.css"/>
     <link rel="stylesheet" href="/services/hub-flask/static/css/navigation.css"/>
+    <link rel="stylesheet" href="/services/hub-flask/static/css/database.css"/>
   </head>
   <body>
     <main class="page">
@@ -14,25 +15,31 @@
         <h1 class="title">Database</h1>
         <img class="logo" src="thu_logo.png" alt="THU logo" />
       </header>
-
       <section class="panel">
-        <div id="navigation">
-        </div>
+        <div id="navigation"></div>
         <div class="results-header">
           <h2>Database</h2>
-          <form class="results-actions" action="/services/hub-flask/database-entries" method="post">
-            <div class="results-toolbar">
-            <button type="submit" class="primary">Show database entries</button>
-          </form>
-        </div>
-
-        <div class="results-table-container">
-          <table id="results-table">
-            
-          </table>
+          <div class="results-toolbar">
+            <button type="button" class="primary" id="show-db-btn">Show database entries</button>
+          </div>
         </div>
       </section>
     </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Database Entries</h2>
+          <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <table id="results-table"></table>
+        </div>
+        <div class="modal-footer" id="modal-footer">Loading…</div>
+      </div>
+    </div>
+
     <script src="/services/hub-flask/static/js/navigation.js"></script>
     <script src="/services/hub-flask/static/js/database.js"></script>
   </body>

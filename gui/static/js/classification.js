@@ -8,7 +8,6 @@ const pagingInfo = document.getElementById("paging-info");
 
 const startClassificationBtn = document.getElementById("start-classification");
 const stopClassificationBtn = document.getElementById("stop-classification");
-const clearResultsBtn = document.getElementById("clear-results");
 
 const elementCount = document.getElementById("element-count");
 
@@ -88,7 +87,6 @@ sseStream.onmessage = (e) => {
   try {
     result = JSON.parse(e.data);
   } catch(err) {
-    console.error("JSON parse failed:", err);
     return;
   }
 
@@ -97,8 +95,7 @@ sseStream.onmessage = (e) => {
     const elapsed = Math.round((Date.now() - start) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
     const ss = String(elapsed % 60).padStart(2, "0");
-    statusComplete.querySelector("p").textContent =
-      `Classification complete! Time taken: ${mm}:${ss}. Total elements: ${totalCount}`;
+
     statusBlock.style.display = "none";
     statusComplete.hidden = false;
     sseStream.close();
@@ -140,7 +137,6 @@ const addResults = (items) => {
   });
 
   renderPage(currentPage);
-  elementCount.textContent = `Elements: ${totalCount}`;
   updatePaging();
 };
 
@@ -179,14 +175,6 @@ stopClassificationBtn.addEventListener("click", () => {
     });
 });
 
-clearResultsBtn.addEventListener("click", () => {
-  allItems = [];
-  totalCount = 0;
-  currentPage = 0;
-  renderPage(currentPage);
-  updatePaging();
-  elementCount.textContent = `Elements: ${totalCount}`;
-});
 
 preprocessingForm.addEventListener("submit", (e) => {
   // Collect checked IDs and stuff them into the hidden input

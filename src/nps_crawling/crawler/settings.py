@@ -6,6 +6,8 @@ NPS-Crawling project.
 
 import os
 
+from nps_crawling.config import Config
+
 BOT_NAME = "crawler"
 SPIDER_MODULES = ["nps_crawling.crawler.spiders"]
 NEWSPIDER_MODULE = "nps_crawling.crawler.spiders"
@@ -27,7 +29,7 @@ DOWNLOAD_DELAY = .2  # Limit so SEC doesn't explode and API bans
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEC_QUERY_FILE_PATH = os.path.join(PROJECT_ROOT, 'queries', 'query.json')
 
-SEC_QUERY_LIMIT_COUNT = 10_000
+SEC_QUERY_LIMIT_COUNT = Config.CRAWLER_GLOBAL_LIMIT
 
 STATS_DUMP = True
 JOB_DIR = 'crawls/sec_filings_spider'
