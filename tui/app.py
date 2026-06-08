@@ -61,7 +61,7 @@ class CrawlerTuiApp(App):
         self.preprocessing_widget = PreprocessingWidget(id="preprocessing-widget")
         self.classification_widget = ClassificationWidget(id="classification-widget")
         self.result_widget = ResultWidget(id="result-widget")
-        self.database_widget = DatabaseWidget(id="database-widget")
+        self.database_widget = DatabaseWidget()
 
         self.widget_map: dict = {
             "nav-query": self.query_widget,

@@ -34,11 +34,35 @@ from textual.widgets.selection_list import Selection
 from constants import FILING_CATEGORIES
 from constants import US_STATES
 
+from models.database_model import DatabaseModel
+
 class DatabaseWidget(Container):
+
+    def __init__(self):
+        super().__init__()
+        self.model = DatabaseModel()
 
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
                 yield Static("Database", classes="section-header")
-
                 yield Button("Show Database", id="btn-show-database")
+                yield DataTable(id="db-table")
+
+    @on(Button.Pressed, "#btn-show-database")
+    async def load(self) -> None:
+        table = self.query_one("#db-table", DataTable)
+
+        # run DB call in background thread
+        worker = self.run_worker(
+            lambda: self.model.get_all_filings(),
+            thread=True,
+        )
+
+        rows = await worker.wait()
+
+        table.clear()
+        table.add_columns("Data")
+
+        for row in rows:
+            table.add_row(str(row))
