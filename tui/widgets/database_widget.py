@@ -36,7 +36,13 @@ from constants import US_STATES
 
 from models.database_model import DatabaseModel
 
+from models.database_model import DatabaseModel
+
 class DatabaseWidget(Container):
+
+    def __init__(self):
+        super().__init__()
+        self.model = DatabaseModel()
 
     def __init__(self):
         super().__init__()
@@ -62,7 +68,15 @@ class DatabaseWidget(Container):
         rows = await worker.wait()
 
         table.clear()
-        table.add_columns("Data")
 
+        # 1. decide columns from first row
+        if not rows:
+            return
+
+        columns = list(rows[0].keys())
+
+        table.add_columns(*columns)
+
+        # 2. fill rows
         for row in rows:
-            table.add_row(str(row))
+            table.add_row(*(str(row.get(col, "")) for col in columns))
