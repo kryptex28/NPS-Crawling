@@ -33,7 +33,11 @@ from textual.widgets.selection_list import Selection
 
 from widgets.nagivation_widget import NavigationWidget
 from widgets.query_widget import QueryWidget
+from widgets.crawl_widget import CrawlWidget
 from widgets.preprocessing_widget import PreprocessingWidget
+from widgets.classification_widget import ClassificationWidget
+from widgets.result_widget import ResultWidget
+from widgets.database_widget import DatabaseWidget
 
 from screens.config_screen import ConfigScreen
 
@@ -53,7 +57,20 @@ class CrawlerTuiApp(App):
         super().__init__()
         
         self.query_widget = QueryWidget(id="query-widget")
+        self.crawl_widget = CrawlWidget(id="crawl-widget")
         self.preprocessing_widget = PreprocessingWidget(id="preprocessing-widget")
+        self.classification_widget = ClassificationWidget(id="classification-widget")
+        self.result_widget = ResultWidget(id="result-widget")
+        self.database_widget = DatabaseWidget(id="database-widget")
+
+        self.widget_map: dict = {
+            "nav-query": self.query_widget,
+            "nav-crawl": self.crawl_widget,
+            "nav-preprocessing": self.preprocessing_widget,
+            "nav-classification": self.classification_widget,
+            "nav-results": self.result_widget,
+            "nav-database": self.database_widget,
+        }
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -63,8 +80,8 @@ class CrawlerTuiApp(App):
                 yield NavigationWidget()
             with Horizontal(id="main-layout"):
                 with Container(id="page-container"):
-                    yield self.query_widget
-                    yield self.preprocessing_widget
+                    for v in self.widget_map.values():
+                        yield v
         yield Footer()
 
     @on(Button.Pressed, "#btn-config")
@@ -77,15 +94,9 @@ class CrawlerTuiApp(App):
         self,
         event: NavigationWidget.Navigate,
     ) -> None:
-
-        container = self.query_one("#page-container", Container)
-        await container.remove_children()
-        match event.page:
-            case "nav-query":
-                await container.mount(QueryWidget())
-
-            case "nav-preprocessing":
-                await container.mount(PreprocessingWidget())
+        for v in self.widget_map.values():
+            v.display = False
+        self.widget_map[event.page].display = True
 
 if __name__ == "__main__":
     CrawlerTuiApp().run()
