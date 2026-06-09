@@ -34,7 +34,13 @@ from textual.widgets.selection_list import Selection
 from constants import FILING_CATEGORIES
 from constants import US_STATES
 
+from models.classification_model import ClassificationModel
+
 class ClassificationWidget(Container):
+
+    def __init__(self):
+        super().__init__()
+        self.model = ClassificationModel()
 
     def compose(self) -> ComposeResult:
         with Horizontal():
@@ -43,3 +49,19 @@ class ClassificationWidget(Container):
 
                 yield Button("Start Classification", id="btn-start-classification")
                 yield Button("Stop Classification", id="btn-stop-classification")
+
+    @on(Button.Pressed, "#btn-start-classification")
+    async def start_classification(self) -> None:
+
+        worker = self.run_worker(
+            lambda: self.model.start_classification(),
+            thread=True
+        )
+        self.app.notify("Classification process started", title="Started")
+        
+        button = self.query_one("#btn-start-classification")
+        button.disabled = True
+
+        await worker.wait()
+        self.app.notify("Classification process finished", title="Complete")
+        button.disabled = False

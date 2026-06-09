@@ -6,6 +6,7 @@ from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams
 from nps_crawling.config import Config
 
 def svc_create_query(data: dict):
+    print(data)
     parameter: SecSearchParams = create_config_from_dict(data=data)
     parameter.query_base = "https://efts.sec.gov/LATEST/search-index?"
     store_config(path=Config.GUI_QUERY_PATH, parameter=parameter)

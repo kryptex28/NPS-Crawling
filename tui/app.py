@@ -38,6 +38,7 @@ from widgets.preprocessing_widget import PreprocessingWidget
 from widgets.classification_widget import ClassificationWidget
 from widgets.result_widget import ResultWidget
 from widgets.database_widget import DatabaseWidget
+from screens.filing_types_screen import FilingTypesScreen
 
 from screens.config_screen import ConfigScreen
 
@@ -56,10 +57,10 @@ class CrawlerTuiApp(App):
     def __init__(self) -> None:
         super().__init__()
         
-        self.query_widget = QueryWidget(id="query-widget")
-        self.crawl_widget = CrawlWidget(id="crawl-widget")
-        self.preprocessing_widget = PreprocessingWidget(id="preprocessing-widget")
-        self.classification_widget = ClassificationWidget(id="classification-widget")
+        self.query_widget = QueryWidget()
+        self.crawl_widget = CrawlWidget()
+        self.preprocessing_widget = PreprocessingWidget()
+        self.classification_widget = ClassificationWidget()
         self.result_widget = ResultWidget(id="result-widget")
         self.database_widget = DatabaseWidget()
 
@@ -97,6 +98,13 @@ class CrawlerTuiApp(App):
         for v in self.widget_map.values():
             v.display = False
         self.widget_map[event.page].display = True
+
+        
+    @on(Button.Pressed, "#btn-filing-types")
+    def action_open_filing_types(self) -> None:
+        self.push_screen(
+            FilingTypesScreen([]),
+        )
 
 if __name__ == "__main__":
     CrawlerTuiApp().run()

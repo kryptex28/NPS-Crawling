@@ -44,10 +44,6 @@ class DatabaseWidget(Container):
         super().__init__()
         self.model = DatabaseModel()
 
-    def __init__(self):
-        super().__init__()
-        self.model = DatabaseModel()
-
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
@@ -59,24 +55,20 @@ class DatabaseWidget(Container):
     async def load(self) -> None:
         table = self.query_one("#db-table", DataTable)
 
-        # run DB call in background thread
+        # create a Thread to fetch all database entries to avoid TUI freeze
         worker = self.run_worker(
             lambda: self.model.get_all_filings(),
             thread=True,
         )
 
         rows = await worker.wait()
-
         table.clear()
-
-        # 1. decide columns from first row
         if not rows:
             return
-
+        
         columns = list(rows[0].keys())
 
         table.add_columns(*columns)
 
-        # 2. fill rows
         for row in rows:
             table.add_row(*(str(row.get(col, "")) for col in columns))
