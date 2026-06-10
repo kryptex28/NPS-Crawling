@@ -35,7 +35,7 @@ class HasNumericNPS(ClassificationCategory):
                 if entry.value == 0 or entry.value == 1:
                     return True
         return False
-            
+
     def extract_from_string(self, text: str) -> List[DataEntry]:
         """Extract NPS Value from given text."""
         entries : List[DataEntry] = []

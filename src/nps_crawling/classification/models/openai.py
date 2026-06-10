@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 class OpenAIModel(ClassificationModel):
     """Hugging Face Model class."""
     def __init__(self, model_name: str, **kwargs):
+        if "prompt" in kwargs:
+            model_input = kwargs["prompt"]
         self.model_input = self._generate_model_input()
         super().__init__(model_name, self.model_input, **kwargs)
         self.model = model_name
