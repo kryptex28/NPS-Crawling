@@ -29,7 +29,9 @@ class ClassificationModelPipeline(Config):
 
         self.adapter = DbAdapter()
 
-        with open(self.NPS_CLASSIFIED_JSON / "files" / "config.json", "w", encoding="utf-8") as f:
+        self.out_path = self.NPS_CLASSIFIED_JSON / self.CLASSIFICATION_VERSION
+
+        with open(self.out_path / "config.json", "w", encoding="utf-8") as f:
             json.dump(self.CLASSIFICATION_CONFIG, f, ensure_ascii=False, indent=2)
 
     def _write_to_db(self, id, results):
@@ -78,8 +80,8 @@ class ClassificationModelPipeline(Config):
                 logger.info(f"{source_filename}: {done}/{total_windows}")
             self._write_to_db(record["filing_id"], record_results)
 
-        out_path = self.NPS_CLASSIFIED_JSON / "files" / f"{source_filename}.json"
-        with open(out_path, "w", encoding="utf-8") as f:
+        file_path = self.out_path / f"{source_filename}.json"
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
 
         logger.info(f"Finished file: {source_filename}")

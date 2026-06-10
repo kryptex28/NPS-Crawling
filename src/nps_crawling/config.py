@@ -187,4 +187,3 @@ class Config:
             "model_config": {"model": "distilbert-base-cased-distilled-squad"},
         }
     }
-    
