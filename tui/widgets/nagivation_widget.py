@@ -36,6 +36,14 @@ from textual.widget import Widget
 
 class NavigationWidget(Widget):
 
+    CSS: str = """
+    #navigation {
+        height: 3;
+        padding-bottom: 1;
+    }
+
+    """
+
     class Navigate(Message):
         def __init__(self, page: str) -> None:
             self.page = page

@@ -34,13 +34,47 @@ from textual.widgets.selection_list import Selection
 from constants import FILING_TYPES
 
 class FilingTypesScreen(ModalScreen):
+    DEFAULT_CSS = """
+        FilingTypesScreen {
+            align: center middle;
+        }
+        FilingTypesScreen > Container {
+            width: 30%;
+            height: 60%;
+            background: $surface;
+            border: thick $primary;
+            padding: 0 1;
+        }
+        FilingTypesScreen .picker-title {
+            background: $primary;
+            color: $text;
+            text-align: center;
+            padding: 0 1;
+            height: 3;
+            content-align: center middle;
+        }
+        FilingTypesScreen SelectionList {
+            height: 1fr;
+            border: none;
+        }
+        FilingTypesScreen .picker-footer {
+            height: 3;
+            layout: horizontal;
+            align: right middle;
+            margin: 1 0;
+        }
+        FilingTypesScreen .picker-footer Button {
+            margin-left: 1;
+        }
+        """
+
     def __init__(self, selected: list[str]) -> None:
         super().__init__()
         self._pre_selected = set(selected)
 
     def compose(self) -> ComposeResult:
         with Container():
-            yield Static("📋  Select Filing Types", classes="picker-title")
+            yield Static("Select Filing Types", classes="picker-title")
             yield SelectionList(
                 *[
                     Selection(ft, ft, initial_state=(ft in self._pre_selected))

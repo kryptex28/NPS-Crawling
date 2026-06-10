@@ -36,6 +36,7 @@ from constants import US_STATES
 
 from models.query_model import QueryModel
 from screens.filing_types_screen import FilingTypesScreen
+from data_package.QueryData import QueryData
 
 class QueryWidget(Container):
 
@@ -50,12 +51,20 @@ class QueryWidget(Container):
             with ScrollableContainer(id="left-panel"):
                 yield Static("Search Parameters", classes="panel-title")
 
-                # Query
+                # Query Base
+                with Vertical(classes="form-row"):
+                    yield Label("Query Base URL")
+                    yield Input(
+                        placeholder="https://efts.sec.gov/LATEST/search-index?",
+                        id="inp-query-base"
+                    )
+
+                # Keyword
                 with Vertical(classes="form-row"):
                     yield Label("Document word or phrase")
                     yield Input(
                         placeholder="Keywords",
-                        id="inp-query"
+                        id="inp-keyword"
                     )
                 # Entity
                 with Vertical(classes="form-row"):
@@ -114,22 +123,52 @@ class QueryWidget(Container):
                 with Horizontal(id="query-toolbar"):
                     yield Button("Select All", id="btn-select-all", variant="default")
                     yield Button("Delete", id="btn-delete", variant="error")
+                    yield Button("Refresh", id="btn-refresh", variant="default")
                 yield DataTable(id="query-table", cursor_type="row", zebra_stripes=True)
                 yield Button("Accept Queries", id="accept-queries-btn", variant="success")
 
+    @on(Button.Pressed, "#btn-refresh")
+    async def query_refresh(self):
+        self._refresh_table()
+
     @on(Button.Pressed, "#btn-create")
     async def query_create(self):
-        
-        data: dict[str, object] = {
-            "query": self.query_one("#inp-query", Input).value,
-            "entity": self.query_one("#inp-entity", Input).value,
-            "filing_category": self.query_one("#sel-category", Select).value,
-            "filing_types": [],  # fill later
-            "date_range": self._get_date_range(),
-            "from_date": self.query_one("#inp-from-date", Input).value,
-            "to_date": self.query_one("#inp-to-date", Input).value,
+        query_base: str = self.query_one("#inp-query-base", Input).value.strip()
+        keyword: str = self.query_one("#inp-keyword", Input).value.strip()
+        from_date: str = self.query_one("#inp-from-date", Input).value.strip()
+        to_date: str = self.query_one("#inp-to-date", Input).value.strip()
+        filing_types: str #TODO Selected
+
+        cat_sel = self.query_one("#sel-category", Select)
+        filing_category: str = str(cat_sel.value) if cat_sel.value != Select.BLANK else ""
+
+
+        if not keyword:
+            self.notify("Please fill in at least one search field.", severity="warning")
+            return
+
+        rs = self.query_one("#date-range-set", RadioSet)
+        date_range_map = {
+            "dr-all": "all", "dr-10y": "10y", "dr-5y": "5y",
+            "dr-1y": "1y", "dr-30d": "30d", "dr-custom": "custom",
         }
-        # create the query in the model
+        date_range = "all"
+        if rs.pressed_button:
+            date_range = date_range_map.get(rs.pressed_button.id, "all")
+
+        data = QueryData(
+            id="",
+            query_base=query_base,
+            keyword=keyword,
+            from_date=from_date,
+            to_date=to_date,
+            date_range=date_range,
+            entity="",
+            filing_category=filing_category,
+            filing_types=[],
+            selected=False
+        )
+
         self.model.create_query(data=data)
         self._refresh_table()
 

@@ -42,6 +42,8 @@ from screens.filing_types_screen import FilingTypesScreen
 
 from screens.config_screen import ConfigScreen
 
+
+
 class CrawlerTuiApp(App):
 
     TITLE = "EDGAR Search"
@@ -53,6 +55,145 @@ class CrawlerTuiApp(App):
         Binding("f2", "open_filing_types", "Filing Types"),
         Binding("ctrl+r", "reset_form", "Reset form"),
     ]
+
+    CSS = """
+    Screen {
+        background: $background;
+    }
+
+    /* Reduce spacing between navigation bar and main content */
+    #outer-layout {
+        padding: 0;
+    }
+
+    #outer-layout > Container {
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    /* ── Top layout ─────────────────────────────────────────────────── */
+    #main-layout {
+        layout: horizontal;
+        height: 1fr;
+    }
+    #left-panel {
+        width: 1fr;
+        height: 1fr;
+        overflow-y: auto;
+        border-right: solid $primary-darken-2;
+        padding: 0 1;
+    }
+    #right-panel {
+        width: 55;
+        height: 1fr;
+        padding: 0 1;
+    }
+
+    /* ── Section headings ────────────────────────────────────────────── */
+    .panel-title {
+        text-style: bold;
+        color: $accent;
+        border-bottom: solid $primary-darken-2;
+        padding: 0 0 1 0;
+        margin-bottom: 1;
+    }
+
+    /* ── Form rows ───────────────────────────────────────────────────── */
+    .form-row {
+        height: auto;
+        margin-bottom: 1;
+    }
+    .form-row Label {
+        color: $text-muted;
+        margin-bottom: 0;
+    }
+    .form-row Input,
+    .form-row Select {
+        width: 100%;
+    }
+    .grid-2 {
+        layout: horizontal;
+        height: auto;
+    }
+    .grid-2 > Vertical {
+        width: 1fr;
+        margin-right: 1;
+    }
+    .grid-2 > Vertical:last-child {
+        margin-right: 0;
+    }
+
+    /* ── Date range ──────────────────────────────────────────────────── */
+    #date-range-set {
+        height: auto;
+    }
+    #date-range-set RadioButton {
+        margin-right: 1;
+    }
+    #custom-dates {
+        display: none;
+        height: auto;
+        layout: horizontal;
+        margin-top: 1;
+    }
+    #custom-dates.visible {
+        display: block;
+    }
+
+    /* ── Filing types badge ──────────────────────────────────────────── */
+    #filing-types-badge {
+        color: $text-muted;
+        text-style: italic;
+        height: 1;
+        margin-top: 0;
+    }
+
+    /* ── Form actions ────────────────────────────────────────────────── */
+    #form-actions {
+        layout: horizontal;
+        height: auto;
+        margin-top: 2;
+        margin-bottom: 1;
+    }
+    #form-actions Button {
+        margin-right: 1;
+    }
+
+    /* ── Query list ──────────────────────────────────────────────────── */
+    #query-toolbar {
+        layout: horizontal;
+        height: 3;
+        align: left middle;
+        margin-bottom: 1;
+    }
+    #query-toolbar Button {
+        margin-right: 1;
+        height: 3;
+    }
+    #query-table {
+        height: 1fr;
+    }
+    #start-search-btn {
+        margin-top: 1;
+        width: 100%;
+    }
+    #right-panel-title {
+        text-style: bold;
+        color: $accent;
+        border-bottom: solid $primary-darken-2;
+        padding: 0 0 1 0;
+        margin-bottom: 1;
+    }
+
+    /* ── Status bar ──────────────────────────────────────────────────── */
+    #status-bar {
+        height: 1;
+        background: $primary-darken-3;
+        color: $text-muted;
+        padding: 0 1;
+        dock: bottom;
+    }
+    """
 
     def __init__(self) -> None:
         super().__init__()

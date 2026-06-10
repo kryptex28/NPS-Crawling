@@ -30,3 +30,4 @@ class CrawlModel():
     def stop_crawl(self) -> bool:
         from nps_crawling.utils.event_bus import bus
         bus.publish("crawler.stop")
+        return False
