@@ -103,11 +103,32 @@ class ConfigScreen(ModalScreen):
         with Container():
             yield Static("Configuration", classes="dialog-title")
             with ScrollableContainer():
+                yield Static("General configuration", classes="section-header")    
+                with Vertical(classes="config-row"):
+                    yield Label("Universal Mode")
+                    yield Switch(False, id="cfg-universal-mode")
+
+                with Vertical(classes="config-row"):
+                    yield Label("Log Level")
+                    yield Select(
+                        [("DEBUG", "debug"), ("INFO", "info"), ("WARNING", "warning"), ("ERROR", "error")],
+                        id="cfg-log-level",
+                        value="info",
+                    ) 
+
                 yield Static("Crawler Configuration", classes="section-header")
 
                 with Vertical(classes="config-row"):
                     yield Label("Result limit")
                     yield Input(str(Config.CRAWLER_GLOBAL_LIMIT), id="cfg-global-limit", validators=[Number(minimum=-1)])
+
+                with Vertical(classes="config-row"):
+                    yield Label("Recovery attempts")
+                    yield Input("10", id="cfg-recovery-attempts", validators=[Number(minimum=0)])
+                
+                with Vertical(classes="config-row"):
+                    yield Label("Recovery timeout (s)")
+                    yield Input("5", id="cfg-recovery-timeout", validators=[Number(minimum=0)])
 
                 with Horizontal(classes="switch-row"):
                     yield Label("Dry run")
@@ -224,8 +245,8 @@ class ConfigScreen(ModalScreen):
 #
         #)
 
-        #self.model.update_config()
-
+        self.model.update_config(ConfigData())
+        
         self.dismiss(True)
 
     @on(Button.Pressed, "#cfg-prompt-confirm")

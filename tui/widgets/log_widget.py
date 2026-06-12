@@ -3,7 +3,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import (
     Static,
-    RichLog
+    RichLog,
 )
 
 LEVEL_COLORS = {
@@ -50,5 +50,5 @@ class LogWidget(Vertical):
     """
 
     def compose(self) -> ComposeResult:
-        yield Static("--- Logs ---")
+        yield Static("Logs")
         yield RichLog(highlight=True, markup=True, wrap=True, id="log-output")

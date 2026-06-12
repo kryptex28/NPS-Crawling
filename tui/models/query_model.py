@@ -29,6 +29,7 @@ class QueryModel():
         if not hasattr(self, '_initialized'):  
             self.query_ids: list[str] = []
             self._initialized = True
+            self.selected_queries: set[str] = set()
 #
 #    def create_query(self, data: dict) -> None:
 #        print(data)
@@ -41,10 +42,10 @@ class QueryModel():
     def get_query_ids(self) -> list[str]:
         return self.query_ids
 
-    def accept_queries(self, ids: list[QueryData]):
-        self.query_ids.clear()
-        for q in ids:
-            self.query_ids.append(q.id)
+    def accept_queries(self):
+        # Technically nothing to do here lol
+        pass
+
 
     def get_queries(self) -> list[QueryData]:
         params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.GUI_QUERY_PATH))
@@ -104,3 +105,14 @@ class QueryModel():
         # TODO Remove in Future lol
         self.query_ids.append(parameter.id)
         print(parameter.id)
+
+    def add_selected(self, id: str) -> None:
+        self.selected_queries.add(id)
+    
+    def remove_selected(self, id: str) -> None:
+        self.selected_queries.remove(id)
+
+    def delete_query(self, id: str) -> None:
+        # TODO: Maybe extract into param class
+        if os.path.isdir(Config.GUI_QUERY_PATH):
+            os.remove(join(Config.GUI_QUERY_PATH, f"{id}.json"))

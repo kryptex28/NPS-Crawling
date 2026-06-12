@@ -33,7 +33,7 @@ class CrawlModel():
         model = QueryModel()
         parameters: list[str] = []
 
-        for id in model.get_query_ids():
+        for id in model.selected_queries:
             path: str = get_search_params_from_id(Config.GUI_QUERY_PATH, id=id)
             parameters.append(path)
 

@@ -28,6 +28,7 @@ from textual.widgets import (
     TabbedContent,
     TabPane,
 )
+from rich.text import Text
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
@@ -46,7 +47,6 @@ class QueryWidget(Container):
         self._selected_ids: set[str] = set()
 
     def compose(self) -> ComposeResult:
-
         with Horizontal(id="crawl-layout"):
             with ScrollableContainer(id="left-panel"):
                 yield Static("Search Parameters", classes="panel-title")
@@ -55,7 +55,7 @@ class QueryWidget(Container):
                 with Vertical(classes="form-row"):
                     yield Label("Query Base URL")
                     yield Input(
-                        placeholder="https://efts.sec.gov/LATEST/search-index?",
+                        placeholder="default: https://efts.sec.gov/LATEST/search-index?",
                         id="inp-query-base"
                     )
 
@@ -111,6 +111,10 @@ class QueryWidget(Container):
                         yield Label("Filed to")
                         yield Input(placeholder="YYYY-MM-DD", id="inp-to-date")
 
+                with Vertical(classes="form-row"):
+                    yield Static("Query Filing Limit")
+                    yield Input("", placeholder="default: -1 (no limit)", id="query-filing-limit", validators=[Number(minimum=-1)])
+
                 # Actions
                 with Horizontal(id="form-actions"):
                     yield Button("Create Query", variant="primary", id="btn-create")
@@ -124,6 +128,7 @@ class QueryWidget(Container):
                     yield Button("Select All", id="btn-select-all", variant="default")
                     yield Button("Delete", id="btn-delete", variant="error")
                     yield Button("Refresh", id="btn-refresh", variant="default")
+                    yield Button("View", id="btn-view", variant="default")
                 yield DataTable(id="query-table", cursor_type="row", zebra_stripes=True)
                 yield Button("Accept Queries", id="accept-queries-btn", variant="success")
 
@@ -133,12 +138,8 @@ class QueryWidget(Container):
 
     @on(Button.Pressed, "#accept-queries-btn")
     async def accept_queries(self):
-#        data: QueryData = QueryData(
-#            id="",
-#            keyword="asba",
-#        )
-#        self.model.accept_queries()
-        pass
+        self.model.accept_queries()
+        self.notify(title="Query", message="Queries accepted for Crawling")
 
     @on(Button.Pressed, "#btn-create")
     async def query_create(self):
@@ -189,7 +190,23 @@ class QueryWidget(Container):
             if query_display is None:
                 query_display = getattr(q, "keyword", "")
             date_range = getattr(q, "date_range", "")
-            table.add_row(q.id, query_display, date_range)
+
+            row_id = q.id
+
+            if row_id in self._selected_ids:
+                table.add_row(
+                    Text(str(row_id), style="bold green"),
+                    Text(query_display, style="bold green"), 
+                    Text(date_range, style="bold green"),
+                    key=row_id
+                )
+            else:
+                table.add_row(
+                    Text(str(row_id)),
+                    Text(query_display), 
+                    Text(date_range),
+                    key=row_id
+                )
 
     @on(DataTable.RowSelected, "#query-table")
     def on_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -198,10 +215,20 @@ class QueryWidget(Container):
         row_id = str(table.get_cell(event.row_key, table.ordered_columns[0].key))
 
         if row_id in self._selected_ids:
-            self._selected_ids.remove(row_id)
+            self.model.remove_selected(row_id)
+            style = ""
         else:
-            self._selected_ids.add(row_id)
+            self.model.add_selected(row_id)
+            style = "bold white on green"
         
+        table = self.query_one("#query-table", DataTable)
+        cols = table.ordered_columns
+        for col in cols:
+            current = table.get_cell(event.row_key, col.key)
+            # strip Rich markup to get plain text back
+            plain = current.plain if hasattr(current, "plain") else str(current)
+            table.update_cell(event.row_key, col.key, Text(plain, style=style))
+
         self._update_row_highlight(event.row_key, row_id)
 
     def _update_row_highlight(self, row_key, row_id: str) -> None:
@@ -213,20 +240,37 @@ class QueryWidget(Container):
     def select_all(self) -> None:
         table = self.query_one("#query-table", DataTable)
         col_key = table.ordered_columns[0].key
-        self._selected_ids = {
-            str(table.get_cell(rk, col_key))
+        all_ids = {
+            str(table.get_cell(rk, col_key).plain) 
             for rk in table.rows
         }
-        #self.query_one("#selected-count", Static).update(
-        #    f"{len(self._selected_ids)} selected"
-        #)
+
+        if self._selected_ids == all_ids:
+            self._selected_ids.clear()
+            self.model.selected_queries.clear()
+            style = ""
+        else:
+            self._selected_ids = all_ids
+            self.model.selected_queries = set(all_ids)
+            style = "bold white on green"
+
+        cols = table.ordered_columns
+        for row_key in table.rows:
+            for col in cols:
+                current = table.get_cell(row_key, col.key)
+                plain = current.plain if hasattr(current, "plain") else str(current)
+                table.update_cell(row_key, col.key, Text(plain, style=style))
 
     @on(Button.Pressed, "#btn-delete")
     def delete_selected(self) -> None:
-        #for query_id in self._selected_ids:
-            #self.model.delete_query(query_id)   # add this to QueryModel
+        for query_id in self.model.selected_queries:
+            self.model.delete_query(query_id)  
+
+        self.model.selected_queries.clear()
         self._selected_ids.clear()
         self._refresh_table()
+
+        self.notify(title="Queries deleted", message="All selected queries were deleted successfully")
 
     def on_mount(self) -> None:
         table = self.query_one("#query-table", DataTable)

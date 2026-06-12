@@ -5,6 +5,8 @@ from data_package.prompt_data import PromptData
 from data_package.table_data import TableData
 from nps_crawling.config import Config
 
+from nps_crawling.db.db_adapter import DbAdapter
+
 class ConfigModel():
 
     instance = None
@@ -21,6 +23,7 @@ class ConfigModel():
 
     def update_config(self, config_data: ConfigData) -> None:
         Config.CRAWLER_GLOBAL_LIMIT = config_data.crawler_limit
+        DbAdapter().ensure_table_exists()
 
     def get_config(self) -> ConfigData:
         return ConfigData()

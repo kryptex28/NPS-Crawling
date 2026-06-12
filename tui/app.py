@@ -76,7 +76,8 @@ class CrawlerTuiApp(App):
     }
 
     #nav-container {
-        height: 10%;       /* shrinks to exactly the nav bar's natural height */
+        width: 100%;
+        height: 3;
         padding: 0;
         margin: 0;
     }
@@ -241,15 +242,15 @@ class CrawlerTuiApp(App):
                 with Container(id="page-container"):
                     for v in self.widget_map.values():
                         yield v
-            with Container():
+            with Container(classes="log-container"):
                 yield LogWidget(id="log-panel")
 
         yield Footer()
 
     @on(Button.Pressed, "#btn-config")
+    @on(Button.Pressed, "#nav-settings")
     def _on_button_config(self):
         self.push_screen(ConfigScreen())
-
 
     @on(NavigationWidget.Navigate)
     async def handle_navigation(
@@ -283,5 +284,4 @@ class CrawlerTuiApp(App):
 
 
 if __name__ == "__main__":
-    DbAdapter().ensure_table_exists()
     CrawlerTuiApp().run()

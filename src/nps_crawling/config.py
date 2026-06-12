@@ -188,6 +188,9 @@ class Config:
 
     MODEL: str = "SVM"  # Options: "SVM", "Ollama"
 
-
-    FLASK_APPLICATION_SECRET: str = os.getenv("FLASK_APPLICATION_SECRET", "nps-crawler-secret")
-    CRAWLER_GLOBAL_LIMIT: int = -1
+    CRAWLER_GLOBAL_LIMIT: int = -1 
+    CRAWLER_RECOVERY_ATTEMPTS: int = 10
+    CRAWLER_RECOVERY_TIMEOUT: int = 5
+    CRAWLER_DRY_RUN: bool = False
+    CRAWLER_DELAY: float = 0.1
+    CRAWLER_STATS_DUMP: bool = False
