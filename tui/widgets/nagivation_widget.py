@@ -37,12 +37,13 @@ from textual.widget import Widget
 class NavigationWidget(Widget):
 
     CSS: str = """
-    #navigation {
-        height: 3;
-        padding-bottom: 1;
-    }
-
-    """
+#navigation {
+    height: 3;
+}
+NavigationWidget {
+    height: auto;
+}
+"""
 
     class Navigate(Message):
         def __init__(self, page: str) -> None:
@@ -64,3 +65,4 @@ class NavigationWidget(Widget):
         assert button_id is not None
 
         self.post_message(self.Navigate(button_id))
+

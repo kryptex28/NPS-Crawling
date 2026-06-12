@@ -12,7 +12,7 @@ from nps_crawling.crawler.pre_fetch_utils.sec_params import (
 )
 from nps_crawling.crawler.pre_fetch_utils.filings import FilingsCategoryCollectionCoarse
 from nps_crawling.config import Config
-from data_package.QueryData import QueryData
+from data_package.query_data import QueryData
 from uuid import uuid4
 
 
@@ -26,7 +26,9 @@ class QueryModel():
         return cls.instance
 
     def __init__(self) -> None:
-        self.queries: list[str] = []
+        if not hasattr(self, '_initialized'):  
+            self.query_ids: list[str] = []
+            self._initialized = True
 #
 #    def create_query(self, data: dict) -> None:
 #        print(data)
@@ -36,9 +38,13 @@ class QueryModel():
 #        store_config(path=Config.GUI_QUERY_PATH, 
 #                     parameter=parameter)
 
-    def accept_queries(self, ids: list[str]):
-        self.queries.clear()
-        self.queries = ids.copy()
+    def get_query_ids(self) -> list[str]:
+        return self.query_ids
+
+    def accept_queries(self, ids: list[QueryData]):
+        self.query_ids.clear()
+        for q in ids:
+            self.query_ids.append(q.id)
 
     def get_queries(self) -> list[QueryData]:
         params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.GUI_QUERY_PATH))
@@ -73,8 +79,9 @@ class QueryModel():
         return queries
 
     def _create_config_from_query(self, data: QueryData) -> SecSearchParams:
+        data.id = str(uuid4())
         return SecSearchParams(
-            id=str(uuid4()),
+            id=data.id,
             keyword=data.keyword,
             query_base=data.query_base,
             date_range=data.date_range,
@@ -93,3 +100,7 @@ class QueryModel():
 
         store_config(path=Config.GUI_QUERY_PATH, 
                      parameter=parameter)
+        
+        # TODO Remove in Future lol
+        self.query_ids.append(parameter.id)
+        print(parameter.id)

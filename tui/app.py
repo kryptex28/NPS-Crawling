@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import json
 import uuid
 from dataclasses import dataclass, field
@@ -27,6 +28,7 @@ from textual.widgets import (
     Switch,
     TabbedContent,
     TabPane,
+    RichLog
 )
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
@@ -39,8 +41,14 @@ from widgets.classification_widget import ClassificationWidget
 from widgets.result_widget import ResultWidget
 from widgets.database_widget import DatabaseWidget
 from screens.filing_types_screen import FilingTypesScreen
+from widgets.log_widget import (
+    LogWidget,
+    TextualLogHandler
+)
 
 from screens.config_screen import ConfigScreen
+
+from nps_crawling.db.db_adapter import DbAdapter
 
 
 
@@ -64,11 +72,13 @@ class CrawlerTuiApp(App):
     /* Reduce spacing between navigation bar and main content */
     #outer-layout {
         padding: 0;
+        height: 20fr;        /* fills remaining space after Header/Footer */
     }
 
-    #outer-layout > Container {
-        padding-bottom: 0;
-        margin-bottom: 0;
+    #nav-container {
+        height: 10%;       /* shrinks to exactly the nav bar's natural height */
+        padding: 0;
+        margin: 0;
     }
 
     /* ── Top layout ─────────────────────────────────────────────────── */
@@ -116,11 +126,13 @@ class CrawlerTuiApp(App):
         height: auto;
     }
     .grid-2 > Vertical {
-        width: 1fr;
-        margin-right: 1;
+        height: auto;
     }
     .grid-2 > Vertical:last-child {
-        margin-right: 0;
+        height: auto;
+    }
+    .grid-2 Select {
+        height: auto;
     }
 
     /* ── Date range ──────────────────────────────────────────────────── */
@@ -214,16 +226,24 @@ class CrawlerTuiApp(App):
             "nav-database": self.database_widget,
         }
 
+        for v in self.widget_map.values():
+            v.display = False
+
+        self.query_widget.display = True
+
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
 
         with Vertical(id="outer-layout"):
-            with Container():
+            with Container(id="nav-container"):
                 yield NavigationWidget()
             with Horizontal(id="main-layout"):
                 with Container(id="page-container"):
                     for v in self.widget_map.values():
                         yield v
+            with Container():
+                yield LogWidget(id="log-panel")
+
         yield Footer()
 
     @on(Button.Pressed, "#btn-config")
@@ -247,5 +267,21 @@ class CrawlerTuiApp(App):
             FilingTypesScreen([]),
         )
 
+    def on_mount(self) -> None:
+        rich_log = self.query_one("#log-output", RichLog)
+        handler = TextualLogHandler(rich_log)
+        handler.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+            datefmt="%H:%M:%S",
+        ))
+
+        # attach to your package's root logger so every sub-logger feeds in
+        pkg_logger = logging.getLogger("nps_crawling") 
+        pkg_logger.setLevel(logging.INFO)
+        pkg_logger.addHandler(handler)
+
+
 if __name__ == "__main__":
+    DbAdapter().ensure_table_exists()
     CrawlerTuiApp().run()

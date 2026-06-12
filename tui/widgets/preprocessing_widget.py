@@ -66,3 +66,4 @@ class PreprocessingWidget(Container):
         await worker.wait()
         self.app.notify("Preprocessing finished", title="Complete")
         button.disabled = False
+

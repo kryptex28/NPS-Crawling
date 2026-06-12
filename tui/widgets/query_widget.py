@@ -36,7 +36,7 @@ from constants import US_STATES
 
 from models.query_model import QueryModel
 from screens.filing_types_screen import FilingTypesScreen
-from data_package.QueryData import QueryData
+from data_package.query_data import QueryData
 
 class QueryWidget(Container):
 
@@ -131,6 +131,15 @@ class QueryWidget(Container):
     async def query_refresh(self):
         self._refresh_table()
 
+    @on(Button.Pressed, "#accept-queries-btn")
+    async def accept_queries(self):
+#        data: QueryData = QueryData(
+#            id="",
+#            keyword="asba",
+#        )
+#        self.model.accept_queries()
+        pass
+
     @on(Button.Pressed, "#btn-create")
     async def query_create(self):
         query_base: str = self.query_one("#inp-query-base", Input).value.strip()
@@ -218,8 +227,6 @@ class QueryWidget(Container):
             #self.model.delete_query(query_id)   # add this to QueryModel
         self._selected_ids.clear()
         self._refresh_table()
-
-
 
     def on_mount(self) -> None:
         table = self.query_one("#query-table", DataTable)

@@ -1,6 +1,13 @@
 from typing_extensions import Self
 
+from models.query_model import QueryModel
+
+from nps_crawling.config import Config
 from nps_crawling.crawler.utils import CrawlerPipeline
+from nps_crawling.crawler.pre_fetch_utils.sec_params import (
+    SecSearchParams,
+    get_search_params_from_id
+)
 
 class CrawlModel():
 
@@ -22,8 +29,15 @@ class CrawlModel():
             self._crawl = CrawlerPipeline()
         return self._crawl
 
-    def start_crawl(self, ids: list) -> bool:
-        self.crawl.crawler_workflow(search_parameter_files=ids)
+    def start_crawl(self) -> bool:
+        model = QueryModel()
+        parameters: list[str] = []
+
+        for id in model.get_query_ids():
+            path: str = get_search_params_from_id(Config.GUI_QUERY_PATH, id=id)
+            parameters.append(path)
+
+        self.crawl.crawler_workflow(search_parameter_files=parameters)
 
         return True
 
