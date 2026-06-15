@@ -3,6 +3,7 @@
 import subprocess
 from pathlib import Path
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,6 +32,47 @@ class Config:
     DATA_PATH = ROOT_DIR / "data"
     QUERY_PATH = ROOT_DIR / "query"
 
+    # Active Project
+    _active_project_file = ROOT_DIR / ".active_project"
+    ACTIVE_PROJECT: str | None = (
+        _active_project_file.read_text(encoding="utf-8").strip()
+        if _active_project_file.exists()
+        else None
+    )
+
+    # Load Active Project Configuration
+    ACTIVE_PROJECT_CONFIG: dict | None = None
+    if ACTIVE_PROJECT:
+        _project_file = ROOT_DIR / "projects" / f"{ACTIVE_PROJECT}.json"
+        if _project_file.exists():
+            try:
+                with open(_project_file, "r", encoding="utf-8") as _f:
+                    ACTIVE_PROJECT_CONFIG = json.load(_f)
+            except Exception:
+                pass
+
+    PROJECT_CATEGORIES: list[dict] = (
+        ACTIVE_PROJECT_CONFIG.get("categories", [])
+        if ACTIVE_PROJECT_CONFIG
+        else []
+    )
+
+    @classmethod
+    def get_classification_columns_sql(cls) -> str:
+        """Returns dynamically generated SQL column definitions for categories."""
+        type_mapping = {
+            "boolean": "BOOLEAN",
+            "float": "DOUBLE PRECISION",
+            "int": "INTEGER",
+            "integer": "INTEGER"
+        }
+        category_columns = []
+        for cat in cls.PROJECT_CATEGORIES:
+            col_name = cat["name"]
+            col_type = type_mapping.get(cat["type"].lower(), "BOOLEAN")
+            category_columns.append(f'"{col_name}" {col_type}')
+        return ",\n        ".join(category_columns)
+
     # ---------------------------------------------------------------------------
     # Local Mode
     # ---------------------------------------------------------------------------
@@ -47,7 +89,9 @@ class Config:
     # ---------------------------------------------------------------------------
 
     # Database Settings
-    DATABASE_TABLE_NAME: str = "nps_filings_final"
+    DATABASE_TABLE_NAME: str = (
+        f"{ACTIVE_PROJECT}_db" if ACTIVE_PROJECT else "default"
+    )
 
     # Define experiment name, preprocessing version and classification version.
     # For PREPROCESSING:
@@ -55,28 +99,31 @@ class Config:
     # If so, preprocessing will be skipped entirely.
     # If not, it will create it and save the preprocessed JSONs there with the
     # configurations set below.
-    PREPROCESSING_VERSION: str = "version_1"
+    PREPROCESSING_VERSION: str = "version_2"
     CLASSIFICATION_VERSION: str = "version_1"
 
     # Base directories
-    RAW_JSON_PATH_CRAWLER = DATA_PATH / "json_raw"
-    PROCESSED_BASE_PATH = DATA_PATH / "json_processed"
-    REJECTED_BASE_PATH = DATA_PATH / "json_rejected"
-    CLASSIFIED_BASE_PATH = DATA_PATH / "json_classified"
+    _proj_sub = ACTIVE_PROJECT if ACTIVE_PROJECT else "default"
+    RAW_JSON_PATH_CRAWLER = DATA_PATH / _proj_sub / "json_raw"
+    PROCESSED_BASE_PATH = DATA_PATH / _proj_sub / "json_processed"
+    REJECTED_BASE_PATH = DATA_PATH / _proj_sub / "json_rejected"
+    CLASSIFIED_BASE_PATH = DATA_PATH / _proj_sub / "json_classified"
 
     # Experiment-specific directories
     NPS_CONTEXT_JSON_PATH = PROCESSED_BASE_PATH / PREPROCESSING_VERSION
     NPS_REJECTED_JSON_PATH = REJECTED_BASE_PATH / PREPROCESSING_VERSION
     NPS_CLASSIFIED_JSON = CLASSIFIED_BASE_PATH / CLASSIFICATION_VERSION
 
-    # Create base directories (always needed)
-    DATA_PATH.mkdir(parents=True, exist_ok=True)
-    RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
-    (RAW_JSON_PATH_CRAWLER / "files").mkdir(parents=True, exist_ok=True)
-    (RAW_JSON_PATH_CRAWLER / "crawl_reports").mkdir(parents=True, exist_ok=True)
-    PROCESSED_BASE_PATH.mkdir(parents=True, exist_ok=True)
-    REJECTED_BASE_PATH.mkdir(parents=True, exist_ok=True)
-    CLASSIFIED_BASE_PATH.mkdir(parents=True, exist_ok=True)
+    # Create base directories (only if a project is loaded)
+    if ACTIVE_PROJECT:
+        DATA_PATH.mkdir(parents=True, exist_ok=True)
+        (DATA_PATH / _proj_sub).mkdir(parents=True, exist_ok=True)
+        RAW_JSON_PATH_CRAWLER.mkdir(parents=True, exist_ok=True)
+        (RAW_JSON_PATH_CRAWLER / "files").mkdir(parents=True, exist_ok=True)
+        (RAW_JSON_PATH_CRAWLER / "crawl_reports").mkdir(parents=True, exist_ok=True)
+        PROCESSED_BASE_PATH.mkdir(parents=True, exist_ok=True)
+        REJECTED_BASE_PATH.mkdir(parents=True, exist_ok=True)
+        CLASSIFIED_BASE_PATH.mkdir(parents=True, exist_ok=True)
     # Note: Version-specific dirs (NPS_CONTEXT_JSON_PATH, NPS_REJECTED_JSON_PATH,
     # NPS_CLASSIFIED_JSON) are created lazily by the respective pipeline constructors.
 
@@ -104,7 +151,7 @@ class Config:
     # Define Threshold for similarity search here. Context windows that fall below
     # this value will be filtered out. This means the higher you set this value, the
     # more strict the filtering will be, and more context windows will be rejected.
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.4
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.8
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler

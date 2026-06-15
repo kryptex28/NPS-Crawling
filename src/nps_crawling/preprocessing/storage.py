@@ -1,9 +1,12 @@
 """Storage pipeline to save processed context windows as JSON files."""
 
 import json
+import logging
 
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
+
+logger = logging.getLogger(__name__)
 
 
 class SaveToJSONPipeline(Config):
@@ -15,7 +18,8 @@ class SaveToJSONPipeline(Config):
 
         try:
             self.db = DbAdapter()
-        except Exception:
+        except Exception as e:
+            logger.warning("Database adapter could not be initialized. Database updates will be skipped. Error: %s", e)
             self.db = None
 
     def storage_workflow(self, records, source_filename, reject=False, update_db=True):
@@ -71,11 +75,11 @@ class SaveToJSONPipeline(Config):
                     self.db.upsert_preprocessing_result(
                         filing_id=filing_id,
                         version=version,
-                        nps_relevant=is_relevant,
+                        project_relevant=is_relevant,
                         path_to_preprocessed=path_str
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error("Failed to upsert preprocessing result for filing %s: %s", filing_id, e)
 
     def count_json_files(self):
         """Count processed JSON files."""

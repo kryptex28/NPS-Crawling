@@ -59,7 +59,7 @@ class DbAdapter:
             -- Extraction/Processing Metadata
             keywords TEXT[],
             blacklisted BOOLEAN DEFAULT FALSE,
-            nps_relevant BOOLEAN,
+            project_relevant BOOLEAN,
 
             -- File Paths
             path_to_raw VARCHAR,
@@ -72,36 +72,13 @@ class DbAdapter:
         );
         """)
         
+        cols_sql = Config.get_classification_columns_sql()
+        cols_sql_part = f"\n            {cols_sql},\n" if cols_sql else ""
         create_stmt_classifications = text(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}_classifications (
             id SERIAL PRIMARY KEY,
             filing_id VARCHAR REFERENCES {self.table_name}(id) ON DELETE CASCADE,
-            experiment_version VARCHAR NOT NULL,
-            
-            -- Main Categories
-            "KPI_CURRENT_VALUE" BOOLEAN,
-            "KPI_TREND" BOOLEAN,
-            "KPI_HISTORICAL_COMPARISON" BOOLEAN,
-            "BENCHMARK_COMPARISON_POSITIVE" BOOLEAN,
-            "BENCHMARK_COMPARISON_NEGATIVE" BOOLEAN,
-            "NPS_GOAL_REACHED" BOOLEAN,
-            "TARGET_OUTLOOK" BOOLEAN,
-            "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN,
-            "CUSTOMER_CASE_EVIDENCE" BOOLEAN,
-            "NPS_SERVICE_PROVIDER" BOOLEAN,
-            "METHODOLOGY_DEFINITION" BOOLEAN,
-            "QUALITATIVE_ONLY" BOOLEAN,
-            "OTHER" BOOLEAN,
-
-            -- Category Helper Columns
-            has_numeric_nps BOOLEAN,
-            nps_value_fix DOUBLE PRECISION,
-            nps_competition_industry DOUBLE PRECISION,
-            nps_value_over DOUBLE PRECISION,
-            nps_value_below DOUBLE PRECISION,
-            nps_goal_value DOUBLE PRECISION,
-            nps_goal_change DOUBLE PRECISION,
-
+            experiment_version VARCHAR NOT NULL,{cols_sql_part}
             classified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             UNIQUE (filing_id, experiment_version)
         );
@@ -112,7 +89,7 @@ class DbAdapter:
             filing_id VARCHAR REFERENCES {self.table_name}(id) ON DELETE CASCADE,
             preprocessing_version VARCHAR NOT NULL,
             
-            nps_relevant BOOLEAN NOT NULL,
+            project_relevant BOOLEAN NOT NULL,
             path_to_preprocessed VARCHAR,
             
             processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -123,8 +100,41 @@ class DbAdapter:
         with self.engine.begin() as conn:
             conn.execute(create_stmt)
             conn.execute(create_stmt_preprocessing)
-            conn.execute(create_stmt_classifications)
-        print(f"Tabellen '{self.table_name}', '{self.table_name}_preprocessing' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
+            if Config.ACTIVE_PROJECT:
+                conn.execute(create_stmt_classifications)
+                
+                # Check for any new categories in JSON that are not yet in the DB table
+                existing_cols_stmt = text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = :table_name"
+                )
+                class_table = f"{self.table_name}_classifications".lower()
+                existing_cols = {
+                    row["column_name"]
+                    for row in conn.execute(existing_cols_stmt, {"table_name": class_table}).mappings().all()
+                }
+                
+                type_mapping = {
+                    "boolean": "BOOLEAN",
+                    "float": "DOUBLE PRECISION",
+                    "int": "INTEGER",
+                    "integer": "INTEGER"
+                }
+                
+                for cat in Config.PROJECT_CATEGORIES:
+                    col_name = cat["name"]
+                    if col_name not in existing_cols:
+                        col_type = type_mapping.get(cat["type"].lower(), "BOOLEAN")
+                        alter_stmt = text(
+                            f'ALTER TABLE {self.table_name}_classifications '
+                            f'ADD COLUMN "{col_name}" {col_type};'
+                        )
+                        conn.execute(alter_stmt)
+                        print(f"Spalte '{col_name}' ({col_type}) dynamisch zur Tabelle '{self.table_name}_classifications' hinzugefuegt.", flush=True)
+                        
+                print(f"Tabellen '{self.table_name}', '{self.table_name}_preprocessing' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
+            else:
+                print(f"Tabellen '{self.table_name}' und '{self.table_name}_preprocessing' gecheckt/erstellt (Klassifikations-Tabelle uebersprungen, da kein aktives Projekt geladen).", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """
@@ -335,7 +345,7 @@ class DbAdapter:
         """
         return self._db.get_classifications(filing_id)
 
-    def upsert_preprocessing_result(self, filing_id: str, version: str, nps_relevant: bool, path_to_preprocessed: str | None = None) -> None:
+    def upsert_preprocessing_result(self, filing_id: str, version: str, project_relevant: bool, path_to_preprocessed: str | None = None) -> None:
         """
         Upserts preprocessing results for a specific filing and experiment version.
         This updates both the versioned preprocessing table and the main filings table.
@@ -343,7 +353,7 @@ class DbAdapter:
         Args:
             filing_id (str): The unique identifier for the filing.
             version (str): The preprocessing experiment version.
-            nps_relevant (bool): Whether the filing is considered relevant.
+            project_relevant (bool): Whether the filing is considered relevant.
             path_to_preprocessed (str | None): Path to the preprocessed JSON file.
         """
-        self._db.upsert_preprocessing_result(filing_id, version, nps_relevant, path_to_preprocessed)
+        self._db.upsert_preprocessing_result(filing_id, version, project_relevant, path_to_preprocessed)

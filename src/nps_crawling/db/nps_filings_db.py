@@ -33,7 +33,7 @@ class NpsFilingsDB:
         "keywords",
         "last_crawled",
         "blacklisted",
-        "nps_relevant",
+        "project_relevant",
         "path_to_raw",
         "path_to_preprocessed",
         "path_to_classified",
@@ -62,7 +62,7 @@ class NpsFilingsDB:
         film_num: list[str] | None = None,
         keywords: list[str] | None = None,
         blacklisted: bool = False,
-        nps_relevant: bool | None = None,
+        project_relevant: bool | None = None,
         meta: dict[str, Any] | None = None,
         path_to_raw: str | None = None,
         path_to_preprocessed: str | None = None,
@@ -74,7 +74,7 @@ class NpsFilingsDB:
         INSERT INTO {self.TABLE} (
           id, ciks, ticker, period_ending, display_names, root_forms, file_date, form, adsh,
           file_type, file_description, film_num, keywords,
-          blacklisted, nps_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url
+          blacklisted, project_relevant, path_to_raw, path_to_preprocessed, path_to_classified, url
         )
         VALUES (
           :id,
@@ -87,7 +87,7 @@ class NpsFilingsDB:
           :file_type, :file_description,
           COALESCE(CAST(:film_num AS text[]), CAST(ARRAY[] AS text[])),
           COALESCE(CAST(:keywords AS text[]), CAST(ARRAY[] AS text[])),
-          :blacklisted, :nps_relevant,
+          :blacklisted, :project_relevant,
           :path_to_raw, :path_to_preprocessed, :path_to_classified, :url
         )
         ON CONFLICT (id) DO UPDATE
@@ -97,8 +97,8 @@ class NpsFilingsDB:
           -- "Sticky" booleans: once TRUE, remain TRUE.
           blacklisted      = {self.TABLE}.blacklisted OR EXCLUDED.blacklisted,
           
-          -- nps_relevant is no longer sticky
-          nps_relevant     = COALESCE(EXCLUDED.nps_relevant, {self.TABLE}.nps_relevant),
+          -- project_relevant is no longer sticky
+          project_relevant = COALESCE(EXCLUDED.project_relevant, {self.TABLE}.project_relevant),
 
           -- Only overwrite paths when a new non-NULL value is provided.
           path_to_raw              = COALESCE(EXCLUDED.path_to_raw, {self.TABLE}.path_to_raw),
@@ -141,7 +141,7 @@ class NpsFilingsDB:
                     "film_num": film_num,
                     "keywords": keywords,
                     "blacklisted": blacklisted,
-                    "nps_relevant": nps_relevant,
+                    "project_relevant": project_relevant,
                     "path_to_raw": path_to_raw,
                     "path_to_preprocessed": path_to_preprocessed,
                     "path_to_classified": path_to_classified,
@@ -223,9 +223,9 @@ class NpsFilingsDB:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
 
-    def nps_relevant(self, id: str) -> bool:
-        """Checks if a filing is marked as relevant for NPS calculations."""
-        stmt = text(f"SELECT nps_relevant FROM {self.TABLE} WHERE id = :id;")
+    def project_relevant(self, id: str) -> bool:
+        """Checks if a filing is marked as relevant for the project calculations."""
+        stmt = text(f"SELECT project_relevant FROM {self.TABLE} WHERE id = :id;")
         with self.engine.connect() as conn:
             val = conn.execute(stmt, {"id": id}).scalar_one_or_none()
             return bool(val) if val is not None else False
@@ -304,18 +304,11 @@ class NpsFilingsDB:
 
     def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
         """
-        Upserts classification results for a filing into nps_classification_results.
+        Upserts classification results for a filing into project_classification_results.
         Also updates the main table with the path to the classified file.
         Only fields present in the table are allowed.
         """
-        allowed_cols = {
-            "KPI_CURRENT_VALUE", "KPI_TREND", "KPI_HISTORICAL_COMPARISON",
-            "BENCHMARK_COMPARISON_POSITIVE", "BENCHMARK_COMPARISON_NEGATIVE", "NPS_GOAL_REACHED",
-            "TARGET_OUTLOOK", "MGMT_COMPENSATION_GOVERNANCE", "CUSTOMER_CASE_EVIDENCE",
-            "NPS_SERVICE_PROVIDER", "METHODOLOGY_DEFINITION", "QUALITATIVE_ONLY", "OTHER",
-            "has_numeric_nps", "nps_value_fix", "nps_competition_industry",
-            "nps_value_over", "nps_value_below", "nps_goal_value", "nps_goal_change"
-        }
+        allowed_cols = {cat["name"] for cat in Config.PROJECT_CATEGORIES}
         
         # Filter kwargs to only allowed columns
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_cols}
@@ -376,18 +369,18 @@ class NpsFilingsDB:
             rows = conn.execute(stmt, {"filing_id": filing_id}).mappings().all()
             return [dict(row) for row in rows]
 
-    def upsert_preprocessing_result(self, filing_id: str, version: str, nps_relevant: bool, path_to_preprocessed: str | None = None) -> None:
+    def upsert_preprocessing_result(self, filing_id: str, version: str, project_relevant: bool, path_to_preprocessed: str | None = None) -> None:
         """
         Upserts preprocessing results (relevance and path) for a filing and a specific version into the preprocessing table.
         Also updates the main table with the latest state.
         """
         # 1. Upsert into the versioned table
         stmt_versioned = text(f"""
-        INSERT INTO {self.TABLE}_preprocessing (filing_id, preprocessing_version, nps_relevant, path_to_preprocessed)
-        VALUES (:filing_id, :version, :nps_relevant, :path_to_preprocessed)
+        INSERT INTO {self.TABLE}_preprocessing (filing_id, preprocessing_version, project_relevant, path_to_preprocessed)
+        VALUES (:filing_id, :version, :project_relevant, :path_to_preprocessed)
         ON CONFLICT (filing_id, preprocessing_version) DO UPDATE
         SET 
-            nps_relevant = EXCLUDED.nps_relevant,
+            project_relevant = EXCLUDED.project_relevant,
             path_to_preprocessed = EXCLUDED.path_to_preprocessed,
             processed_at = now();
         """)
@@ -396,7 +389,7 @@ class NpsFilingsDB:
         stmt_main = text(f"""
         UPDATE {self.TABLE}
         SET 
-            nps_relevant = :nps_relevant,
+            project_relevant = :project_relevant,
             path_to_preprocessed = :path_to_preprocessed,
             last_crawled = now()
         WHERE id = :filing_id;
@@ -406,11 +399,11 @@ class NpsFilingsDB:
             conn.execute(stmt_versioned, {
                 "filing_id": filing_id,
                 "version": version,
-                "nps_relevant": nps_relevant,
+                "project_relevant": project_relevant,
                 "path_to_preprocessed": path_to_preprocessed
             })
             conn.execute(stmt_main, {
                 "filing_id": filing_id,
-                "nps_relevant": nps_relevant,
+                "project_relevant": project_relevant,
                 "path_to_preprocessed": path_to_preprocessed
             })

@@ -1,4 +1,4 @@
-"""Script to reset the nps_relevant flag for all filings in the database."""
+"""Script to reset the project_relevant flag for all filings in the database."""
 
 import os
 import sys
@@ -17,13 +17,13 @@ def main() -> None:
         print(f"Fehler bei der Datenbankverbindung: {e}")
         return
 
-    print("Setze nps_relevant für alle Filings auf NULL...")
+    print("Setze project_relevant für alle Filings auf NULL...")
     try:
         with db.engine.begin() as conn:
 
-            stmt_main = text(f"UPDATE {db.table_name} SET nps_relevant = NULL;")
+            stmt_main = text(f"UPDATE {db.table_name} SET project_relevant = NULL;")
             res_main = conn.execute(stmt_main)
-            print(f"  -> Haupttabelle ({db.table_name}): {res_main.rowcount} Zeilen auf nps_relevant = NULL gesetzt.")
+            print(f"  -> Haupttabelle ({db.table_name}): {res_main.rowcount} Zeilen auf project_relevant = NULL gesetzt.")
 
             
         print("Fertig!")

@@ -106,7 +106,7 @@ class SaveToJSONPipeline(Config):
                             film_num=filing.get("film_num", []),
                             keywords=keywords_list,
                             blacklisted=False,
-                            nps_relevant=None,
+                            project_relevant=None,
                             path_to_raw=None,  # Will be set once batched to disk
                             url=url,
                         )

@@ -10,7 +10,7 @@ from sqlalchemy import text
 
 def main() -> None:
     """
-    Connects to the database and retrieves up to 5 filings with nps_relevant=NULL 
+    Connects to the database and retrieves up to 5 filings with project_relevant=NULL 
     per keyword, printing their path_to_raw.
     """
     try:
@@ -23,8 +23,8 @@ def main() -> None:
     
     try:
         with db.engine.connect() as conn:
-            # Hole alle Filings, wo nps_relevant NULL ist und keywords existieren
-            stmt = text(f"SELECT path_to_raw, keywords FROM {db.table_name} WHERE nps_relevant IS NULL AND keywords IS NOT NULL")
+            # Hole alle Filings, wo project_relevant NULL ist und keywords existieren
+            stmt = text(f"SELECT path_to_raw, keywords FROM {db.table_name} WHERE project_relevant IS NULL AND keywords IS NOT NULL")
             rows = conn.execute(stmt).fetchall()
             
             for row in rows:
@@ -43,7 +43,7 @@ def main() -> None:
                         
         # Ausgabe der Ergebnisse
         print("=" * 60)
-        print("Filings mit nps_relevant = NULL (Maximal 5 pro Keyword)")
+        print("Filings mit project_relevant = NULL (Maximal 5 pro Keyword)")
         print("=" * 60)
         
         if not keyword_filings:

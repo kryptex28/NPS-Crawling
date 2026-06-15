@@ -92,6 +92,60 @@ def main(argv=None):
     from nps_crawling.results import ResultsPipeline
 
     try:
+        if args.command == "load":
+            projects_dir = Config.ROOT_DIR / "projects"
+            if not projects_dir.exists():
+                projects_dir.mkdir(parents=True, exist_ok=True)
+            
+            available_projects = [f.stem for f in projects_dir.glob("*.json")]
+            
+            if not args.project_name:
+                if not available_projects:
+                    print("Keine Projekte im Ordner 'projects' gefunden. Bitte erstelle eine JSON-Datei (z.B. projects/mein_projekt.json).")
+                    return
+                print("Verfuegbare Projekte:")
+                for proj in available_projects:
+                    print(f" - {proj}")
+                print("\nBitte lade ein Projekt mit: nps-crawling load <projekt_name>")
+                return
+
+            project_file = projects_dir / f"{args.project_name}.json"
+            if not project_file.exists():
+                print(f"Fehler: Projekt-Datei '{project_file.name}' existiert nicht in '{projects_dir}'.")
+                if available_projects:
+                    print("Verfuegbare Projekte:")
+                    for proj in available_projects:
+                        print(f" - {proj}")
+                sys.exit(1)
+
+            # Read the JSON file to verify it's valid
+            try:
+                import json
+                with open(project_file, "r", encoding="utf-8") as f:
+                    project_data = json.load(f)
+            except Exception as e:
+                print(f"Fehler beim Lesen der Projekt-Datei '{project_file.name}': {e}")
+                sys.exit(1)
+
+            if not project_data.get("categories"):
+                print(f"Fehler beim Laden des Projekts '{args.project_name}': Das Projekt hat keine Kategorien.")
+                sys.exit(1)
+
+            # Write active project state
+            active_file = Config.ROOT_DIR / ".active_project"
+            active_file.write_text(args.project_name, encoding="utf-8")
+            print(f"Projekt '{args.project_name}' erfolgreich geladen.")
+            return
+
+        if args.command in ["crawl", "process", "classify", "display"]:
+            if not Config.ACTIVE_PROJECT:
+                print("Bitte mit nps-crawling load ein projekt laden.")
+                sys.exit(1)
+            if not Config.ACTIVE_PROJECT_CONFIG:
+                print(f"Fehler: Die Konfigurationsdatei fuer das aktive Projekt '{Config.ACTIVE_PROJECT}' wurde nicht gefunden.")
+                print("Bitte lade ein existierendes Projekt mit: nps-crawling load <projekt_name>")
+                sys.exit(1)
+
         if Config.LOCAL_MODE:
             _ensure_docker_db_running()
 
@@ -232,6 +286,17 @@ def create_parser() -> argparse.ArgumentParser:
         "display",
         parents=[parent],
         description="Displaying of Results.",
+    )
+
+    load_parser = subparsers.add_parser(
+        "load",
+        parents=[parent],
+        description="Load a project.",
+    )
+    load_parser.add_argument(
+        "project_name",
+        nargs="?",
+        help="Name of the project to load (corresponds to a JSON file in the projects/ directory)",
     )
 
     return parser

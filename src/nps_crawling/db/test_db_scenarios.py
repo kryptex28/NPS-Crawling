@@ -2,11 +2,28 @@ import os
 import sys
 from pathlib import Path
 
-from nps_crawling.db.db_adapter import DbAdapter
-
 # Ensure the src directory is in the Python path so module imports work
 src_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(src_dir))
+
+# Backup and mock active project for testing using the first available project config file
+active_file = src_dir.parent / ".active_project"
+temp_backup = src_dir.parent / ".active_project.backup"
+
+if active_file.exists():
+    try:
+        active_file.rename(temp_backup)
+    except Exception:
+        pass
+
+# Find first project config to use as mock, fallback to "example_project" if none found
+projects_dir = src_dir.parent / "projects"
+project_files = list(projects_dir.glob("*.json"))
+mock_project = project_files[0].stem if project_files else "example_project"
+
+active_file.write_text(mock_project, encoding="utf-8")
+
+from nps_crawling.db.db_adapter import DbAdapter
 
 if 'POSTGRES_ENGINE' not in os.environ:
     os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
@@ -28,7 +45,7 @@ def test_scenarios() -> None:
         adapter.ensure_table_exists()
     except Exception as e:
         print(f"Failed to connect to DB or create tables: {e}")
-        return
+        sys.exit(1)
 
     test_id = "test_scenario_comprehensive"
     print(f"\n======== Testing Database Scenarios for ID: '{test_id}' ========")
@@ -46,7 +63,7 @@ def test_scenarios() -> None:
         adapter.add_filing(
             filing_id=test_id,
             form="10-K",
-            nps_relevant=True,
+            project_relevant=True,
             display_names=["Scenario Test Inc."],
         )
         adapter.add_keyword(test_id, "Initial Keyword")
@@ -75,26 +92,26 @@ def test_scenarios() -> None:
     adapter.upsert_preprocessing_result(
         filing_id=test_id,
         version="prep_v1",
-        nps_relevant=True,
+        project_relevant=True,
         path_to_preprocessed="/dummy/path/v1.json"
     )
     print("Upserted preprocessing result for 'prep_v1'")
     
     filing_prep = adapter.get_filing(test_id)
-    print(f"Verification (Main Table) - nps_relevant: {filing_prep.get('nps_relevant')} (Should be True)")
+    print(f"Verification (Main Table) - project_relevant: {filing_prep.get('project_relevant')} (Should be True)")
     print(f"Verification (Main Table) - path_to_preprocessed: {filing_prep.get('path_to_preprocessed')} (Should be /dummy/path/v1.json)")
     
     print("\n--- Scenario 1.7: Preprocessing Version 2 (Overwrite Main Table) ---")
     adapter.upsert_preprocessing_result(
         filing_id=test_id,
         version="prep_v2",
-        nps_relevant=False,
+        project_relevant=False,
         path_to_preprocessed=None
     )
     print("Upserted preprocessing result for 'prep_v2'")
     
     filing_prep_v2 = adapter.get_filing(test_id)
-    print(f"Verification (Main Table) - nps_relevant: {filing_prep_v2.get('nps_relevant')} (Should be False)")
+    print(f"Verification (Main Table) - project_relevant: {filing_prep_v2.get('project_relevant')} (Should be False)")
     print(f"Verification (Main Table) - path_to_preprocessed: {filing_prep_v2.get('path_to_preprocessed')} (Should be None)")
     
     # Check versioned table using raw SQL as we don't have a specific get_preprocessing method
@@ -165,6 +182,33 @@ def test_scenarios() -> None:
     
     print(f"Verification - Total Classifications found: {len(classifs_updated)} (Should STILL be 2, no new row)")
     print(f"Verification (v1 updated) - KPI_CURRENT_VALUE: {v1_data_updated.get('KPI_CURRENT_VALUE')} (Should be False)")
+    print("\n--- Scenario 4.5: Dynamic Column Addition ---")
+    from nps_crawling.config import Config
+    
+    # Simulate adding a category in JSON config
+    new_cat = {"name": "DYNAMIC_TEST_COLUMN", "type": "boolean"}
+    Config.PROJECT_CATEGORIES.append(new_cat)
+    print("Simulated adding category 'DYNAMIC_TEST_COLUMN' to Config.PROJECT_CATEGORIES.")
+    
+    # Rerun ensure_table_exists to trigger ALTER TABLE
+    adapter.ensure_table_exists()
+    
+    # Verify we can upsert with this new column
+    adapter.upsert_classification(
+        filing_id=test_id,
+        version="dynamic_v1",
+        DYNAMIC_TEST_COLUMN=True
+    )
+    print("Upserted classification with dynamic column 'DYNAMIC_TEST_COLUMN'=True successful.")
+    
+    # Verify retrieval
+    classifs_dyn = adapter.get_classifications(test_id)
+    dyn_data = next((c for c in classifs_dyn if c["experiment_version"] == "dynamic_v1"), None)
+    print(f"Verification - Total Classifications found: {len(classifs_dyn)} (Should be 3)")
+    print(f"Verification - DYNAMIC_TEST_COLUMN value retrieved: {dyn_data.get('DYNAMIC_TEST_COLUMN')} (Should be True)")
+
+    # Clean up from config to not affect other tests in same session
+    Config.PROJECT_CATEGORIES.remove(new_cat)
 
 
     # --- SCENARIO 5: Delete Cascade ---
@@ -183,4 +227,16 @@ def test_scenarios() -> None:
 
 
 if __name__ == "__main__":
-    test_scenarios()
+    try:
+        test_scenarios()
+    finally:
+        if active_file.exists():
+            try:
+                active_file.unlink()
+            except Exception:
+                pass
+        if temp_backup.exists():
+            try:
+                temp_backup.rename(active_file)
+            except Exception:
+                pass

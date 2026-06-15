@@ -8,7 +8,7 @@ from nps_crawling.db.db_adapter import DbAdapter
 def export_to_excel(filepath: str = "nps_filings_export.xlsx", only_relevant: bool = True) -> None:
     """
     Exports the entire database table to an Excel (.xlsx) file using pandas.
-    If only_relevant is True, only rows where nps_relevant is True are exported.
+    If only_relevant is True, only rows where project_relevant is True are exported.
     Requires 'openpyxl' to write the file.
     """
     try:
@@ -22,7 +22,7 @@ def export_to_excel(filepath: str = "nps_filings_export.xlsx", only_relevant: bo
     try:
         # Construct query to fetch all data
         if only_relevant:
-            query = f"SELECT * FROM {db.table_name} WHERE nps_relevant = True"
+            query = f"SELECT * FROM {db.table_name} WHERE project_relevant = True"
         else:
             query = f"SELECT * FROM {db.table_name}"
 
