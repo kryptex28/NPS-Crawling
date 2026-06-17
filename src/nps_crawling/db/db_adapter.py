@@ -37,7 +37,7 @@ class DbAdapter:
         self._db = NpsFilingsDB(self.engine)
         self.table_name = self._db.TABLE
 
-    def ensure_table_exists(self) -> None:
+    def ensure_table_exists(self, include_classifications: bool = False) -> None:
         """Erstellt die Tabelle falls sie noch nicht existiert (CREATE TABLE IF NOT EXISTS)."""
         create_stmt = text(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name} (
@@ -100,7 +100,7 @@ class DbAdapter:
         with self.engine.begin() as conn:
             conn.execute(create_stmt)
             conn.execute(create_stmt_preprocessing)
-            if Config.ACTIVE_PROJECT:
+            if include_classifications and Config.ACTIVE_PROJECT:
                 conn.execute(create_stmt_classifications)
                 
                 # Check for any new categories in JSON that are not yet in the DB table
@@ -134,7 +134,7 @@ class DbAdapter:
                         
                 print(f"Tabellen '{self.table_name}', '{self.table_name}_preprocessing' und '{self.table_name}_classifications' gecheckt/erstellt.", flush=True)
             else:
-                print(f"Tabellen '{self.table_name}' und '{self.table_name}_preprocessing' gecheckt/erstellt (Klassifikations-Tabelle uebersprungen, da kein aktives Projekt geladen).", flush=True)
+                print(f"Tabellen '{self.table_name}' und '{self.table_name}_preprocessing' gecheckt/erstellt (Klassifikations-Tabelle uebersprungen).", flush=True)
 
     def add_filing(self, filing_id: str, **kwargs) -> None:
         """

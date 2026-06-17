@@ -149,9 +149,8 @@ def main(argv=None):
         if Config.LOCAL_MODE:
             _ensure_docker_db_running()
 
-        DbAdapter().ensure_table_exists()
-        
         if args.command == "crawl":
+            DbAdapter().ensure_table_exists(include_classifications=False)
             crawler = CrawlerPipeline()
             crawler.crawler_workflow(dry_run=args.dry_run, 
                                      db_only=args.db_only, 
@@ -167,6 +166,7 @@ def main(argv=None):
                     f"data at {processed_dir} — skipping preprocessing",
                 )
             else:
+                DbAdapter().ensure_table_exists(include_classifications=False)
                 pre_processing = PreProcessingPipeline()
                 pre_processing.pre_processing_workflow()
         elif args.command == "classify":
@@ -184,9 +184,11 @@ def main(argv=None):
                     f"data at {classified_dir} — skipping classification",
                 )
             else:
+                DbAdapter().ensure_table_exists(include_classifications=True)
                 classification = ClassificationPipeline()
                 classification.classification_workflow()
         elif args.command == "display":
+            DbAdapter().ensure_table_exists(include_classifications=False)
             results = ResultsPipeline()
             results.results_workflow()
 
