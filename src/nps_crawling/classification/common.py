@@ -1,5 +1,20 @@
 from enum import Enum
 from pathlib import Path
+import re
+
+
+def classification_config_basename(name: str, *, max_length: int = 200) -> str:
+    """Turn a category or model label into a single path segment / filename stem (no extension).
+
+    Removes characters that are invalid or awkward on common filesystems.
+    """
+    s = str(name).replace("\\", "_").replace("/", "_")
+    for ch in ':*?"<>|':
+        s = s.replace(ch, "_")
+    s = re.sub(r"\s+", " ", s).strip()
+    if not s:
+        s = "unnamed"
+    return s[:max_length]
 
 
 def stable_serialize(obj):
@@ -18,6 +33,7 @@ def stable_serialize(obj):
     if hasattr(obj, "__dict__"):
         return stable_serialize({k: v for k, v in vars(obj).items() if not k.startswith("_")})
     return obj
+
 
 def make_hashable(obj):
     """Convert unhashable types to hashable equivalents."""

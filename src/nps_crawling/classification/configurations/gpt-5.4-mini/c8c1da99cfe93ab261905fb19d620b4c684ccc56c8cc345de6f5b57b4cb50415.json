@@ -1,0 +1,6 @@
+{
+    "class_name": "OpenAIModel",
+    "model_name": "gpt-5.4-mini",
+    "model_input": "category.prompt_base\n\nLabels (one JSON field per label below):\n - prop1.name: prop1.description\n - prop2.name: prop2.description\n\nOutput format \u2014 types show the JSON type for each field; return one JSON object with exactly these keys:\n{\n  \"prop1.name\": \"boolean\",\n  \"prop2.name\": \"boolean\"\n}\n\nReturn valid JSON only: a single object with every key above. Use true/false for boolean fields. No markdown fences, no commentary.",
+    "kwargs": {}
+}

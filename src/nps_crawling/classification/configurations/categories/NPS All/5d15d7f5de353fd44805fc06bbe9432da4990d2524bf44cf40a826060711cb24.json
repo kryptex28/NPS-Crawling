@@ -1,0 +1,447 @@
+{
+    "class_name": "ClassificationCategory",
+    "name": "NPS All",
+    "properties": [
+        {
+            "description": "The text reports a specific NPS value.",
+            "name": "KPI_CURRENT_VALUE",
+            "type": "boolean"
+        },
+        {
+            "description": "The text describes change over time.",
+            "name": "KPI_TREND",
+            "type": "boolean"
+        },
+        {
+            "description": "The text explicitly compares NPS against a previous period.",
+            "name": "KPI_HISTORICAL_COMPARISON",
+            "type": "boolean"
+        },
+        {
+            "description": "The text expresses a future goal, target, ambition, forecast, or expected future NPS.",
+            "name": "TARGET_OUTLOOK",
+            "type": "boolean"
+        },
+        {
+            "description": "The text states that an NPS target or objective has been met or exceeded.",
+            "name": "NPS_GOAL_REACHED",
+            "type": "boolean"
+        },
+        {
+            "description": "The text explains what NPS is, how it is calculated, or what it measures.",
+            "name": "METHODOLOGY_DEFINITION",
+            "type": "boolean"
+        },
+        {
+            "description": "NPS is mentioned meaningfully but none of the other labels apply.",
+            "name": "QUALITATIVE_ONLY",
+            "type": "boolean"
+        },
+        {
+            "description": "Direct NPS value.",
+            "name": "nps_value_fix",
+            "type": "float"
+        },
+        {
+            "description": "Industry benchmark or competitor NPS value.",
+            "name": "nps_competition_industry",
+            "type": "float"
+        },
+        {
+            "description": "Threshold value associated with above, over, greater than, more than, or at least.",
+            "name": "nps_value_over",
+            "type": "float"
+        },
+        {
+            "description": "Threshold value associated with below, under, less than, or at most.",
+            "name": "nps_value_below",
+            "type": "float"
+        },
+        {
+            "description": "Explicit NPS target value, only if value is at least 20.",
+            "name": "nps_goal_value",
+            "type": "float"
+        },
+        {
+            "description": "Planned improvement amount such as improve by 10, increase by 5, or raise by 7.",
+            "name": "nps_goal_change",
+            "type": "float"
+        },
+        {
+            "description": "True if the text contains at least one explicit numeric NPS value.",
+            "name": "has_numeric_nps",
+            "type": "boolean"
+        }
+    ],
+    "prompt_base": "You are an expert at analyzing text to identify and extract information about Net Promoter Score (NPS). NPS is a widely used metric that measures customer loyalty and satisfaction by asking customers how likely they are to recommend a product or service to others. Your task is to read the provided text and determine whether it contains specific information related to NPS, as defined by the following properties:",
+    "csv_path": "train\\ground_truth_final.csv",
+    "num_examples": 6,
+    "examples": [
+        {
+            "answer": [
+                {
+                    "column_name": "KPI_CURRENT_VALUE",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_TREND",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_HISTORICAL_COMPARISON",
+                    "value": false
+                },
+                {
+                    "column_name": "TARGET_OUTLOOK",
+                    "value": false
+                },
+                {
+                    "column_name": "NPS_GOAL_REACHED",
+                    "value": false
+                },
+                {
+                    "column_name": "METHODOLOGY_DEFINITION",
+                    "value": false
+                },
+                {
+                    "column_name": "QUALITATIVE_ONLY",
+                    "value": true
+                },
+                {
+                    "column_name": "nps_value_fix",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_competition_industry",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_over",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_below",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_value",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_change",
+                    "value": null
+                },
+                {
+                    "column_name": "has_numeric_nps",
+                    "value": false
+                }
+            ],
+            "text": "$ millions +30% YoY Mobile Deposits 18% Digital Sales 26% 12% of non-mortgage loan applications of new retail deposit accounts vs. 16% 4Q\u201920 $50mm $15.5mm vs. $37mm 4Q\u201920 Expanding Digital Capabilities of consumer deposits via mobile app Mobile App Rating Apple Store 4.2 stars Google Store 4.4 stars +35% Personal Banking \u2013 Private Wealth Management 35 (1) Includes AUM and AUA; (2) American Customer Satisfaction Index \u201cScore.\u201d Source: Market Strategies International; (3) Source: 2020 Forrester Net Promoter Benchmarks Study Customer Assets Managed Assets (AUM): $12.2B Non-Managed Assets (AUA): $4.9B Composition as of 12/31/21. Personal Trust 21% Investment Advisory 36% Non-Managed AUA 29% IRAs 6% Brokerage 4% Other 4% Institutional Banking \u2013 Fund Services & Institutional Custody 36 Assets Under Administration +25% YoY Best Interval Fund Administrator (1) Best Administrator \u2013 Technology (2) Fund Services \u2013 Registered Funds & Alternative Investments Institutional Custody $345B $405B $419B $336B Provides services for 1,700 funds, including registered and alternative investment funds, PE funds, real"
+        },
+        {
+            "answer": [
+                {
+                    "column_name": "KPI_CURRENT_VALUE",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_TREND",
+                    "value": true
+                },
+                {
+                    "column_name": "KPI_HISTORICAL_COMPARISON",
+                    "value": false
+                },
+                {
+                    "column_name": "TARGET_OUTLOOK",
+                    "value": false
+                },
+                {
+                    "column_name": "NPS_GOAL_REACHED",
+                    "value": false
+                },
+                {
+                    "column_name": "METHODOLOGY_DEFINITION",
+                    "value": false
+                },
+                {
+                    "column_name": "QUALITATIVE_ONLY",
+                    "value": false
+                },
+                {
+                    "column_name": "nps_value_fix",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_competition_industry",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_over",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_below",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_value",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_change",
+                    "value": null
+                },
+                {
+                    "column_name": "has_numeric_nps",
+                    "value": false
+                }
+            ],
+            "text": "\u201cWe remain committed to product development and have a robust launch pipeline planned throughout 2021. Additionally, our carbon neutral and carbon negative products are increasingly being written into specifications as major companies make good on their carbon reduction commitments. And we are winning in the dealer network as evidenced by the consistent increase in our Net Promoter Score SM since the third quarter of 2020.\u201d \u201cWe are encouraged by the positive indicators we are seeing in many of our market verticals for an eventual economic recovery. Orders and overall customer activity increased notably from last quarter making us optimistic on improved performance in the second half of the calendar year,\u201d Hendrix concluded. \u201cThe actions we have taken to reduce our cost structure, strengthen our balance sheet and improve cash flows have created significant earnings power for Interface as our markets continue to recover."
+        },
+        {
+            "answer": [
+                {
+                    "column_name": "KPI_CURRENT_VALUE",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_TREND",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_HISTORICAL_COMPARISON",
+                    "value": false
+                },
+                {
+                    "column_name": "TARGET_OUTLOOK",
+                    "value": false
+                },
+                {
+                    "column_name": "NPS_GOAL_REACHED",
+                    "value": false
+                },
+                {
+                    "column_name": "METHODOLOGY_DEFINITION",
+                    "value": true
+                },
+                {
+                    "column_name": "QUALITATIVE_ONLY",
+                    "value": false
+                },
+                {
+                    "column_name": "nps_value_fix",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_competition_industry",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_over",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_below",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_value",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_change",
+                    "value": null
+                },
+                {
+                    "column_name": "has_numeric_nps",
+                    "value": false
+                }
+            ],
+            "text": "Revenue growth muted in 2024 due to exceptional SBIC and swap fee income recognized in 2023. Represents data from the 2024 employee engagement survey. Net promoter score assesses likelihood to recommend on an 11\u2010point scale, where detractors (scores 0\u20106) are subtracted from promoters (scores 9\u201010), while passives (scores 7\u20108) are not considered. See appendix for additional information on the source of the net promoter score. Represents data from the 2024 survey."
+        },
+        {
+            "answer": [
+                {
+                    "column_name": "KPI_CURRENT_VALUE",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_TREND",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_HISTORICAL_COMPARISON",
+                    "value": false
+                },
+                {
+                    "column_name": "TARGET_OUTLOOK",
+                    "value": true
+                },
+                {
+                    "column_name": "NPS_GOAL_REACHED",
+                    "value": false
+                },
+                {
+                    "column_name": "METHODOLOGY_DEFINITION",
+                    "value": false
+                },
+                {
+                    "column_name": "QUALITATIVE_ONLY",
+                    "value": false
+                },
+                {
+                    "column_name": "nps_value_fix",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_competition_industry",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_over",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_below",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_value",
+                    "value": 69.0
+                },
+                {
+                    "column_name": "nps_goal_change",
+                    "value": null
+                },
+                {
+                    "column_name": "has_numeric_nps",
+                    "value": true
+                }
+            ],
+            "text": "Response : The Company respectfully acknowledges the Staff\u0092s comment and will provide the Staff with copies of all written communications, as defined in Rule 405 under the Securities Act, that the Company, or anyone authorized to do so on its behalf, presents to potential investors in reliance on Section 5(d) of the Securities Act, whether or not they retain copies of the communications. 2. We note that you have listed that you achieved a milestone net promoter score of 69. Please elaborate on the data behind your net promoter score. For example, please disclose how you calculated this metric."
+        },
+        {
+            "answer": [
+                {
+                    "column_name": "KPI_CURRENT_VALUE",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_TREND",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_HISTORICAL_COMPARISON",
+                    "value": false
+                },
+                {
+                    "column_name": "TARGET_OUTLOOK",
+                    "value": false
+                },
+                {
+                    "column_name": "NPS_GOAL_REACHED",
+                    "value": false
+                },
+                {
+                    "column_name": "METHODOLOGY_DEFINITION",
+                    "value": false
+                },
+                {
+                    "column_name": "QUALITATIVE_ONLY",
+                    "value": true
+                },
+                {
+                    "column_name": "nps_value_fix",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_competition_industry",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_over",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_below",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_value",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_change",
+                    "value": null
+                },
+                {
+                    "column_name": "has_numeric_nps",
+                    "value": false
+                }
+            ],
+            "text": "ans who\u2019ve used DocsGPT and other AI technologies. DOCS Investor Day \u2014 June 6, 2023 WHAT HASN\u2019T CHANGED SINCE IPO WEEKEND SUMMITS FOUNDER-LED MISSION-DRIVEN TEAM DOCS N\u2019 DORKS GSD 2011 2021 DOCS Investor Day \u2014 June 6, 2023 PRODUCT Nate Gross, MD CSO & Co-Founder DOCS Investor Day \u2014 June 6, 2023 PURPOSE BUILT FOR MEDICINE Professional Network WorkflowNewsfeed DOCS Investor Day \u2014 June 6, 2023 ADOPTION \u201cThis app has changed my professional life.\u201d 4.8 out of 5, 150K+ Ratings & Reviews2 Quarterly Active Workflow Providers1 >500,000 1. Quarterly Active Workflow Providers counts all unique MDs, DOs, NPs, PAs, CRNAs, Med Students, and Pharmacists who used at least one productivity tool (telehealth, scheduling, digital fax and e-signature, and DocsGPT). As of March 31, 2023. 2."
+        },
+        {
+            "answer": [
+                {
+                    "column_name": "KPI_CURRENT_VALUE",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_TREND",
+                    "value": false
+                },
+                {
+                    "column_name": "KPI_HISTORICAL_COMPARISON",
+                    "value": false
+                },
+                {
+                    "column_name": "TARGET_OUTLOOK",
+                    "value": false
+                },
+                {
+                    "column_name": "NPS_GOAL_REACHED",
+                    "value": false
+                },
+                {
+                    "column_name": "METHODOLOGY_DEFINITION",
+                    "value": true
+                },
+                {
+                    "column_name": "QUALITATIVE_ONLY",
+                    "value": false
+                },
+                {
+                    "column_name": "nps_value_fix",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_competition_industry",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_over",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_value_below",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_value",
+                    "value": null
+                },
+                {
+                    "column_name": "nps_goal_change",
+                    "value": null
+                },
+                {
+                    "column_name": "has_numeric_nps",
+                    "value": false
+                }
+            ],
+            "text": "We believe that net debt provides useful information to investors because it shows the amount of notional debt that would be outstanding if available cash and cash equivalents and long-term and short-term deposits were applied to repay such indebtedness. Net debt should not be considered in isolation as an alternative to long-term debt and short-term debt, or any other measure of our financial position. Net Promoter Score (\u201cNPS\u201d) is the methodology VEON uses to measure customer satisfaction. Relational NPS (rNPS) \u2013 advantage or gap in NPS comparing to competition. Revenues from telecommunications services (Telco revenues) are revenues generated by VEON from data, voice, connectivity, television, and similar services, regardless of medium of transmission, including transmission by satellite."
+        }
+    ]
+}

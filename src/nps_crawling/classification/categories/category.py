@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 from typing import List, Optional
+
 from nps_crawling.classification.common import make_hashable, stable_serialize
 
 import logging
@@ -109,27 +110,32 @@ class ClassificationProperty:
         )
     
     def cast_value(self, value : any):
-        exception = None
-        value = self.default_value
         if self.type == ClassificationType.BOOLEAN:
             try:
-                value = bool(value)
+                return bool(value)
             except Exception as e:
-                exception = e
-        elif self.type == ClassificationType.FLOAT:
+                logger.warning(
+                    "Value %r was not valid for boolean %s:\n%s\nReturning default %s",
+                    value,
+                    self.name,
+                    e,
+                    self.default_value,
+                )
+                return self.default_value
+        if self.type == ClassificationType.FLOAT:
             try:
-                value = str(value).replace(",", ".")
-                value = float(value)
+                return float(str(value).replace(",", "."))
             except Exception as e:
-                exception = e
-        else:
-            exception = ValueError(f"{self.type} is not implemented.")
-
-        if exception:
-            logger.warning(f"Value {value} was not valid:\n{e}\nReturning{self.default_value}")
-            return self.default_value
-        
-        return value
+                logger.warning(
+                    "Value %r was not valid for float %s:\n%s\nReturning default %s",
+                    value,
+                    self.name,
+                    e,
+                    self.default_value,
+                )
+                return self.default_value
+        logger.warning("%s is not implemented; returning default %s", self.type, self.default_value)
+        return self.default_value
         
 
 
@@ -142,13 +148,39 @@ class ClassificationCategory:
             properties: list[ClassificationProperty],
             prompt_base: str,
             csv_path: Optional[str] = None,
-            examples: List[Example] = []
+            examples: Optional[List[Example]] = None,
+            num_examples: Optional[int] = None,
         ):
         self.name = name
         self.properties = properties
         self.prompt_base = prompt_base
         self.csv_path = csv_path
-        self.examples = examples
+        self.num_examples = num_examples
+
+        if examples is None:
+            self.examples = []
+            _fill_examples_from_csv = bool(self.csv_path)
+        else:
+            self.examples = list(examples)
+            _fill_examples_from_csv = False
+
+        if _fill_examples_from_csv:
+            from nps_crawling.config import Config
+
+            effective_n = (
+                self.num_examples
+                if self.num_examples is not None
+                else Config.CLASSIFICATION_FEW_SHOT_NUM_EXAMPLES
+            )
+            if effective_n is not None and effective_n > 0:
+                from nps_crawling.classification.models.model import examples_from_training_split
+
+                self.examples = examples_from_training_split(
+                    self,
+                    text_column=None,
+                    max_examples=effective_n,
+                )
+
         current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
         self.config_path = current_dir.parent / "configurations" / "categories" / name / f"{self.stable_id}.json"
         if not os.path.exists(self.config_path):
@@ -163,6 +195,7 @@ class ClassificationCategory:
             f"properties={self.properties!r}, "
             f"prompt_base={self.prompt_base!r}, "
             f"csv_path={self.csv_path!r}, "
+            f"num_examples={self.num_examples!r}, "
             f"examples={self.examples!r})"
         )
     
@@ -175,6 +208,7 @@ class ClassificationCategory:
             and self.properties == other.properties
             and self.prompt_base == other.prompt_base
             and self.csv_path == other.csv_path
+            and self.num_examples == other.num_examples
             and self.examples == other.examples
         )
     
@@ -185,6 +219,7 @@ class ClassificationCategory:
             tuple(make_hashable(prop) for prop in self.properties),
             make_hashable(self.prompt_base),
             make_hashable(self.csv_path),
+            make_hashable(self.num_examples),
             make_hashable(self.examples)
         ))
 
@@ -199,6 +234,7 @@ class ClassificationCategory:
             "properties": stable_serialize(self.properties),
             "prompt_base": self.prompt_base,
             "csv_path": self.csv_path,
+            "num_examples": stable_serialize(self.num_examples),
             "examples" : stable_serialize(self.examples)
         }
     
@@ -210,6 +246,7 @@ class ClassificationCategory:
             "properties": stable_serialize(self.properties),
             "prompt_base": stable_serialize(self.prompt_base),
             "csv_path": stable_serialize(self.csv_path),
+            "num_examples": stable_serialize(self.num_examples),
             "examples" : stable_serialize(self.examples)
         }
 
@@ -219,12 +256,16 @@ class ClassificationCategory:
     @classmethod
     def from_dict(cls, data):
 
+        raw_examples = data.get("examples") or []
+        examples_arg = [Example.from_dict(example_data) for example_data in raw_examples]
+
         return cls(
             name=data["name"],
             properties=[ClassificationProperty.from_dict(prop_data) for prop_data in data["properties"]],
             prompt_base=data["prompt_base"],
             csv_path=data["csv_path"],
-            examples=[Example.from_dict(example_data) for example_data in data.get("examples", [])]
+            examples=examples_arg,
+            num_examples=data.get("num_examples"),
         )
 
     def is_valid(self, entry: DataEntry) -> bool:
@@ -306,3 +347,55 @@ class ClassificationCategory:
             return "correct_value"
         else:
             return "wrong_value"
+
+
+def default_category_config_path() -> Path:
+    """JSON path used as the packaged default category (depends on :attr:`Config.CLASSIFICATION_CONFIG_USE_NAME_FILES`)."""
+    from nps_crawling.config import Config
+    from nps_crawling.classification.common import classification_config_basename
+
+    categories_root = current_dir.parent / "configurations" / "categories"
+    if Config.CLASSIFICATION_CONFIG_USE_NAME_FILES:
+        return categories_root / f"{classification_config_basename('Default')}.json"
+    return DEFAULT_FILE
+
+
+def load_default_classification_category() -> ClassificationCategory:
+    """Load the packaged default category JSON (reference shape for prompts / serialization)."""
+    path = default_category_config_path()
+    if not path.is_file():
+        path = DEFAULT_FILE
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"No default category JSON found (tried {default_category_config_path()} and {DEFAULT_FILE})"
+        )
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return ClassificationCategory.from_dict(data)
+
+
+def load_category_from_standard_config(name: str) -> ClassificationCategory:
+    """Load a category JSON from ``configurations/categories`` (flat or per-folder layout).
+
+    ``name`` is the folder / file stem, e.g. ``\"NPS Category\"`` or
+    ``ClassificationTask.NPS_CATEGORY.value`` from :mod:`nps_crawling.config`.
+
+    Uses :attr:`nps_crawling.config.Config.CLASSIFICATION_CONFIG_USE_NAME_FILES` the same way as
+    :class:`ClassificationCategory` persistence (``<Name>.json`` vs ``<Name>/<hash>.json``).
+    """
+    from nps_crawling.config import Config
+    from nps_crawling.classification.common import classification_config_basename
+
+    categories_root = current_dir.parent / "configurations" / "categories"
+    if Config.CLASSIFICATION_CONFIG_USE_NAME_FILES:
+        flat = categories_root / f"{classification_config_basename(name)}.json"
+        if flat.is_file():
+            with open(flat, encoding="utf-8") as f:
+                return ClassificationCategory.from_dict(json.load(f))
+
+    folder = categories_root / name
+    paths = sorted(folder.glob("*.json"))
+    if not paths:
+        raise FileNotFoundError(f"No category JSON files found under {folder}")
+    with open(paths[0], encoding="utf-8") as f:
+        return ClassificationCategory.from_dict(json.load(f))

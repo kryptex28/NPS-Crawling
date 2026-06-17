@@ -6,7 +6,6 @@ from typing import List
 
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.classification.models.registry import get_model_from_config, ClassificationModel
-from nps_crawling.classification.categories.registry import get_category, ClassificationTask
 from nps_crawling.classification.categories.category import ClassificationCategory
 from nps_crawling.classification.common import make_hashable, stable_serialize
 from nps_crawling.config import Config
@@ -133,13 +132,13 @@ class ClassificationModelPipeline(Config):
         for record in records:
             record_results = default_results.copy()
             for window in record.get("context", []):
-                for category, model in self.category_model.items:
-                    results = model.classify(category, window["context"])
+                for category, model in self.category_model.items():
+                    results = model.classify(window["context"], category)
                     for result in results:
-                        window[result.column_name] = result.entry
-                        if result.entry != category.get_property(result.column_name).default_value:
-                            record_results[result.column_name] = result.entry
-                    
+                        window[result.column_name] = result.value
+                        if result.value != category.get_property(result.column_name).default_value:
+                            record_results[result.column_name] = result.value
+
                 done += 1
                 logger.info(f"{source_filename}: {done}/{total_windows}")
             self._write_to_db(record["filing_id"], record_results)

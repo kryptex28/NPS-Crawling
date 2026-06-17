@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from nps_crawling.classification.categories.registry import ClassificationTask
+from enum import Enum
 
 load_dotenv()
 
@@ -172,19 +172,28 @@ class Config:
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     """ Classification CONFIG """
+    # Ground-truth CSV train/test split: same random_state and test_size for evaluate, train,
+    # and few-shot sampling (training fold only for examples).
+    CLASSIFICATION_RANDOM_SEED: int = 42
+    CLASSIFICATION_GROUND_TRUTH_TEST_SIZE: float = 0.5
+    # Few-shot examples taken from the training fold of category.csv_path.
+    # None disables auto-generation when examples=None is passed to ClassificationCategory.
+    CLASSIFICATION_FEW_SHOT_NUM_EXAMPLES: int | None = 8
+    CLASSIFICATION_FEW_SHOT_TEXT_COLUMN: str = "snippet_text_short"
+    # Shuffles rows within the training fold only; does not change the train/test boundary.
+    CLASSIFICATION_FEW_SHOT_SAMPLE_SEED: int = 43
+
     CLASSIFICATION_CACHE_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "cache"
     CLASSIFICATION_CONFIG_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations"
+
+    # When True: category configs are ``categories/<Name>.json`` (no per-name subfolder / hash file).
+    # Model configs are ``<ClassName>__<ModelName>.json`` directly under CLASSIFICATION_CONFIG_DIR
+    # (no ``<model_name>/<hash>.json`` folder). When False, the previous hash-based layout is used.
+    # Can be overridden with env ``CLASSIFICATION_CONFIG_USE_NAME_FILES=1``.
+    CLASSIFICATION_CONFIG_USE_NAME_FILES: bool = os.getenv(
+        "CLASSIFICATION_CONFIG_USE_NAME_FILES", "0"
+    ) == "1"
     CLASSIFICATION_CONFIG = {
-        ClassificationTask.NPS_CATEGORY: {
-            "config_file": CLASSIFICATION_CONFIG_DIR / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json",
-            "model_config": {"model": "distilbert-base-cased-distilled-squad"},
-        },
-        ClassificationTask.HAS_NUMERIC_NPS: {
-            "config_file": CLASSIFICATION_CONFIG_DIR / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json",
-            "model_config": {"model": "distilbert-base-cased-distilled-squad"},
-        },
-        ClassificationTask.NPS_VALUE_CATEGORY: {
-            "config_file": CLASSIFICATION_CONFIG_DIR / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json",
-            "model_config": {"model": "distilbert-base-cased-distilled-squad"},
-        }
+        ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "NPS All" / "67367bd328ec625adb579cb106022d6a284acb5639ced679346daa3d2ffd1039.json":
+        ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json"
     }
