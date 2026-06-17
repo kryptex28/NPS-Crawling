@@ -16,10 +16,8 @@ if active_file.exists():
     except Exception:
         pass
 
-# Find first project config to use as mock, fallback to "example_project" if none found
-projects_dir = src_dir.parent / "projects"
-project_files = list(projects_dir.glob("*.json"))
-mock_project = project_files[0].stem if project_files else "example_project"
+# Use the dedicated test project config for database tests
+mock_project = "test_project"
 
 active_file.write_text(mock_project, encoding="utf-8")
 
@@ -37,9 +35,13 @@ def test_adapter() -> None:
     update fields and file paths, and retrieve rows from the database.
     """
     print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
+    
+    from nps_crawling.db.ensure_docker import ensure_docker_db_running
+    ensure_docker_db_running()
+
     try:
         adapter = DbAdapter()
-        adapter.ensure_table_exists()
+        adapter.ensure_table_exists(include_classifications=True)
     except Exception as e:
         print(f"Failed to connect to DB or ensure table exists: {e}")
         sys.exit(1)
