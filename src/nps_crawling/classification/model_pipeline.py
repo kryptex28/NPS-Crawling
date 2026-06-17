@@ -2,10 +2,13 @@
 
 import json
 import hashlib
+from typing import List
 
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.classification.models.registry import get_model_from_config, ClassificationModel
 from nps_crawling.classification.categories.registry import get_category, ClassificationTask
+from nps_crawling.classification.categories.category import ClassificationCategory
+from nps_crawling.classification.common import make_hashable, stable_serialize
 from nps_crawling.config import Config
 import logging
 
@@ -15,24 +18,87 @@ logger = logging.getLogger(__name__)
 class ClassificationModelPipeline(Config):
     """Classification model pipeline class."""
 
-    def __init__(self):
+    @staticmethod
+    def _iter_configuration_items(classification_configuration):
+        if isinstance(classification_configuration, dict):
+            return classification_configuration.items()
+        return classification_configuration
+
+    def __init__(
+            self,
+            name : str,
+            classification_configuration : 
+            dict[str | dict | ClassificationCategory,
+                 str | dict | ClassificationModel]
+        ):
         """Initializes ClassificationModelPipeline."""
-        super().__init__()
-
-        self.classification_models : dict[ClassificationTask, ClassificationModel] = {}
-
-        for classification_option in self.CLASSIFICATION_CONFIG:
-            logger.info(f"Loading Model for: {classification_option}")
-            self.classification_models[classification_option] = get_model_from_config(
-                self.CLASSIFICATION_CONFIG[classification_option]["config_file"]
-            )
+        self.category_model : dict[ClassificationCategory, ClassificationModel] = {}
+        self.name = name
+        for key, value in self._iter_configuration_items(classification_configuration):
+            if isinstance(key, str):
+                with open(key, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                category = ClassificationCategory.from_dict(data)
+            elif isinstance(key, dict):
+                category = ClassificationCategory.from_dict(key)
+            else:
+                category = key
+            if isinstance(value, str):
+                with open(value, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                model = ClassificationModel.from_dict(data)
+            elif isinstance(value, dict):
+                model = ClassificationModel.from_dict(value)
+            else:
+                model = value
+            self.category_model[category] = model
 
         self.adapter = DbAdapter()
 
-        self.out_path = self.NPS_CLASSIFIED_JSON / self.CLASSIFICATION_VERSION
+        self.out_path = self.NPS_CLASSIFIED_JSON / self.name
 
-        with open(self.out_path / "config.json", "w", encoding="utf-8") as f:
-            json.dump(self.CLASSIFICATION_CONFIG, f, ensure_ascii=False, indent=2)
+        with open(Config.CLASSIFICATION_CONFIG_DIR / f"{name}.json", "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "classification_configuration": [
+                {
+                    "category": stable_serialize(category),
+                    "model": stable_serialize(model),
+                }
+                for category, model in self.category_model.items()
+            ],
+        }
+    
+    @property
+    def stable_id(self):
+        data = {
+            "class": self.__class__.__name__,
+            "model_name": self.model_name,
+            "model_input": stable_serialize(self.model_input),
+            "kwargs": stable_serialize(self.kwargs),
+        }
+
+        payload = json.dumps(data, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(payload.encode()).hexdigest()
+    
+    @classmethod
+    def from_dict(cls, data):
+
+        classification_configuration = data.get("classification_configuration", {})
+        if isinstance(classification_configuration, list):
+            classification_configuration = {
+                ClassificationCategory.from_dict(entry["category"]): ClassificationModel.from_dict(entry["model"])
+                for entry in classification_configuration
+            }
+
+        return cls(
+            name=data["name"],
+            classification_configuration=classification_configuration,
+        )
+
 
     def _write_to_db(self, id, results):
         payload = json.dumps(self.CLASSIFICATION_CONFIG, sort_keys=True, separators=(",", ":"))
@@ -60,20 +126,18 @@ class ClassificationModelPipeline(Config):
         logger.info(f"Starting file: {source_filename} ({total_windows} windows)")
 
         default_results = {}
-        for classification_option in self.CLASSIFICATION_CONFIG:
-            for prop in get_category(classification_option).properties:
-                default_results[prop.name] = classification_option.default_value
+        for category in self.category_model:
+            for prop in category.properties:
+                default_results[prop.name] = prop.default_value
 
         for record in records:
             record_results = default_results.copy()
             for window in record.get("context", []):
-                for classification_option in self.CLASSIFICATION_CONFIG:
-                    model = self.classification_models[classification_option]
-                    option = get_category(classification_option)
-                    results = model.classify(option, window["context"])
+                for category, model in self.category_model.items:
+                    results = model.classify(category, window["context"])
                     for result in results:
                         window[result.column_name] = result.entry
-                        if result.entry != option.default_value:
+                        if result.entry != category.get_property(result.column_name).default_value:
                             record_results[result.column_name] = result.entry
                     
                 done += 1

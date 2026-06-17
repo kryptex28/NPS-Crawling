@@ -1,6 +1,7 @@
 from enum import Enum
+from typing import List
 
-from nps_crawling.classification.categories.category import ClassificationCategory
+from nps_crawling.classification.categories.category import ClassificationCategory, ClassificationProperty
 from nps_crawling.classification.categories.nps_value_category import NPSValueCategory
 from nps_crawling.classification.categories.nps_category import NPSCategory
 from nps_crawling.classification.categories.has_numeric_nps import HasNumericNPS
@@ -19,6 +20,11 @@ _CLASSIFICATION_REGISTRY = {
     ClassificationTask.NPS_CATEGORY: NPSCategory,
     ClassificationTask.HAS_NUMERIC_NPS: HasNumericNPS,
 }
+
+class ClassificationType(str, Enum):
+    """Classification types."""
+    BOOLEAN = "boolean"
+    FLOAT = "float"
 
 def get_category(model_name: ClassificationTask) -> ClassificationCategory:
     """Get category instance by name."""

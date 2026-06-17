@@ -41,7 +41,7 @@ class Config:
 
     # .env LOCAL_MODE=1 to enable local mode, .env LOCAL_MODE=0 to disable local mode
     # defaults to False if not set to not interfere with existing server setup
-    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "0") == "1"
+    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "0") == "0"
 
     # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
     LOCAL_DB_CONNECTION: str = "crawler:crawler@localhost:5432/crawler"
@@ -172,6 +172,7 @@ class Config:
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     """ Classification CONFIG """
+    CLASSIFICATION_CACHE_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "cache"
     CLASSIFICATION_CONFIG_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations"
     CLASSIFICATION_CONFIG = {
         ClassificationTask.NPS_CATEGORY: {

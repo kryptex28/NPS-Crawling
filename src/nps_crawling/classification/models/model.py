@@ -6,36 +6,20 @@ from pathlib import Path
 
 import pandas as pd
 from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
 
 from nps_crawling.classification.categories.category import DataEntry, ClassificationCategory
 import json
 import os
 import logging
+from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.config import Config
 
 logger = logging.getLogger(__name__)
 
 import hashlib
 
-def stable_serialize(obj):
-    if isinstance(obj, dict):
-        return {k: stable_serialize(v) for k, v in sorted(obj.items())}
-    elif isinstance(obj, (list, tuple)):
-        return [stable_serialize(v) for v in obj]
-    elif isinstance(obj, set):
-        return sorted(stable_serialize(v) for v in obj)
-    else:
-        return obj
-
-def make_hashable(obj):
-    """Convert unhashable types to hashable equivalents."""
-    if isinstance(obj, dict):
-        return tuple(sorted((k, make_hashable(v)) for k, v in obj.items()))
-    elif isinstance(obj, list):
-        return tuple(make_hashable(item) for item in obj)
-    elif isinstance(obj, set):
-        return frozenset(make_hashable(item) for item in obj)
-    else:
-        return obj
+SEED = 42
 
 class ClassificationModel:
     """Base class for classification models."""
@@ -61,15 +45,14 @@ class ClassificationModel:
         self.model_input = model_input
         self.kwargs = kwargs
         self._initialized = True
-        config_dir = model_name.split("/")[-1]
-        current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-        self.config_path = current_dir.parent / "configurations" / config_dir / f"{self.stable_id}.json"
+        model_file_name = model_name.split("/")[-1]
+        self.config_path = Config.CLASSIFICATION_CONFIG_DIR / model_file_name / f"{self.stable_id}.json"
         if not os.path.exists(self.config_path):
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             with open(self.config_path, "w") as f:
                 json.dump(self.to_dict(), f, indent=4)
 
-        self.cache_dir = current_dir.parent / "cache"
+        self.cache_dir = Config.CLASSIFICATION_CACHE_DIR
     
     def __repr__(self):
         return (
@@ -127,7 +110,6 @@ class ClassificationModel:
 
         return subclass(
             model_name=data["model_name"],
-            model_input=data.get("model_input"),
             **data.get("kwargs", {})
         )
     
@@ -135,9 +117,14 @@ class ClassificationModel:
         """Classify given text according to the specified category."""
         raise NotImplementedError("Subclasses must implement this method.")
     
-    def evaluate(self, df : pd.DataFrame, category: ClassificationCategory) -> list[dict]:
+    def evaluate(self, category: ClassificationCategory, text_column : str, test_size = 0.2) -> list[dict]:
         """Evaluate model performance on given texts and labels."""
-        texts = df["snippet_text_short"].tolist()
+        if not category.csv_path:
+            raise ValueError("No csv as groundtruth provided")
+
+        df = pd.read_csv(category.csv_path)
+        train_df, test_df = train_test_split(df, test_size=test_size, random_state=SEED)
+        texts = test_df[text_column].tolist()
         all_data_entries = []
         all_evaluation_results = {}
         time_per_snippet = 0
@@ -178,4 +165,8 @@ class ClassificationModel:
         with open(self.config_path, "w") as f:
             json.dump(config, f, indent=4)
         return all_evaluation_results
+    
+    def train(self, category: ClassificationCategory, text_column : str, test_size = 0.2) -> None:
+        """Train SVM model for given classification option."""
+        
     

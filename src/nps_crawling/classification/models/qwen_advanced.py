@@ -2,6 +2,7 @@ import os
 
 import joblib
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -10,7 +11,7 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel
 
-from nps_crawling.classification.models.model import ClassificationModel
+from nps_crawling.classification.models.model import ClassificationModel, SEED
 from nps_crawling.classification.categories.category import (
     ClassificationCategory,
     DataEntry,
@@ -20,7 +21,7 @@ from nps_crawling.classification.categories.registry import ClassificationTask
 
 class QWEN_Advanced(ClassificationModel):
     """Hugging Face Model class."""
-    def __init__(self, model_name: str, **kwargs):
+    def __init__(self, model_name: str, classification_categories: list[ClassificationCategory], **kwargs):
         super().__init__(model_name, **kwargs)
         # load the tokenizer and the model
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=self.cache_dir, padding_side="left")
@@ -119,9 +120,14 @@ class QWEN_Advanced(ClassificationModel):
 
         return data_entries
     
-    def train(self, df : pd.DataFrame, category: ClassificationCategory) -> None:
+    def train(self, category: ClassificationCategory, text_column : str, test_size = 0.2) -> None:
         """Train SVM model for given classification option."""
-        texts = df["snippet_text_short"].tolist()
+        if not category.csv_path:
+            raise ValueError("No csv as groundtruth provided")
+
+        df = pd.read_csv(category.csv_path)
+        train_df, test_df = train_test_split(df, test_size=test_size, random_state=SEED)
+        texts = train_df["snippet_text_short"].tolist()
 
         for class_property in category.properties:
             labels = df[class_property.name].tolist()
@@ -129,3 +135,4 @@ class QWEN_Advanced(ClassificationModel):
             svm_model = make_pipeline(StandardScaler(), SVC(kernel='linear', random_state=42))
             svm_model.fit(embeddings, labels)
             joblib.dump(svm_model, self.cache_dir / f"{class_property.name}.joblib")
+    

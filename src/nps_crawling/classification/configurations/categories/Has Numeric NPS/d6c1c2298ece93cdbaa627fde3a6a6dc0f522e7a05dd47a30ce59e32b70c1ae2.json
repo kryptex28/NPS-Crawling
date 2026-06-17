@@ -1,0 +1,12 @@
+{
+    "class_name": "ClassificationCategory",
+    "name": "Has Numeric NPS",
+    "properties": {
+        "description": "True if the text contains at least one explicit numeric NPS value.",
+        "name": "has_numeric_nps",
+        "type": "boolean"
+    },
+    "prompt_base": "You are an expert at analyzing text to identify and extract information about Net Promoter Score (NPS). NPS is a widely used metric that measures customer loyalty and satisfaction by asking customers how likely they are to recommend a product or service to others. Your task is to read the provided text and determine whether it contains specific information related to NPS, as defined by the following properties:",
+    "csv_path": null,
+    "examples": []
+}
