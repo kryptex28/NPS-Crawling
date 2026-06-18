@@ -22,7 +22,6 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
-*cache/
 .installed.cfg
 *.egg
 MANIFEST
@@ -225,7 +224,7 @@ data/
 *.pkl
 crawls/
 
-src/nps_crawling/classification/model/cache/bge-m3
+cache
 docs/database_confluence_report.md
 docs/preprocessing_confluence_report.md
 evaluation/
@@ -234,3 +233,5 @@ evaluation/
 Claude.md
 .claude/
 
+# Active project local state
+.active_project
