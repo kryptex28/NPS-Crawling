@@ -47,7 +47,7 @@ def create_table() -> None:
         -- Extraction/Processing Metadata
         keywords TEXT[],
         blacklisted BOOLEAN DEFAULT FALSE,
-        nps_relevant BOOLEAN,
+        project_relevant BOOLEAN,
 
         -- File Paths
         path_to_raw VARCHAR,
@@ -60,36 +60,13 @@ def create_table() -> None:
     );
     """)
 
+    cols_sql = Config.get_classification_columns_sql()
+    cols_sql_part = f"\n        {cols_sql},\n" if cols_sql else ""
     create_stmt_classifications = text(f"""
     CREATE TABLE IF NOT EXISTS {table_name}_classifications (
         id SERIAL PRIMARY KEY,
         filing_id VARCHAR REFERENCES {table_name}(id) ON DELETE CASCADE,
-        experiment_version VARCHAR NOT NULL,
-        
-        -- Main Categories
-        "KPI_CURRENT_VALUE" BOOLEAN,
-        "KPI_TREND" BOOLEAN,
-        "KPI_HISTORICAL_COMPARISON" BOOLEAN,
-        "BENCHMARK_COMPARISON_POSITIVE" BOOLEAN,
-        "BENCHMARK_COMPARISON_NEGATIVE" BOOLEAN,
-        "NPS_GOAL_REACHED" BOOLEAN,
-        "TARGET_OUTLOOK" BOOLEAN,
-        "MGMT_COMPENSATION_GOVERNANCE" BOOLEAN,
-        "CUSTOMER_CASE_EVIDENCE" BOOLEAN,
-        "NPS_SERVICE_PROVIDER" BOOLEAN,
-        "METHODOLOGY_DEFINITION" BOOLEAN,
-        "QUALITATIVE_ONLY" BOOLEAN,
-        "OTHER" BOOLEAN,
-
-        -- Category Helper Columns
-        has_numeric_nps BOOLEAN,
-        nps_value_fix DOUBLE PRECISION,
-        nps_competition_industry DOUBLE PRECISION,
-        nps_value_over DOUBLE PRECISION,
-        nps_value_below DOUBLE PRECISION,
-        nps_goal_value DOUBLE PRECISION,
-        nps_goal_change DOUBLE PRECISION,
-
+        experiment_version VARCHAR NOT NULL,{cols_sql_part}
         classified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         UNIQUE (filing_id, experiment_version)
     );
@@ -101,7 +78,7 @@ def create_table() -> None:
         filing_id VARCHAR REFERENCES {table_name}(id) ON DELETE CASCADE,
         preprocessing_version VARCHAR NOT NULL,
         
-        nps_relevant BOOLEAN NOT NULL,
+        project_relevant BOOLEAN NOT NULL,
         path_to_preprocessed VARCHAR,
         
         processed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -112,8 +89,11 @@ def create_table() -> None:
     with engine.begin() as conn:
         conn.execute(create_stmt)
         conn.execute(create_stmt_preprocessing)
-        conn.execute(create_stmt_classifications)
-        print(f"Tables '{table_name}', '{table_name}_preprocessing', and '{table_name}_classifications' checked/created successfully.")
+        if Config.ACTIVE_PROJECT:
+            conn.execute(create_stmt_classifications)
+            print(f"Tables '{table_name}', '{table_name}_preprocessing', and '{table_name}_classifications' checked/created successfully.")
+        else:
+            print(f"Tables '{table_name}' and '{table_name}_preprocessing' checked/created successfully. Classifications table skipped (no active project).")
 
 
 if __name__ == "__main__":

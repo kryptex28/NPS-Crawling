@@ -232,3 +232,6 @@ evaluation/
 # Claude
 Claude.md
 .claude/
+
+# Active project local state
+.active_project

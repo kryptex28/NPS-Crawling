@@ -21,13 +21,13 @@ def main() -> None:
         from sqlalchemy import text
         with db.engine.connect() as conn:
             total_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name}")).scalar()
-            true_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant = TRUE")).scalar()
-            false_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant = FALSE")).scalar()
-            null_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE nps_relevant IS NULL")).scalar()
+            true_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE project_relevant = TRUE")).scalar()
+            false_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE project_relevant = FALSE")).scalar()
+            null_count = conn.execute(text(f"SELECT COUNT(*) FROM {db.table_name} WHERE project_relevant IS NULL")).scalar()
             
             # Get all keywords to process in python for clean aggregation
             all_keywords_rows = conn.execute(text(f"SELECT keywords FROM {db.table_name}")).fetchall()
-            null_keywords_rows = conn.execute(text(f"SELECT keywords FROM {db.table_name} WHERE nps_relevant IS NULL")).fetchall()
+            null_keywords_rows = conn.execute(text(f"SELECT keywords FROM {db.table_name} WHERE project_relevant IS NULL")).fetchall()
 
         from collections import Counter
         keyword_counter = Counter()
@@ -66,9 +66,9 @@ def main() -> None:
         print("=" * 50)
         print(f"Statistiken zur Datenbank-Tabelle '{db.table_name}':")
         print(f"  - Gesamte Filings: {total_count}")
-        print(f"  - nps_relevant = True:  {true_count}")
-        print(f"  - nps_relevant = False: {false_count}")
-        print(f"  - nps_relevant = Null:  {null_count}")
+        print(f"  - project_relevant = True:  {true_count}")
+        print(f"  - project_relevant = False: {false_count}")
+        print(f"  - project_relevant = Null:  {null_count}")
         print("-" * 50)
         print(f"  - Verschiedene Keywords (Gesamt): {len(keyword_counter)}")
         
@@ -81,7 +81,7 @@ def main() -> None:
             print(f"    * {combo}: {cnt}")
             
         if null_count > 0:
-            print("\nFilings mit nps_relevant = NULL pro Keyword-Kombination:")
+            print("\nFilings mit project_relevant = NULL pro Keyword-Kombination:")
             for combo, cnt in null_combination_counter.most_common():
                 print(f"    * {combo}: {cnt}")
             
