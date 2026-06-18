@@ -24,6 +24,7 @@ from nps_crawling.classification.models.model import (
     NotSupportedError,
     NotTrainedError,
     ground_truth_train_test_split,
+    resolved_category_csv_path,
 )
 from nps_crawling.config import Config
 
@@ -115,7 +116,7 @@ class QWEN_Advanced(ClassificationModel):
         if not category.csv_path:
             raise ValueError("No csv as groundtruth provided")
 
-        df = pd.read_csv(category.csv_path)
+        df = pd.read_csv(resolved_category_csv_path(category.csv_path))
         train_df, _test_df = ground_truth_train_test_split(df, test_size=test_size)
         train_df = train_df.dropna(subset=[text_column])
         train_df = train_df[train_df[text_column].astype(str).str.strip() != ""]

@@ -1,0 +1,462 @@
+{
+  "name": "GPT_All",
+  "classification_configuration": [
+    {
+      "category": {
+        "class_name": "ClassificationCategory",
+        "csv_path": "train\\ground_truth_final_without_examples.csv",
+        "examples": [
+          {
+            "answer": [
+              {
+                "column_name": "KPI_CURRENT_VALUE",
+                "value": true
+              },
+              {
+                "column_name": "KPI_TREND",
+                "value": true
+              },
+              {
+                "column_name": "KPI_HISTORICAL_COMPARISON",
+                "value": true
+              },
+              {
+                "column_name": "TARGET_OUTLOOK",
+                "value": false
+              },
+              {
+                "column_name": "NPS_GOAL_REACHED",
+                "value": false
+              },
+              {
+                "column_name": "METHODOLOGY_DEFINITION",
+                "value": false
+              },
+              {
+                "column_name": "QUALITATIVE_ONLY",
+                "value": false
+              },
+              {
+                "column_name": "nps_value_fix",
+                "value": 61.0
+              },
+              {
+                "column_name": "nps_competition_industry",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_over",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_below",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_value",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_change",
+                "value": null
+              },
+              {
+                "column_name": "has_numeric_nps",
+                "value": true
+              }
+            ],
+            "text": "Based on over 12,000 interviews with small businesses across the country 2020 Greenwich Excellence Award Winner, South Region (Overall Satisfaction) 95 74 70 69 Atlantic Union Bank Big Bank #1 Big Bank #2 Big Bank #3 J.D. Power 2021 U.S. Retail Banking Satisfaction Study (Overall Satisfaction, Mid - Atlantic) AUB Overall ( Verint /Foresee) 2019 2020 YOY Overall Satisfaction 86 87 +1 Recommend AUB 85 87 +2 Increase Business 84 86 +2 Make Banking Easy 87% 88% +1% Net Promoter Score (NPS) 57 61 +4 AUB sees year over year improvements in Net Promoter Score, making banking easier and other key customer metrics. Recently Recognized By: 854 832 832 821 817 814 808 807 806 804 Atlantic Union Bank Region Average Proven Track Record of Superior Customer Satisfaction 15 Caring Working together toward common goals, acting with kindness, respect and a genuine concern for others. Courageous Speaking openly, honestly and accepting our challenges and mistakes as opportunities to learn and grow."
+          },
+          {
+            "answer": [
+              {
+                "column_name": "KPI_CURRENT_VALUE",
+                "value": true
+              },
+              {
+                "column_name": "KPI_TREND",
+                "value": false
+              },
+              {
+                "column_name": "KPI_HISTORICAL_COMPARISON",
+                "value": false
+              },
+              {
+                "column_name": "TARGET_OUTLOOK",
+                "value": false
+              },
+              {
+                "column_name": "NPS_GOAL_REACHED",
+                "value": false
+              },
+              {
+                "column_name": "METHODOLOGY_DEFINITION",
+                "value": false
+              },
+              {
+                "column_name": "QUALITATIVE_ONLY",
+                "value": false
+              },
+              {
+                "column_name": "nps_value_fix",
+                "value": 84.0
+              },
+              {
+                "column_name": "nps_competition_industry",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_over",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_below",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_value",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_change",
+                "value": null
+              },
+              {
+                "column_name": "has_numeric_nps",
+                "value": true
+              }
+            ],
+            "text": "We have a freemium to paid aspect of that. We insure about 2 million vehicles across our jurisdictions. Net promoter score, which is something we're really proud of because it directly connects to the culture of a company we believe and its brand is an 84 net promoter score, which in insurance is extraordinary, but in almost any business is something to be proud of, we believe. We have this really strong lifetime value to customer acquisition cost. We're about 600 plus million in change this year and from a revenue standpoint, 90% retention, which is really strong and a 41% loss ratio, which if you know anything about auto insurance, that's extraordinary."
+          },
+          {
+            "answer": [
+              {
+                "column_name": "KPI_CURRENT_VALUE",
+                "value": false
+              },
+              {
+                "column_name": "KPI_TREND",
+                "value": false
+              },
+              {
+                "column_name": "KPI_HISTORICAL_COMPARISON",
+                "value": false
+              },
+              {
+                "column_name": "TARGET_OUTLOOK",
+                "value": false
+              },
+              {
+                "column_name": "NPS_GOAL_REACHED",
+                "value": false
+              },
+              {
+                "column_name": "METHODOLOGY_DEFINITION",
+                "value": false
+              },
+              {
+                "column_name": "QUALITATIVE_ONLY",
+                "value": true
+              },
+              {
+                "column_name": "nps_value_fix",
+                "value": null
+              },
+              {
+                "column_name": "nps_competition_industry",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_over",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_below",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_value",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_change",
+                "value": null
+              },
+              {
+                "column_name": "has_numeric_nps",
+                "value": false
+              }
+            ],
+            "text": "In the United States, we sell to or have agreements in place with most of the top 100 U.S. healthcare systems. Moreover, positive feedback about Butterfly iQ+ among practitioners has historically been a significant driver of sales, as healthcare practitioners share their appreciation for Butterfly iQ within their medical communities, which has yielded a strong net promoter score. A net promoter score is a metric used as a measure of customer satisfaction and word of mouth referrals. A strong net promoter score has been shown to correlate with revenue growth relative to competitors."
+          },
+          {
+            "answer": [
+              {
+                "column_name": "KPI_CURRENT_VALUE",
+                "value": false
+              },
+              {
+                "column_name": "KPI_TREND",
+                "value": false
+              },
+              {
+                "column_name": "KPI_HISTORICAL_COMPARISON",
+                "value": false
+              },
+              {
+                "column_name": "TARGET_OUTLOOK",
+                "value": true
+              },
+              {
+                "column_name": "NPS_GOAL_REACHED",
+                "value": true
+              },
+              {
+                "column_name": "METHODOLOGY_DEFINITION",
+                "value": false
+              },
+              {
+                "column_name": "QUALITATIVE_ONLY",
+                "value": false
+              },
+              {
+                "column_name": "nps_value_fix",
+                "value": null
+              },
+              {
+                "column_name": "nps_competition_industry",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_over",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_below",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_value",
+                "value": 48.0
+              },
+              {
+                "column_name": "nps_goal_change",
+                "value": null
+              },
+              {
+                "column_name": "has_numeric_nps",
+                "value": true
+              }
+            ],
+            "text": "Our compensation committee believes these performance goals reflect commonly recognized measures of financial and operating performance within our industry and are key drivers of sustained value creation for our stockholders. The performance goals and weightings, in addition to our actual performance, are set forth in the table below. Revenue, New Bookings (ARR), and Net Promoter Score have target levels of achievement as well as a pay-and-performance curve around target with threshold and maximum levels. Given the importance of achieving our Adjusted EBITDA target, this metric's achievement evaluation was structured as all-or-nothing. [TABLE] Performance Goal: Net Promoter Score (4) | Weighting: 25% | Threshold: 48 | Target: 60 | Maximum: 100 | Actual Performance: 71 [/TABLE]."
+          },
+          {
+            "answer": [
+              {
+                "column_name": "KPI_CURRENT_VALUE",
+                "value": false
+              },
+              {
+                "column_name": "KPI_TREND",
+                "value": true
+              },
+              {
+                "column_name": "KPI_HISTORICAL_COMPARISON",
+                "value": false
+              },
+              {
+                "column_name": "TARGET_OUTLOOK",
+                "value": false
+              },
+              {
+                "column_name": "NPS_GOAL_REACHED",
+                "value": false
+              },
+              {
+                "column_name": "METHODOLOGY_DEFINITION",
+                "value": false
+              },
+              {
+                "column_name": "QUALITATIVE_ONLY",
+                "value": false
+              },
+              {
+                "column_name": "nps_value_fix",
+                "value": null
+              },
+              {
+                "column_name": "nps_competition_industry",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_over",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_below",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_value",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_change",
+                "value": null
+              },
+              {
+                "column_name": "has_numeric_nps",
+                "value": false
+              }
+            ],
+            "text": "In addition, a live video Q&A webcast will commence at 2.00pm BST on 29 September 2021, with an on-demand recording available shortly afterwards. Key highlights from the event: 1. Deep & trusted customer relationships ⫶ Following a series of initiatives conducted over the last 3 years, Vodafone has improved its net promoter score to be the #1 or #2 operator in 13 of 16 markets. This has contributed to systematic reductions in mobile contract churn and increasing fixed connectivity customers. The next phase of improving loyalty with consumers will be achieved through our multi-product connectivity strategy, 'Digital First' consumer engagement platforms and complementary digital services, all underpinned by our purpose-led brand."
+          },
+          {
+            "answer": [
+              {
+                "column_name": "KPI_CURRENT_VALUE",
+                "value": false
+              },
+              {
+                "column_name": "KPI_TREND",
+                "value": false
+              },
+              {
+                "column_name": "KPI_HISTORICAL_COMPARISON",
+                "value": false
+              },
+              {
+                "column_name": "TARGET_OUTLOOK",
+                "value": false
+              },
+              {
+                "column_name": "NPS_GOAL_REACHED",
+                "value": false
+              },
+              {
+                "column_name": "METHODOLOGY_DEFINITION",
+                "value": true
+              },
+              {
+                "column_name": "QUALITATIVE_ONLY",
+                "value": false
+              },
+              {
+                "column_name": "nps_value_fix",
+                "value": null
+              },
+              {
+                "column_name": "nps_competition_industry",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_over",
+                "value": null
+              },
+              {
+                "column_name": "nps_value_below",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_value",
+                "value": null
+              },
+              {
+                "column_name": "nps_goal_change",
+                "value": null
+              },
+              {
+                "column_name": "has_numeric_nps",
+                "value": false
+              }
+            ],
+            "text": "2. 4. Please clarify the method by which you calculate your net promoter score and explain how management uses this score to monitor or manage your business. Disclose any underlying assumptions and limitations in how the score is calculated or used. In response to the Staffs comment, the Company has revised its disclosure on pages 1, 49, 61 and 89 of Draft No."
+          }
+        ],
+        "name": "NPS All",
+        "num_examples": 0,
+        "prompt_base": "You are an expert at analyzing text to identify and extract information about Net Promoter Score (NPS). NPS is a widely used metric that measures customer loyalty and satisfaction by asking customers how likely they are to recommend a product or service to others. Your task is to read the provided text and determine whether it contains specific information related to NPS, as defined by the following properties:",
+        "properties": [
+          {
+            "description": "The text reports a specific NPS value.",
+            "name": "KPI_CURRENT_VALUE",
+            "type": "boolean"
+          },
+          {
+            "description": "The text describes change over time.",
+            "name": "KPI_TREND",
+            "type": "boolean"
+          },
+          {
+            "description": "The text explicitly compares NPS against a previous period.",
+            "name": "KPI_HISTORICAL_COMPARISON",
+            "type": "boolean"
+          },
+          {
+            "description": "The text expresses a future goal, target, ambition, forecast, or expected future NPS.",
+            "name": "TARGET_OUTLOOK",
+            "type": "boolean"
+          },
+          {
+            "description": "The text states that an NPS target or objective has been met or exceeded.",
+            "name": "NPS_GOAL_REACHED",
+            "type": "boolean"
+          },
+          {
+            "description": "The text explains what NPS is, how it is calculated, or what it measures.",
+            "name": "METHODOLOGY_DEFINITION",
+            "type": "boolean"
+          },
+          {
+            "description": "NPS is mentioned meaningfully but none of the other labels apply.",
+            "name": "QUALITATIVE_ONLY",
+            "type": "boolean"
+          },
+          {
+            "description": "Direct NPS value.",
+            "name": "nps_value_fix",
+            "type": "float"
+          },
+          {
+            "description": "Industry benchmark or competitor NPS value.",
+            "name": "nps_competition_industry",
+            "type": "float"
+          },
+          {
+            "description": "Threshold value associated with above, over, greater than, more than, or at least.",
+            "name": "nps_value_over",
+            "type": "float"
+          },
+          {
+            "description": "Threshold value associated with below, under, less than, or at most.",
+            "name": "nps_value_below",
+            "type": "float"
+          },
+          {
+            "description": "Explicit NPS target value, only if value is at least 20.",
+            "name": "nps_goal_value",
+            "type": "float"
+          },
+          {
+            "description": "Planned improvement amount such as improve by 10, increase by 5, or raise by 7.",
+            "name": "nps_goal_change",
+            "type": "float"
+          },
+          {
+            "description": "True if the text contains at least one explicit numeric NPS value.",
+            "name": "has_numeric_nps",
+            "type": "boolean"
+          }
+        ]
+      },
+      "model": {
+        "class_name": "BGE_Base",
+        "kwargs": {
+          "examples": "handselected"
+        },
+        "model_input": "",
+        "model_name": "BAAI/bge-m3"
+      }
+    }
+  ]
+}

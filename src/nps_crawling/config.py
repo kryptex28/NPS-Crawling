@@ -194,6 +194,7 @@ class Config:
         "CLASSIFICATION_CONFIG_USE_NAME_FILES", "0"
     ) == "1"
     CLASSIFICATION_CONFIG = {
-        ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "NPS All" / "67367bd328ec625adb579cb106022d6a284acb5639ced679346daa3d2ffd1039.json":
-        ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "Qwen3-8B" / "fc71e4662a1dee0f734b09d3a2d746c791b2ad11156266b7b59b75cb9e433773.json"
+        "NPS All.json":"Qwen3-8B.json",
+        "Animals.json":"gpt-4-mini.json"
     }
+    
