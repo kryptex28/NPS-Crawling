@@ -7,8 +7,9 @@ from typing import Any, Optional
 
 import pandas as pd
 import torch
+import torch.nn.functional as F
 from torch.optim import AdamW
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import DebertaV2Config, DebertaV2ForSequenceClassification, DebertaV2Tokenizer
 
 from nps_crawling.classification.categories.category import ClassificationCategory, ClassificationType, DataEntry
 from nps_crawling.classification.models.model import (
@@ -45,6 +46,15 @@ def _series_to_multilabel_float(series: pd.Series) -> torch.Tensor:
                 except ValueError:
                     out.append(0.0)
     return torch.tensor(out, dtype=torch.float32)
+
+
+def _load_deberta_v2_config(config_path: Path) -> DebertaV2Config:
+    """Load a DeBERTa v2 config while normalizing legacy multi-label settings."""
+    with config_path.open(encoding="utf-8") as f:
+        config_dict = json.load(f)
+    if config_dict.get("problem_type") == "multi_label":
+        config_dict["problem_type"] = "multi_label_classification"
+    return DebertaV2Config.from_dict(config_dict)
 
 
 class DeBERTa_Base(ClassificationModel):
@@ -142,8 +152,12 @@ class DeBERTa_Base(ClassificationModel):
         if self._loaded_category_id == category.stable_id and self._model is not None:
             return
 
-        self._tokenizer = AutoTokenizer.from_pretrained(str(ckpt))
-        self._model = AutoModelForSequenceClassification.from_pretrained(str(ckpt))
+        config = _load_deberta_v2_config(cfg)
+        self._tokenizer = DebertaV2Tokenizer.from_pretrained(str(ckpt))
+        self._model = DebertaV2ForSequenceClassification.from_pretrained(
+            str(ckpt),
+            config=config,
+        )
         self._model.to(self._device)
         self._model.eval()
         self._loaded_category_id = category.stable_id
@@ -198,11 +212,14 @@ class DeBERTa_Base(ClassificationModel):
         )
 
         tw = self._train_kw()
-        tokenizer = AutoTokenizer.from_pretrained(self.model_name, cache_dir=self.cache_dir)
-        model = AutoModelForSequenceClassification.from_pretrained(
+        tokenizer = DebertaV2Tokenizer.from_pretrained(
+            self.model_name,
+            cache_dir=self.cache_dir,
+        )
+        model = DebertaV2ForSequenceClassification.from_pretrained(
             self.model_name,
             num_labels=n_labels,
-            problem_type="multi_label",
+            problem_type="multi_label_classification",
             cache_dir=self.cache_dir,
         )
         model.to(self._device)
@@ -228,7 +245,7 @@ class DeBERTa_Base(ClassificationModel):
             for start in range(0, n, bs):
                 idx = perm[start : start + bs]
                 batch_texts = [texts[i] for i in idx.tolist()]
-                batch_labels = label_cols[idx].to(self._device)
+                batch_labels = label_cols[idx].to(self._device).float()
 
                 enc = tokenizer(
                     batch_texts,
@@ -241,6 +258,11 @@ class DeBERTa_Base(ClassificationModel):
                 optimizer.zero_grad()
                 out = model(**enc, labels=batch_labels)
                 loss = out.loss
+                if loss is None:
+                    loss = F.binary_cross_entropy_with_logits(
+                        out.logits,
+                        batch_labels,
+                    )
                 loss.backward()
                 optimizer.step()
                 running += float(loss.detach().cpu())
