@@ -1,0 +1,46 @@
+{
+    "class_name": "ClassificationCategory",
+    "name": "Default",
+    "properties": [
+        {
+            "description": "prop1.description",
+            "name": "prop1.name",
+            "type": "boolean"
+        },
+        {
+            "description": "prop2.description",
+            "name": "prop2.name",
+            "type": "boolean"
+        }
+    ],
+    "prompt_base": "category.prompt_base",
+    "csv_path": null,
+    "examples": [
+        {
+            "answer": [
+                {
+                    "column_name": "prop1.name",
+                    "value": "value"
+                },
+                {
+                    "column_name": "prop2.name",
+                    "value": "value"
+                }
+            ],
+            "text": "Input text one"
+        },
+        {
+            "answer": [
+                {
+                    "column_name": "prop1.name",
+                    "value": "value"
+                },
+                {
+                    "column_name": "prop2.name",
+                    "value": "value"
+                }
+            ],
+            "text": "Input text two"
+        }
+    ]
+}

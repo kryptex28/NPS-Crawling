@@ -1,0 +1,15 @@
+{
+    "class_name": "ClassificationCategory",
+    "name": "Test Category",
+    "properties": [
+        {
+            "description": "Test flag",
+            "name": "flag",
+            "type": "boolean"
+        }
+    ],
+    "prompt_base": "Test prompt",
+    "csv_path": null,
+    "num_examples": null,
+    "examples": []
+}

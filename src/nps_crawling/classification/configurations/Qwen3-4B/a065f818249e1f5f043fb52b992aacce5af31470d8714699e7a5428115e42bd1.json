@@ -1,0 +1,411 @@
+{
+    "class_name": "HF_LLM",
+    "model_name": "Qwen/Qwen3-4B",
+    "model_input": {
+        "NPS Category": "\n                You are an expert text classification model for Net Promoter Score (NPS) related statements.\n\n                Task:\n                Classify the input text into one or more labels from the list below.\n                This is a multi-label classification task, so more than one label can be correct.\n                Return a JSON array of label names only.\n\n                Labels:\n                - KPI_CURRENT_VALUE: Reports a specific NPS value.\n                - KPI_TREND: Describes change over time such as increase, decrease, decline, improvement, or growth.\n                - KPI_HISTORICAL_COMPARISON: Explicit numerical comparison to past values such as a year, quarter, or previous period.\n                - TARGET_OUTLOOK: Future goals, targets, ambitions, or expected future NPS values.\n                - NPS_GOAL_REACHED: States that an NPS target, goal, threshold, or objective has been met or exceeded.\n                - METHODOLOGY_DEFINITION: Explains what NPS is, how it is calculated, or what it measures.\n                - QUALITATIVE_ONLY: Mentions NPS without numbers, benchmarks, targets, trends, or other clear context.\n\n                Rules:\n                1. Return at least one label.\n                2. Return every label that is explicitly supported by the text.\n                3. Do not infer labels that are not clearly stated.\n                4. If the text gives a specific NPS number, include KPI_CURRENT_VALUE.\n                5. If the text describes a change over time, include KPI_TREND.\n                6. If the text compares against a past period, include KPI_HISTORICAL_COMPARISON.\n                7. If the text states a future target or ambition, include TARGET_OUTLOOK.\n                8. If the text says a target was reached or exceeded, include NPS_GOAL_REACHED.\n                9. If the text explains NPS conceptually, include METHODOLOGY_DEFINITION.\n                10. Use QUALITATIVE_ONLY only when NPS is mentioned meaningfully but no stronger label applies.\n                11. Return JSON only, with no explanation.\n\n                Output format:\n                [\"KPI_CURRENT_VALUE\", \"KPI_TREND\"]\n            ",
+        "NPS Value Category": "\n                You are an information extraction classifier specialized in Net Promoter Score (NPS) statements.\n\n                Your task:\n                - Extract ALL matching categories from the input text.\n                - Multiple categories MAY occur in the same text.\n                - Return ONLY valid JSON.\n                - Do not explain your reasoning.\n                - If no category matches, return {}.\n                - Numeric values must be floats.\n                - Extract only explicitly stated values.\n                - Do not infer or calculate values.\n\n                Categories:\n\n                1. nps_value_fix\n                - Extract a direct, unambiguous NPS value.\n\n                2. nps_competition_industry\n                - Extract industry benchmark or competitor comparison values.\n                - Trigger words may include:\n                    \"industry average\", \"benchmark\", \"competitor\", \"sector average\"\n\n                3. nps_value_over\n                - Extract values connected to minimum-threshold wording.\n                - Only trigger if signal words appear:\n                    \"above\", \"over\", \"greater than\", \"more than\", \"at least\"\n\n                4. nps_value_below\n                - Extract values connected to maximum-threshold wording.\n                - Trigger words:\n                    \"below\", \"under\", \"less than\", \"at most\"\n\n                5. nps_goal_value\n                - Extract explicit NPS target values.\n                - Trigger words may include:\n                    \"target\", \"goal\", \"aim\", \"plan to reach\", \"objective\"\n                - Only extract values >= 20.\n\n                6. nps_goal_change\n                - Extract intended NPS improvement/delta values.\n                - Trigger phrases:\n                    \"improve by\", \"increase by\", \"raise by\", \"grow by\"\n\n                Important rules:\n                - Multiple categories can appear simultaneously.\n                - Return all detected categories in one JSON object.\n                - Never return text outside JSON.\n                - Use exact property names.\n                - Ignore unrelated numbers.\n                - Ignore ambiguous NPS references.\n                - Ignore percentages unless clearly an NPS value.\n                - Prefer the most local value associated with the trigger phrase.\n\n                Examples:\n\n                Input:\n                \"Our NPS is 60.0.\"\n\n                Output:\n                {\n                \"nps_value_fix\": 60.0\n                }\n\n                Input:\n                \"Our NPS is higher than the industry average of 35.4.\"\n\n                Output:\n                {\n                \"nps_competition_industry\": 35.4\n                }\n\n                Input:\n                \"Our NPS is above 30.0.\"\n\n                Output:\n                {\n                \"nps_value_over\": 30.0\n                }\n\n                Input:\n                \"Our NPS is below 79.7.\"\n\n                Output:\n                {\n                \"nps_value_below\": 79.7\n                }\n\n                Input:\n                \"We aim to improve our NPS to 80.0 next year.\"\n\n                Output:\n                {\n                \"nps_goal_value\": 80.0\n                }\n\n                Input:\n                \"We aim to improve our NPS by 12.5 next year.\"\n\n                Output:\n                {\n                \"nps_goal_change\": 12.5\n                }\n\n                Input:\n                \"Our NPS is 60.0 and above the industry average of 35.4.\"\n\n                Output:\n                {\n                \"nps_value_fix\": 60.0,\n                \"nps_competition_industry\": 35.4\n                }\n\n                Input:\n                \"We aim to improve our NPS by 12.5 and reach 80 next year.\"\n\n                Output:\n                {\n                \"nps_goal_change\": 12.5,\n                \"nps_goal_value\": 80.0\n                }\n\n                Input:\n                \"Our NPS remains below 40 but above 30.\"\n\n                Output:\n                {\n                \"nps_value_below\": 40.0,\n                \"nps_value_over\": 30.0\n                }\n\n                Input:\n                \"The sector benchmark is 45 while our NPS is 61.\"\n\n                Output:\n                {\n                \"nps_competition_industry\": 45.0,\n                \"nps_value_fix\": 61.0\n                }\n\n                Now classify the following text:\n            ",
+        "Has Numeric NPS": "\n                You are an expert text classifier for Net Promoter Score (NPS) related statements.\n\n                Task:\n                Determine whether the input text contains a specific numeric NPS value.\n                Return a JSON boolean only: true or false.\n\n                Definitions:\n                - has_numeric_nps = true: the text explicitly contains a numeric NPS value (e.g., \"NPS is 60\", \"NPS of 35.4\", \"NPS: 72\").\n                - has_numeric_nps = false: the text mentions NPS but does not give a concrete number, or does not mention NPS at all.\n\n                Examples:\n                Text: \"Our NPS is 60.\"\n                Output: true\n\n                Text: \"We aim to improve our NPS next year.\"\n                Output: false\n\n                Text: \"Our NPS declined to 45.2 in Q4.\"\n                Output: true\n\n                Text: \"NPS is a very important metric.\"\n                Output: false\n\n                Rules:\n                1. Return valid JSON only.\n                2. Output must be exactly true or false, lowercase, no quotes, no explanation.\n                3. Do not infer numbers that are not explicitly stated.\n            "
+    },
+    "kwargs": {},
+    "evaluation_results": {
+        "NPS Category": {
+            "KPI_CURRENT_VALUE": {
+                "0": {
+                    "precision": 0.922077922077922,
+                    "recall": 0.797752808988764,
+                    "f1-score": 0.8554216867469879,
+                    "support": 89.0
+                },
+                "1": {
+                    "precision": 0.71875,
+                    "recall": 0.8846153846153846,
+                    "f1-score": 0.7931034482758621,
+                    "support": 52.0
+                },
+                "accuracy": 0.8297872340425532,
+                "macro avg": {
+                    "precision": 0.820413961038961,
+                    "recall": 0.8411840968020743,
+                    "f1-score": 0.824262567511425,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.8470917380491848,
+                    "recall": 0.8297872340425532,
+                    "f1-score": 0.8324390739774947,
+                    "support": 141.0
+                }
+            },
+            "KPI_TREND": {
+                "0": {
+                    "precision": 0.7222222222222222,
+                    "recall": 0.7386363636363636,
+                    "f1-score": 0.7303370786516854,
+                    "support": 88.0
+                },
+                "1": {
+                    "precision": 0.5490196078431373,
+                    "recall": 0.5283018867924528,
+                    "f1-score": 0.5384615384615384,
+                    "support": 53.0
+                },
+                "accuracy": 0.6595744680851063,
+                "macro avg": {
+                    "precision": 0.6356209150326797,
+                    "recall": 0.6334691252144082,
+                    "f1-score": 0.634399308556612,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.6571176934130627,
+                    "recall": 0.6595744680851063,
+                    "f1-score": 0.6582136486511336,
+                    "support": 141.0
+                }
+            },
+            "KPI_HISTORICAL_COMPARISON": {
+                "0": {
+                    "precision": 0.9239130434782609,
+                    "recall": 0.6746031746031746,
+                    "f1-score": 0.7798165137614679,
+                    "support": 126.0
+                },
+                "1": {
+                    "precision": 0.16326530612244897,
+                    "recall": 0.5333333333333333,
+                    "f1-score": 0.25,
+                    "support": 15.0
+                },
+                "accuracy": 0.6595744680851063,
+                "macro avg": {
+                    "precision": 0.543589174800355,
+                    "recall": 0.603968253968254,
+                    "f1-score": 0.5149082568807339,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.8429930714191319,
+                    "recall": 0.6595744680851063,
+                    "f1-score": 0.7234530548506735,
+                    "support": 141.0
+                }
+            },
+            "TARGET_OUTLOOK": {
+                "0": {
+                    "precision": 0.9576271186440678,
+                    "recall": 0.8560606060606061,
+                    "f1-score": 0.904,
+                    "support": 132.0
+                },
+                "1": {
+                    "precision": 0.17391304347826086,
+                    "recall": 0.4444444444444444,
+                    "f1-score": 0.25,
+                    "support": 9.0
+                },
+                "accuracy": 0.8297872340425532,
+                "macro avg": {
+                    "precision": 0.5657700810611643,
+                    "recall": 0.6502525252525253,
+                    "f1-score": 0.577,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.9076028159739099,
+                    "recall": 0.8297872340425532,
+                    "f1-score": 0.8622553191489362,
+                    "support": 141.0
+                }
+            },
+            "NPS_GOAL_REACHED": {
+                "0": {
+                    "precision": 1.0,
+                    "recall": 0.9929078014184397,
+                    "f1-score": 0.99644128113879,
+                    "support": 141.0
+                },
+                "1": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 0.0
+                },
+                "accuracy": 0.9929078014184397,
+                "macro avg": {
+                    "precision": 0.5,
+                    "recall": 0.49645390070921985,
+                    "f1-score": 0.498220640569395,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 0.9929078014184397,
+                    "f1-score": 0.99644128113879,
+                    "support": 141.0
+                }
+            },
+            "METHODOLOGY_DEFINITION": {
+                "0": {
+                    "precision": 0.9672131147540983,
+                    "recall": 0.9076923076923077,
+                    "f1-score": 0.9365079365079365,
+                    "support": 130.0
+                },
+                "1": {
+                    "precision": 0.3684210526315789,
+                    "recall": 0.6363636363636364,
+                    "f1-score": 0.4666666666666667,
+                    "support": 11.0
+                },
+                "accuracy": 0.8865248226950354,
+                "macro avg": {
+                    "precision": 0.6678170836928387,
+                    "recall": 0.772027972027972,
+                    "f1-score": 0.7015873015873015,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.9204988404041144,
+                    "recall": 0.8865248226950354,
+                    "f1-score": 0.8998536530451424,
+                    "support": 141.0
+                }
+            },
+            "QUALITATIVE_ONLY": {
+                "0": {
+                    "precision": 0.8962264150943396,
+                    "recall": 0.7786885245901639,
+                    "f1-score": 0.8333333333333334,
+                    "support": 122.0
+                },
+                "1": {
+                    "precision": 0.22857142857142856,
+                    "recall": 0.42105263157894735,
+                    "f1-score": 0.2962962962962963,
+                    "support": 19.0
+                },
+                "accuracy": 0.7304964539007093,
+                "macro avg": {
+                    "precision": 0.5623989218328841,
+                    "recall": 0.5998705780845557,
+                    "f1-score": 0.5648148148148149,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.8062587218749403,
+                    "recall": 0.7304964539007093,
+                    "f1-score": 0.7609666403992645,
+                    "support": 141.0
+                }
+            },
+            "time_per_snippet": 94.314177
+        },
+        "Has Numeric NPS": {
+            "has_numeric_nps": {
+                "0": {
+                    "precision": 0.8736842105263158,
+                    "recall": 0.9764705882352941,
+                    "f1-score": 0.9222222222222223,
+                    "support": 85.0
+                },
+                "1": {
+                    "precision": 0.9565217391304348,
+                    "recall": 0.7857142857142857,
+                    "f1-score": 0.8627450980392157,
+                    "support": 56.0
+                },
+                "accuracy": 0.900709219858156,
+                "macro avg": {
+                    "precision": 0.9151029748283753,
+                    "recall": 0.8810924369747899,
+                    "f1-score": 0.892483660130719,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.906584221886817,
+                    "recall": 0.900709219858156,
+                    "f1-score": 0.898600101979326,
+                    "support": 141.0
+                }
+            },
+            "time_per_snippet": 13.521005375886524
+        },
+        "NPS Value Category": {
+            "nps_value_fix": {
+                "correct_value": {
+                    "precision": 0.7916666666666666,
+                    "recall": 1.0,
+                    "f1-score": 0.8837209302325582,
+                    "support": 38.0
+                },
+                "no_value": {
+                    "precision": 0.9247311827956989,
+                    "recall": 0.9247311827956989,
+                    "f1-score": 0.9247311827956989,
+                    "support": 93.0
+                },
+                "wrong_value": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 10.0
+                },
+                "accuracy": 0.8794326241134752,
+                "macro avg": {
+                    "precision": 0.5721326164874552,
+                    "recall": 0.6415770609318997,
+                    "f1-score": 0.602817371009419,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.8232860520094563,
+                    "recall": 0.8794326241134752,
+                    "f1-score": 0.8480950024740228,
+                    "support": 141.0
+                }
+            },
+            "nps_competition_industry": {
+                "correct_value": {
+                    "precision": 0.4444444444444444,
+                    "recall": 1.0,
+                    "f1-score": 0.6153846153846154,
+                    "support": 4.0
+                },
+                "no_value": {
+                    "precision": 0.9318181818181818,
+                    "recall": 0.968503937007874,
+                    "f1-score": 0.9498069498069498,
+                    "support": 127.0
+                },
+                "wrong_value": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 10.0
+                },
+                "accuracy": 0.900709219858156,
+                "macro avg": {
+                    "precision": 0.45875420875420875,
+                    "recall": 0.6561679790026247,
+                    "f1-score": 0.5217305217305217,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.8519055806289848,
+                    "recall": 0.900709219858156,
+                    "f1-score": 0.8729575963618517,
+                    "support": 141.0
+                }
+            },
+            "nps_value_over": {
+                "correct_value": {
+                    "precision": 0.75,
+                    "recall": 1.0,
+                    "f1-score": 0.8571428571428571,
+                    "support": 3.0
+                },
+                "no_value": {
+                    "precision": 1.0,
+                    "recall": 0.9927536231884058,
+                    "f1-score": 0.9963636363636363,
+                    "support": 138.0
+                },
+                "accuracy": 0.9929078014184397,
+                "macro avg": {
+                    "precision": 0.875,
+                    "recall": 0.9963768115942029,
+                    "f1-score": 0.9267532467532467,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.9946808510638298,
+                    "recall": 0.9929078014184397,
+                    "f1-score": 0.9934014921248965,
+                    "support": 141.0
+                }
+            },
+            "nps_value_below": {
+                "correct_value": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 0.0
+                },
+                "no_value": {
+                    "precision": 1.0,
+                    "recall": 0.9929078014184397,
+                    "f1-score": 0.99644128113879,
+                    "support": 141.0
+                },
+                "accuracy": 0.9929078014184397,
+                "macro avg": {
+                    "precision": 0.5,
+                    "recall": 0.49645390070921985,
+                    "f1-score": 0.498220640569395,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 0.9929078014184397,
+                    "f1-score": 0.99644128113879,
+                    "support": 141.0
+                }
+            },
+            "nps_goal_value": {
+                "correct_value": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 0.0
+                },
+                "no_value": {
+                    "precision": 1.0,
+                    "recall": 0.9857142857142858,
+                    "f1-score": 0.9928057553956835,
+                    "support": 140.0
+                },
+                "wrong_value": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 1.0
+                },
+                "accuracy": 0.9787234042553191,
+                "macro avg": {
+                    "precision": 0.3333333333333333,
+                    "recall": 0.32857142857142857,
+                    "f1-score": 0.33093525179856115,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 0.9929078014184397,
+                    "recall": 0.9787234042553191,
+                    "f1-score": 0.9857645798255014,
+                    "support": 141.0
+                }
+            },
+            "nps_goal_change": {
+                "no_value": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 141.0
+                },
+                "accuracy": 1.0,
+                "macro avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 141.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 141.0
+                }
+            },
+            "time_per_snippet": 32.11169943971631
+        }
+    }
+}

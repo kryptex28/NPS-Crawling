@@ -1,13 +1,13 @@
 Scrapy~=2.13.3
 beautifulsoup4~=4.14.2
-pyarrow~=22.0.0
+pyarrow
 pandas~=2.3.3
 bs4~=0.0.2
 ollama
 pypdf
 requests
 sentence-transformers~=5.2.3
-transformers
+transformers==5.2.0
 torch
 langchain
 langchain-huggingface
@@ -17,4 +17,8 @@ matplotlib
 # psycopg2 comment in when using local postgres, not needed for server
 python-dotenv
 openpyxl
+pathvalidate
 flask
+openai
+scikit-learn
+psycopg2
