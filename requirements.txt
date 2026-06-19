@@ -21,4 +21,3 @@ pathvalidate
 flask
 openai
 scikit-learn
-psycopg2
