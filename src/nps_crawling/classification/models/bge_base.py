@@ -40,26 +40,38 @@ class BGE_Base(ClassificationModel):
         return sentence_embeddings.squeeze(0).cpu().numpy()
 
     def _svm_path(self, category: ClassificationCategory, class_property) -> Path:
-        safe = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in category.name)
-        return Path(self.cache_dir) / f"bge_base_{safe}_{class_property.name}.joblib"
+        return Path(self.cache_dir) / self.model_name.split("/")[-1] / f"{category.name}_{class_property.name}.joblib"
+
+    def is_supported(self, category: ClassificationCategory) -> bool:
+        for property in category.properties:
+            if not property.type == ClassificationType.BOOLEAN:
+                return False
+        return True
+    
+    def is_trained(self, category: ClassificationCategory) -> bool:
+        for property in category.properties:
+            svm_path = self._svm_path(category, property)
+            if not svm_path.exists():
+                return False
+        return True
 
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
+        if not self.is_supported(category):
+            raise NotSupportedError(
+                "SVM models are only supported for boolean classification."
+            )
+        if not self.is_trained(category):
+            raise NotTrainedError(
+                f"SVM model for {category.name}/{class_property.name} not found at {svm_path}. "
+                "Train the model first."
+            )
         embedding = self._get_embedding(text).reshape(1, -1)
         data_entries: list[DataEntry] = []
         for class_property in category.properties:
-            if not class_property.type == ClassificationType.BOOLEAN:
-                raise NotSupportedError(
-                    "SVM models are only supported for boolean classification."
-                )
             svm_path = self._svm_path(category, class_property)
-            if not svm_path.exists():
-                raise NotTrainedError(
-                    f"SVM model for {category.name}/{class_property.name} not found at {svm_path}. "
-                    "Train the model first."
-                )
             svm_model = joblib.load(svm_path)
             prediction = svm_model.predict(embedding)
-            data_entries.append(DataEntry(column_name=class_property.name, value=prediction[0]))
+            data_entries.append(DataEntry(column_name=class_property.name, value=int(prediction[0])))
 
         return data_entries
 
@@ -71,7 +83,10 @@ class BGE_Base(ClassificationModel):
     ) -> None:
         if not category.csv_path:
             raise ValueError("No csv as groundtruth provided")
-
+        if not self.is_supported(category):
+            raise NotSupportedError(
+                "SVM models are only supported for boolean classification."
+            )
         df = pd.read_csv(resolved_category_csv_path(category.csv_path))
         train_df, _test_df = ground_truth_train_test_split(df, test_size=test_size)
         train_df = train_df.dropna(subset=[text_column])

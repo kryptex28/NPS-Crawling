@@ -222,7 +222,7 @@ class Config:
     # Ground-truth CSV train/test split: same random_state and test_size for evaluate, train,
     # and few-shot sampling (training fold only for examples).
     CLASSIFICATION_RANDOM_SEED: int = 42
-    CLASSIFICATION_GROUND_TRUTH_TEST_SIZE: float = 0.5
+    CLASSIFICATION_GROUND_TRUTH_TEST_SIZE: float = 0.95
     # Few-shot examples taken from the training fold of category.csv_path.
     # None disables auto-generation when examples=None is passed to ClassificationCategory.
     CLASSIFICATION_FEW_SHOT_NUM_EXAMPLES: int | None = 8
@@ -240,8 +240,14 @@ class Config:
     CLASSIFICATION_CONFIG_USE_NAME_FILES: bool = os.getenv(
         "CLASSIFICATION_CONFIG_USE_NAME_FILES", "0"
     ) == "1"
+    nps_category_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "NPS Category" / "c0b1409c1550fcafe2a84875f32bb495385beac0eccf6d09d7e9eac4c266c1f7.json"
+    nps_value_category_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "NPS Value Category" / "12b0b9acf27aee693b1d518d68a4b6e9481a53fb55245ab4f08e7c50274f433b.json"
+    has_numeric_nps_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "Has Numeric NPS" / "ee63ed22edbeb29b02a976cfdd209f172cff421b5bde2009e1a0c0193f83a38f.json"
+    qwen_llm_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "Qwen3-8B" / "6cd28608db45079139f438ef355a2f901be42efb24f9a4ae1155ebbfa8d957ff.json"
+    qwen_svm_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "Qwen3-Embedding-4B" / "c7d19631b6aeaf2445204a81e778ec2d639ba3c7b02be9416c61e98c5245f3a6.json"
     CLASSIFICATION_CONFIG = {
-        "NPS All.json":"Qwen3-8B.json",
-        "Animals.json":"gpt-4-mini.json"
+        str(nps_category_file):str(qwen_svm_file),
+        str(has_numeric_nps_file):str(qwen_svm_file),
+        str(nps_value_category_file):str(qwen_llm_file)
     }
     

@@ -357,3 +357,9 @@ class ClassificationModel:
     ) -> None:
         """Train SVM model for given classification option."""
         pass
+
+    def is_trained(self, category: ClassificationCategory) -> bool:
+        return True
+    
+    def is_supported(self, category: ClassificationCategory) -> bool:
+        return True

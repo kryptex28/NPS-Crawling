@@ -2,6 +2,7 @@
 
 import json
 import hashlib
+from pathlib import Path
 from typing import List
 
 from nps_crawling.db.db_adapter import DbAdapter
@@ -34,7 +35,7 @@ class ClassificationModelPipeline(Config):
         self.category_model : dict[ClassificationCategory, ClassificationModel] = {}
         self.name = name
         for key, value in self._iter_configuration_items(classification_configuration):
-            if isinstance(key, str):
+            if isinstance(key, str) or isinstance(key, Path):
                 with open(key, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 category = ClassificationCategory.from_dict(data)
@@ -42,7 +43,7 @@ class ClassificationModelPipeline(Config):
                 category = ClassificationCategory.from_dict(key)
             else:
                 category = key
-            if isinstance(value, str):
+            if isinstance(value, str) or isinstance(value, Path):
                 with open(value, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 model = ClassificationModel.from_dict(data)
@@ -51,10 +52,13 @@ class ClassificationModelPipeline(Config):
             else:
                 model = value
             self.category_model[category] = model
+            if not model.is_trained(category):
+                logger.info(f"Training {model.model_name} for {category.name}")
+                model.train(category)
 
         self.adapter = DbAdapter()
 
-        self.out_path = self.NPS_CLASSIFIED_JSON / self.name
+        self.out_path = Config.CLASSIFIED_BASE_PATH / self.name
 
         with open(Config.CLASSIFICATION_CONFIG_DIR / f"{name}.json", "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
@@ -88,10 +92,12 @@ class ClassificationModelPipeline(Config):
 
         classification_configuration = data.get("classification_configuration", {})
         if isinstance(classification_configuration, list):
-            classification_configuration = {
-                ClassificationCategory.from_dict(entry["category"]): ClassificationModel.from_dict(entry["model"])
-                for entry in classification_configuration
-            }
+            for entry in classification_configuration:
+                data = entry["category"]
+                classification_configuration = {
+                    ClassificationCategory.from_dict(entry["category"]): ClassificationModel.from_dict(entry["model"])
+                    for entry in classification_configuration
+                }
 
         return cls(
             name=data["name"],
@@ -112,7 +118,7 @@ class ClassificationModelPipeline(Config):
             # --- Pflicht- und Metadaten-Felder ---
             filing_id=id,                 # ID des Filings
             version=experiment_version,                          # Deine aktuelle Experiment-Version
-            path_to_classified = str(self.NPS_CLASSIFIED_JSON / "files"),    # Pfad für die Haupttabelle (neu!)
+            path_to_classified = str(self.out_path / "files"),    # Pfad für die Haupttabelle (neu!)
             # --- Results ---
             **results
         )
@@ -141,9 +147,9 @@ class ClassificationModelPipeline(Config):
 
                 done += 1
                 logger.info(f"{source_filename}: {done}/{total_windows}")
-            self._write_to_db(record["filing_id"], record_results)
+            self._write_to_db(record["metadata"]["filing"]["id"], record_results)
 
-        file_path = self.out_path / f"{source_filename}.json"
+        file_path = self.out_path / "files" / f"{source_filename}.json"
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
 

@@ -19,6 +19,7 @@ class ClassificationType(str, Enum):
     """Classification types."""
     BOOLEAN = "boolean"
     FLOAT = "float"
+    INTEGER = "integer"
 
     def __repr__(self):
         return self.value
@@ -114,7 +115,7 @@ class ClassificationProperty:
             try:
                 return bool(value)
             except Exception as e:
-                logger.warning(
+                logger.debug(
                     "Value %r was not valid for boolean %s:\n%s\nReturning default %s",
                     value,
                     self.name,
@@ -126,7 +127,7 @@ class ClassificationProperty:
             try:
                 return float(str(value).replace(",", "."))
             except Exception as e:
-                logger.warning(
+                logger.debug(
                     "Value %r was not valid for float %s:\n%s\nReturning default %s",
                     value,
                     self.name,
@@ -134,7 +135,19 @@ class ClassificationProperty:
                     self.default_value,
                 )
                 return self.default_value
-        logger.warning("%s is not implemented; returning default %s", self.type, self.default_value)
+        if self.type == ClassificationType.INTEGER:
+            try:
+                return int(str(value))
+            except Exception as e:
+                logger.debug(
+                    "Value %r was not valid for float %s:\n%s\nReturning default %s",
+                    value,
+                    self.name,
+                    e,
+                    self.default_value,
+                )
+                return self.default_value
+        logger.debug("%s is not implemented; returning default %s", self.type, self.default_value)
         return self.default_value
         
 
@@ -294,7 +307,7 @@ class ClassificationCategory:
             return result
 
         except Exception as e:
-            logger.warning(f"JSON could not be loaded, taking defaults.\n{e}")
+            logger.debug(f"JSON could not be loaded, taking defaults.\n{e}")
             return {}
 
     def get_property(self, name : str):

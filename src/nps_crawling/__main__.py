@@ -178,12 +178,6 @@ def main(argv=None):
                 Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
                 classified_dir.mkdir(parents=True, exist_ok=True)
 
-            if classified_dir.exists() and any(classified_dir.glob("*.json")):
-                print(
-                    f"Experiment '{Config.CLASSIFICATION_VERSION}' already has classified "
-                    f"data at {classified_dir} — skipping classification",
-                )
-            else:
                 DbAdapter().ensure_table_exists(include_classifications=True)
                 classification = ClassificationPipeline()
                 classification.classification_workflow()

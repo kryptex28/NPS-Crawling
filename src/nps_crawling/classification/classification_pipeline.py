@@ -18,9 +18,8 @@ class ClassificationPipeline():
     def __init__(self):
         """Initialize the ClassificationPipeline."""
         # Create version-specific directories on demand
-        Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
         name = Config.CLASSIFICATION_VERSION
-        file_dir = self.NPS_CLASSIFIED_JSON / name
+        file_dir = Config.CLASSIFIED_BASE_PATH / name / "files"
         (file_dir).mkdir(parents=True, exist_ok=True)
 
         self.classified_files = [path.name for path in file_dir.iterdir() if path.is_file()]
@@ -47,18 +46,20 @@ class ClassificationPipeline():
         total_windows_classified = 0
 
         current_time = datetime.now()
+        try:
+            for i, json_file in enumerate(json_files, start=1):
+                logger.info(f"[{i}/{total_files}] Processing {json_file.name}")
+                records = self.get_data.load_file(json_file)
 
-        for i, json_file in enumerate(json_files, start=1):
-            logger.info(f"[{i}/{total_files}] Processing {json_file.name}")
-            records = self.get_data.load_file(json_file)
+                total_windows_classified += sum(len(record.get("context", [])) for record in records)
 
-            total_windows_classified += sum(len(record.get("context", [])) for record in records)
-
-            self.model_pipeline.model_workflow(
-                records,
-                source_filename=json_file.stem,
-            )
-            logger.info(f"[{i}/{total_files}] Finished {json_file.name}")
+                self.model_pipeline.model_workflow(
+                    records,
+                    source_filename=json_file.stem,
+                )
+                logger.info(f"[{i}/{total_files}] Finished {json_file.name}")
+        except KeyboardInterrupt:
+            logger.info("Classification stopped, saving report")
 
         elapsed_seconds = int((datetime.now() - current_time).total_seconds())
         hours, remainder = divmod(elapsed_seconds, 3600)
@@ -77,11 +78,10 @@ class ClassificationPipeline():
             },
         }
 
-        summary_path = self.NPS_CLASSIFIED_JSON / f"classification_{self.CLASSIFICATION_VERSION}.json"
+        summary_path = Config.CLASSIFIED_BASE_PATH / f"classification_{self.CLASSIFICATION_VERSION}.json"
         with open(summary_path, "a", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
 
         logger.info(f"Classification report saved to {summary_path}")
         logger.info(f"Classification finished in {time_taken}")
-        logger.info("Finished classification")
         return None
