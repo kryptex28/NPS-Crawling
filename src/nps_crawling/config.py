@@ -222,7 +222,7 @@ class Config:
     # Ground-truth CSV train/test split: same random_state and test_size for evaluate, train,
     # and few-shot sampling (training fold only for examples).
     CLASSIFICATION_RANDOM_SEED: int = 42
-    CLASSIFICATION_GROUND_TRUTH_TEST_SIZE: float = 0.95
+    CLASSIFICATION_GROUND_TRUTH_TEST_SIZE: float = 0.5
     # Few-shot examples taken from the training fold of category.csv_path.
     # None disables auto-generation when examples=None is passed to ClassificationCategory.
     CLASSIFICATION_FEW_SHOT_NUM_EXAMPLES: int | None = 8
