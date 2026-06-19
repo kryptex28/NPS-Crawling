@@ -38,7 +38,7 @@ class NotSupportedError(Exception):
 
 def resolved_category_csv_path(csv_path: str) -> Path:
     """Resolve ``csv_path`` for reading; relative paths are anchored at :attr:`Config.ROOT_DIR`."""
-    p = Path(csv_path)
+    p = Path(csv_path.replace("\\", "/"))
     if not p.is_absolute():
         return Config.ROOT_DIR / p
     return p
