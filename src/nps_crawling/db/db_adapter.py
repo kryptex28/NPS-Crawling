@@ -37,7 +37,11 @@ class DbAdapter:
         self._db = NpsFilingsDB(self.engine)
         self.table_name = self._db.TABLE
 
-    def ensure_table_exists(self, include_classifications: bool = False) -> None:
+    def ensure_table_exists(
+        self,
+        include_classifications: bool = False,
+        classification_properties: dict[str, str] | None = None
+    ) -> None:
         """Erstellt die Tabelle falls sie noch nicht existiert (CREATE TABLE IF NOT EXISTS)."""
         create_stmt = text(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name} (
@@ -72,7 +76,22 @@ class DbAdapter:
         );
         """)
         
-        cols_sql = Config.get_classification_columns_sql()
+        type_mapping = {
+            "boolean": "BOOLEAN",
+            "float": "DOUBLE PRECISION",
+            "int": "INTEGER",
+            "integer": "INTEGER"
+        }
+
+        if classification_properties is not None:
+            category_columns = []
+            for col_name, col_type in classification_properties.items():
+                db_type = type_mapping.get(col_type.lower(), "BOOLEAN")
+                category_columns.append(f'"{col_name}" {db_type}')
+            cols_sql = ",\n            ".join(category_columns)
+        else:
+            cols_sql = Config.get_classification_columns_sql()
+
         cols_sql_part = f"\n            {cols_sql},\n" if cols_sql else ""
         create_stmt_classifications = text(f"""
         CREATE TABLE IF NOT EXISTS {self.table_name}_classifications (
@@ -114,17 +133,15 @@ class DbAdapter:
                     for row in conn.execute(existing_cols_stmt, {"table_name": class_table}).mappings().all()
                 }
                 
-                type_mapping = {
-                    "boolean": "BOOLEAN",
-                    "float": "DOUBLE PRECISION",
-                    "int": "INTEGER",
-                    "integer": "INTEGER"
-                }
+                properties_to_check = (
+                    classification_properties
+                    if classification_properties is not None
+                    else {cat["name"]: cat["type"] for cat in Config.PROJECT_CATEGORIES}
+                )
                 
-                for cat in Config.PROJECT_CATEGORIES:
-                    col_name = cat["name"]
+                for col_name, col_type in properties_to_check.items():
                     if col_name not in existing_cols:
-                        col_type = type_mapping.get(cat["type"].lower(), "BOOLEAN")
+                        col_type = type_mapping.get(col_type.lower(), "BOOLEAN")
                         alter_stmt = text(
                             f'ALTER TABLE {self.table_name}_classifications '
                             f'ADD COLUMN "{col_name}" {col_type};'
@@ -326,7 +343,7 @@ class DbAdapter:
                 return dict(row)
             return None
 
-    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
+    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, allowed_cols: set[str] | None = None, **kwargs) -> None:
         """
         Upserts a classification result for a specific filing and experiment version.
         This also updates the main filings table with the classified path.
@@ -335,9 +352,10 @@ class DbAdapter:
             filing_id (str): The unique identifier for the filing.
             version (str): The classification experiment version.
             path_to_classified (str | None): Path to the classified JSON file.
+            allowed_cols (set[str] | None): Set of allowed column names.
             **kwargs: Classification category flags mapping to db columns.
         """
-        self._db.upsert_classification(filing_id, version, path_to_classified, **kwargs)
+        self._db.upsert_classification(filing_id, version, path_to_classified, allowed_cols=allowed_cols, **kwargs)
 
     def get_classifications(self, filing_id: str) -> list[dict]:
         """

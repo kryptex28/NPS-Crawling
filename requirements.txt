@@ -21,3 +21,6 @@ pathvalidate
 flask
 openai
 scikit-learn
+pytest
+pytest-mock
+

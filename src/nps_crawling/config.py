@@ -52,11 +52,18 @@ class Config:
             except Exception:
                 pass
 
-    PROJECT_CATEGORIES: list[dict] = (
-        ACTIVE_PROJECT_CONFIG.get("categories", [])
-        if ACTIVE_PROJECT_CONFIG
-        else []
-    )
+
+
+    @classmethod
+    def get_active_project(cls) -> str | None:
+        """Returns the name of the active project, or None if no project is active."""
+        return cls.ACTIVE_PROJECT
+
+    @classmethod
+    def has_active_project(cls) -> bool:
+        """Returns True if a project is currently active, False otherwise."""
+        return bool(cls.ACTIVE_PROJECT)
+
 
     @classmethod
     def get_classification_columns_sql(cls) -> str:
@@ -250,4 +257,26 @@ class Config:
         str(has_numeric_nps_file):str(qwen_svm_file),
         str(nps_value_category_file):str(qwen_llm_file)
     }
+
+    # Load Category properties dynamically from classification configurations
+    PROJECT_CATEGORIES: list[dict] = []
+    for _cat_path in CLASSIFICATION_CONFIG.keys():
+        _path = Path(_cat_path)
+        if _path.exists():
+            try:
+                with open(_path, "r", encoding="utf-8") as _f:
+                    _data = json.load(_f)
+                    for _prop in _data.get("properties", []):
+                        _found = False
+                        for _x in PROJECT_CATEGORIES:
+                            if _x["name"] == _prop["name"]:
+                                _found = True
+                                break
+                        if not _found:
+                            PROJECT_CATEGORIES.append({
+                                "name": _prop["name"],
+                                "type": _prop["type"]
+                            })
+            except Exception:
+                pass
     

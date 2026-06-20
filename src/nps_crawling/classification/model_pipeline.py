@@ -34,6 +34,10 @@ class ClassificationModelPipeline(Config):
         """Initializes ClassificationModelPipeline."""
         self.category_model : dict[ClassificationCategory, ClassificationModel] = {}
         self.name = name
+
+        # 1. Parse configuration to extract categories and properties first
+        self.classification_properties = {}
+        parsed_configs = []
         for key, value in self._iter_configuration_items(classification_configuration):
             if isinstance(key, str) or isinstance(key, Path):
                 with open(key, "r", encoding="utf-8") as f:
@@ -43,6 +47,23 @@ class ClassificationModelPipeline(Config):
                 category = ClassificationCategory.from_dict(key)
             else:
                 category = key
+
+            for prop in category.properties:
+                self.classification_properties[prop.name] = prop.type.value
+
+            parsed_configs.append((category, value))
+
+        self.allowed_cols = set(self.classification_properties.keys())
+
+        # 2. Initialize DB Adapter and ensure classifications table exists with these properties
+        self.adapter = DbAdapter()
+        self.adapter.ensure_table_exists(
+            include_classifications=True,
+            classification_properties=self.classification_properties
+        )
+
+        # 3. Instantiate models and train if necessary
+        for category, value in parsed_configs:
             if isinstance(value, str) or isinstance(value, Path):
                 with open(value, "r", encoding="utf-8") as f:
                     data = json.load(f)
@@ -51,12 +72,11 @@ class ClassificationModelPipeline(Config):
                 model = ClassificationModel.from_dict(value)
             else:
                 model = value
+
             self.category_model[category] = model
             if not model.is_trained(category):
                 logger.info(f"Training {model.model_name} for {category.name}")
                 model.train(category)
-
-        self.adapter = DbAdapter()
 
         self.out_path = Config.CLASSIFIED_BASE_PATH / self.name
 
@@ -119,6 +139,7 @@ class ClassificationModelPipeline(Config):
             filing_id=id,                 # ID des Filings
             version=experiment_version,                          # Deine aktuelle Experiment-Version
             path_to_classified = str(self.out_path / "files"),    # Pfad für die Haupttabelle (neu!)
+            allowed_cols=self.allowed_cols,
             # --- Results ---
             **results
         )

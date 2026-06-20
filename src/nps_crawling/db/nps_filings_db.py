@@ -302,13 +302,14 @@ class NpsFilingsDB:
         with self.engine.connect() as conn:
             return conn.execute(stmt, {"id": id}).scalar_one_or_none()
 
-    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, **kwargs) -> None:
+    def upsert_classification(self, filing_id: str, version: str, path_to_classified: str | None = None, allowed_cols: set[str] | None = None, **kwargs) -> None:
         """
         Upserts classification results for a filing into project_classification_results.
         Also updates the main table with the path to the classified file.
         Only fields present in the table are allowed.
         """
-        allowed_cols = {cat["name"] for cat in Config.PROJECT_CATEGORIES}
+        if allowed_cols is None:
+            allowed_cols = {cat["name"] for cat in Config.PROJECT_CATEGORIES}
         
         # Filter kwargs to only allowed columns
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_cols}
