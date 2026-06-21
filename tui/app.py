@@ -33,6 +33,7 @@ from textual.widgets import (
 from textual.widgets import SelectionList
 from textual.widgets.selection_list import Selection
 
+from widgets.project_widget import ProjectWidget
 from widgets.nagivation_widget import NavigationWidget
 from widgets.query_widget import QueryWidget
 from widgets.crawl_widget import CrawlWidget
@@ -48,6 +49,7 @@ from widgets.log_widget import (
 
 from screens.config_screen import ConfigScreen
 from screens.splash_screen import SplashScreen
+from screens.project_screen import ProjectScreen
 
 from nps_crawling.db.db_adapter import DbAdapter
 
@@ -225,8 +227,10 @@ class CrawlerTuiApp(App):
         self.classification_widget = ClassificationWidget()
         self.result_widget = ResultWidget(id="result-widget")
         self.database_widget = DatabaseWidget()
+        self.project_widget = ProjectWidget()
 
         self.widget_map: dict = {
+            "nav-project": self.project_widget,
             "nav-query": self.query_widget,
             "nav-crawl": self.crawl_widget,
             "nav-preprocessing": self.preprocessing_widget,
@@ -238,7 +242,7 @@ class CrawlerTuiApp(App):
         for v in self.widget_map.values():
             v.display = False
 
-        self.query_widget.display = True
+        self.project_widget.display = True
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
