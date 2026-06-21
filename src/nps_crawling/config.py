@@ -46,6 +46,32 @@ class Config:
         pass
 
     @classmethod
+    def reload_config(cls) -> None:
+        """Reloads the active project from the project manager and recalculates all dependent configurations."""
+        from nps_crawling.utils.project_manager import get_active_project
+        _project_info = get_active_project()
+        if _project_info:
+            cls.ACTIVE_PROJECT = _project_info[0]
+            cls.ACTIVE_PROJECT_DESCRIPTION = _project_info[1]
+        else:
+            cls.ACTIVE_PROJECT = None
+            cls.ACTIVE_PROJECT_DESCRIPTION = None
+
+        cls.DATABASE_TABLE_NAME = (
+            f"{cls.ACTIVE_PROJECT}_db" if cls.ACTIVE_PROJECT else "default"
+        )
+
+        _proj_sub = cls.ACTIVE_PROJECT if cls.ACTIVE_PROJECT else "default"
+        cls.RAW_JSON_PATH_CRAWLER = cls.DATA_PATH / _proj_sub / "json_raw"
+        cls.PROCESSED_BASE_PATH = cls.DATA_PATH / _proj_sub / "json_processed"
+        cls.REJECTED_BASE_PATH = cls.DATA_PATH / _proj_sub / "json_rejected"
+        cls.CLASSIFIED_BASE_PATH = cls.DATA_PATH / _proj_sub / "json_classified"
+
+        cls.NPS_CONTEXT_JSON_PATH = cls.PROCESSED_BASE_PATH / cls.PREPROCESSING_VERSION
+        cls.NPS_REJECTED_JSON_PATH = cls.REJECTED_BASE_PATH / cls.PREPROCESSING_VERSION
+        cls.NPS_CLASSIFIED_JSON = cls.CLASSIFIED_BASE_PATH / cls.CLASSIFICATION_VERSION
+
+    @classmethod
     def get_classification_columns_sql(cls) -> str:
         """Returns dynamically generated SQL column definitions for categories."""
         type_mapping = {
