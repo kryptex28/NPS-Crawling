@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import json
 from dotenv import load_dotenv
+from enum import Enum
 
 load_dotenv()
 
@@ -52,11 +53,18 @@ class Config:
             except Exception:
                 pass
 
-    PROJECT_CATEGORIES: list[dict] = (
-        ACTIVE_PROJECT_CONFIG.get("categories", [])
-        if ACTIVE_PROJECT_CONFIG
-        else []
-    )
+
+
+    @classmethod
+    def get_active_project(cls) -> str | None:
+        """Returns the name of the active project, or None if no project is active."""
+        return cls.ACTIVE_PROJECT
+
+    @classmethod
+    def has_active_project(cls) -> bool:
+        """Returns True if a project is currently active, False otherwise."""
+        return bool(cls.ACTIVE_PROJECT)
+
 
     @classmethod
     def get_classification_columns_sql(cls) -> str:
@@ -83,7 +91,7 @@ class Config:
 
     # .env LOCAL_MODE=1 to enable local mode, .env LOCAL_MODE=0 to disable local mode
     # defaults to False if not set to not interfere with existing server setup
-    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "0") == "1"
+    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "0") == "0"
 
     # Verbindungsstring für die lokale Docker-Postgres (user:password@host:port/db)
     LOCAL_DB_CONNECTION: str = "crawler:crawler@localhost:5432/crawler"
@@ -219,6 +227,60 @@ class Config:
     SIMILARITY_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     """ Classification CONFIG """
+    # Ground-truth CSV train/test split: same random_state and test_size for evaluate, train,
+    # and few-shot sampling (training fold only for examples).
+    CLASSIFICATION_RANDOM_SEED: int = 42
+    CLASSIFICATION_GROUND_TRUTH_TEST_SIZE: float = 0.5
+    # Few-shot examples taken from the training fold of category.csv_path.
+    # None disables auto-generation when examples=None is passed to ClassificationCategory.
+    CLASSIFICATION_FEW_SHOT_NUM_EXAMPLES: int | None = 8
+    CLASSIFICATION_FEW_SHOT_TEXT_COLUMN: str = "snippet_text_short"
+    # Shuffles rows within the training fold only; does not change the train/test boundary.
+    CLASSIFICATION_FEW_SHOT_SAMPLE_SEED: int = 43
+
+    CLASSIFICATION_CACHE_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "cache"
+    CLASSIFICATION_CONFIG_DIR = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations"
+
+    # When True: category configs are ``categories/<Name>.json`` (no per-name subfolder / hash file).
+    # Model configs are ``<ClassName>__<ModelName>.json`` directly under CLASSIFICATION_CONFIG_DIR
+    # (no ``<model_name>/<hash>.json`` folder). When False, the previous hash-based layout is used.
+    # Can be overridden with env ``CLASSIFICATION_CONFIG_USE_NAME_FILES=1``.
+    CLASSIFICATION_CONFIG_USE_NAME_FILES: bool = os.getenv(
+        "CLASSIFICATION_CONFIG_USE_NAME_FILES", "0"
+    ) == "1"
+    nps_category_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "NPS Category" / "c0b1409c1550fcafe2a84875f32bb495385beac0eccf6d09d7e9eac4c266c1f7.json"
+    nps_value_category_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "NPS Value Category" / "12b0b9acf27aee693b1d518d68a4b6e9481a53fb55245ab4f08e7c50274f433b.json"
+    has_numeric_nps_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "categories" / "Has Numeric NPS" / "ee63ed22edbeb29b02a976cfdd209f172cff421b5bde2009e1a0c0193f83a38f.json"
+    qwen_llm_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "Qwen3-8B" / "6cd28608db45079139f438ef355a2f901be42efb24f9a4ae1155ebbfa8d957ff.json"
+    qwen_svm_file = ROOT_DIR / "src" / "nps_crawling" / "classification" / "configurations" / "Qwen3-Embedding-4B" / "c7d19631b6aeaf2445204a81e778ec2d639ba3c7b02be9416c61e98c5245f3a6.json"
+    CLASSIFICATION_CONFIG = {
+        str(nps_category_file):str(qwen_svm_file),
+        str(has_numeric_nps_file):str(qwen_svm_file),
+        str(nps_value_category_file):str(qwen_llm_file)
+    }
+
+    # Load Category properties dynamically from classification configurations
+    PROJECT_CATEGORIES: list[dict] = []
+    for _cat_path in CLASSIFICATION_CONFIG.keys():
+        _path = Path(_cat_path)
+        if _path.exists():
+            try:
+                with open(_path, "r", encoding="utf-8") as _f:
+                    _data = json.load(_f)
+                    for _prop in _data.get("properties", []):
+                        _found = False
+                        for _x in PROJECT_CATEGORIES:
+                            if _x["name"] == _prop["name"]:
+                                _found = True
+                                break
+                        if not _found:
+                            PROJECT_CATEGORIES.append({
+                                "name": _prop["name"],
+                                "type": _prop["type"]
+                            })
+            except Exception:
+                pass
+    
     # OLLAMA
     OLLAMA_PERSONA: str = (
             "You are a corporate-disclosure text classifier.\n"

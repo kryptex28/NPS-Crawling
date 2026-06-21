@@ -86,7 +86,7 @@ def main(argv=None):
     log_level = min(logging.INFO, max(logging.DEBUG, verbosity))
     log.setLevel(log_level)
 
-    from nps_crawling.classification import ClassificationPipeline
+    from nps_crawling.classification.classification_pipeline import ClassificationPipeline
     from nps_crawling.crawler import CrawlerPipeline
     from nps_crawling.preprocessing import PreProcessingPipeline
     from nps_crawling.results import ResultsPipeline
@@ -170,13 +170,13 @@ def main(argv=None):
                 pre_processing = PreProcessingPipeline()
                 pre_processing.pre_processing_workflow()
         elif args.command == "classify":
-
             classified_dir = Config.NPS_CLASSIFIED_JSON / "files"
 
             if args.force and Config.NPS_CLASSIFIED_JSON.exists():
                 shutil.rmtree(Config.NPS_CLASSIFIED_JSON)
-                Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
-                classified_dir.mkdir(parents=True, exist_ok=True)
+                
+            Config.NPS_CLASSIFIED_JSON.mkdir(parents=True, exist_ok=True)
+            classified_dir.mkdir(parents=True, exist_ok=True)
 
             if classified_dir.exists() and any(classified_dir.glob("*.json")):
                 print(
@@ -184,7 +184,6 @@ def main(argv=None):
                     f"data at {classified_dir} — skipping classification",
                 )
             else:
-                DbAdapter().ensure_table_exists(include_classifications=True)
                 classification = ClassificationPipeline()
                 classification.classification_workflow()
         elif args.command == "display":

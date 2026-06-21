@@ -1,0 +1,59 @@
+{
+  "name": "Default",
+  "classification_configuration": [
+    {
+      "category": {
+        "class_name": "ClassificationCategory",
+        "csv_path": null,
+        "examples": [
+          {
+            "answer": [
+              {
+                "column_name": "prop1.name",
+                "value": "value"
+              },
+              {
+                "column_name": "prop2.name",
+                "value": "value"
+              }
+            ],
+            "text": "Input text one"
+          },
+          {
+            "answer": [
+              {
+                "column_name": "prop1.name",
+                "value": "value"
+              },
+              {
+                "column_name": "prop2.name",
+                "value": "value"
+              }
+            ],
+            "text": "Input text two"
+          }
+        ],
+        "name": "Default",
+        "prompt_base": "category.prompt_base",
+        "properties": [
+          {
+            "description": "prop1.description",
+            "name": "prop1.name",
+            "type": "boolean"
+          },
+          {
+            "description": "prop2.description",
+            "name": "prop2.name",
+            "type": "boolean"
+          }
+        ]
+      },
+      "model": {
+        "class_name": "HF_LLM",
+        "kwargs": {},
+        "model_input": "category.prompt_base\n\nLabels:\n - prop1.name: prop1.description\n - prop2.name: prop2.description\n\nOutput Format:\n{\n    \"prop1.name\": \"boolean\",\n    \"prop2.name\": \"boolean\"\n}\nReturn valid JSON only, following the output format exactly.\nNow classify this text:\n",
+        "model_name": "Qwen/Qwen3-8B"
+      }
+    }
+  ]
+}

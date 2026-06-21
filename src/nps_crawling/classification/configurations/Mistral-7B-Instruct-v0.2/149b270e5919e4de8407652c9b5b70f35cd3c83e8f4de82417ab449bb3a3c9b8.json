@@ -1,0 +1,204 @@
+{
+    "class_name": "HF_LLM",
+    "model_name": "mistralai/Mistral-7B-Instruct-v0.2",
+    "model_input": {
+        "NPS Category": "\n                You are an expert text classification model for Net Promoter Score (NPS) related statements.\n\n                Task:\n                Classify the input text into one or more labels from the list below.\n                This is a multi-label classification task, so more than one label can be correct.\n                Return a JSON array of label names only.\n\n                Labels:\n                - KPI_CURRENT_VALUE: Reports a specific NPS value.\n                - KPI_TREND: Describes change over time such as increase, decrease, decline, improvement, or growth.\n                - KPI_HISTORICAL_COMPARISON: Explicit numerical comparison to past values such as a year, quarter, or previous period.\n                - TARGET_OUTLOOK: Future goals, targets, ambitions, or expected future NPS values.\n                - NPS_GOAL_REACHED: States that an NPS target, goal, threshold, or objective has been met or exceeded.\n                - METHODOLOGY_DEFINITION: Explains what NPS is, how it is calculated, or what it measures.\n                - QUALITATIVE_ONLY: Mentions NPS without numbers, benchmarks, targets, trends, or other clear context.\n\n                Rules:\n                1. Return at least one label.\n                2. Return every label that is explicitly supported by the text.\n                3. Do not infer labels that are not clearly stated.\n                4. If the text gives a specific NPS number, include KPI_CURRENT_VALUE.\n                5. If the text describes a change over time, include KPI_TREND.\n                6. If the text compares against a past period, include KPI_HISTORICAL_COMPARISON.\n                7. If the text states a future target or ambition, include TARGET_OUTLOOK.\n                8. If the text says a target was reached or exceeded, include NPS_GOAL_REACHED.\n                9. If the text explains NPS conceptually, include METHODOLOGY_DEFINITION.\n                10. Use QUALITATIVE_ONLY only when NPS is mentioned meaningfully but no stronger label applies.\n                11. Return JSON only, with no explanation.\n\n                Output format:\n                [\"KPI_CURRENT_VALUE\", \"KPI_TREND\"]\n            ",
+        "NPS Value Category": "\n                You are a precise text classification assistant specialized in identifying Net Promoter Score (NPS) signals. Your task is to analyze the input text and return all applicable labels from the list below. This is a multi-label classification task, so zero, one, or several labels may apply.\n\n                Labels and definitions:\n                - nps_value_fix: Unambiguous, valid NPS value explicitly stated (no bounds or comparisons).  \n                Example: \"Our NPS is 60.0.\"\n                - nps_competition_industry: NPS mentioned in comparison to industry benchmarks or competitors.  \n                Example: \"Our NPS is higher than the industry average of 35.4.\"\n                - nps_value_over: NPS value expressed as a minimum using signal words like \"above\", \"over\", or \"greater than\".  \n                Example: \"Our NPS is above 30.0.\"\n                - nps_value_below: NPS value expressed as a maximum using signal words like \"below\", \"under\", or \"less than\".  \n                Example: \"Our NPS is below 79.7.\"\n                - nps_goal_value: Explicit target NPS value, typically \u2265 20.  \n                Example: \"We aim to improve our NPS to 80.0 next year.\"\n                - nps_goal_change: Change-oriented target (amount of improvement, not a final value).  \n                Example: \"We aim to improve our NPS by 12.5 next year.\"\n\n                Instructions:\n                - Return all labels that clearly apply to the text.\n                - If multiple labels apply, include all of them.\n                - If no label applies, return the empty array [].\n                - Return the result as a JSON array of strings.\n                - Do not add explanations, reasoning, or extra text.\n                - Preserve the exact label names (no variants, typos, or abbreviations).\n\n                Example outputs:\n                - [\"nps_value_fix\"]\n                - [\"nps_competition_industry\", \"nps_value_fix\"]\n                - [\"nps_goal_value\", \"nps_goal_change\"]\n                - []\n\n                Now classify the following text according to these rules. Return only the JSON array.\n            ",
+        "Has Numeric NPS": "\n                You are an expert text classifier for Net Promoter Score (NPS) related statements.\n\n                Task:\n                Determine whether the input text contains a specific numeric NPS value.\n                Return a JSON boolean only: true or false.\n\n                Definitions:\n                - has_numeric_nps = true: the text explicitly contains a numeric NPS value (e.g., \"NPS is 60\", \"NPS of 35.4\", \"NPS: 72\").\n                - has_numeric_nps = false: the text mentions NPS but does not give a concrete number, or does not mention NPS at all.\n\n                Examples:\n                Text: \"Our NPS is 60.\"\n                Output: true\n\n                Text: \"We aim to improve our NPS next year.\"\n                Output: false\n\n                Text: \"Our NPS declined to 45.2 in Q4.\"\n                Output: true\n\n                Text: \"NPS is a very important metric.\"\n                Output: false\n\n                Rules:\n                1. Return valid JSON only.\n                2. Output must be exactly true or false, lowercase, no quotes, no explanation.\n                3. Do not infer numbers that are not explicitly stated.\n            "
+    },
+    "kwargs": {},
+    "evaluation_results": {
+        "NPS Category": {
+            "KPI_CURRENT_VALUE": {
+                "0": {
+                    "precision": 0.75,
+                    "recall": 0.3333333333333333,
+                    "f1-score": 0.46153846153846156,
+                    "support": 9.0
+                },
+                "1": {
+                    "precision": 0.45454545454545453,
+                    "recall": 0.8333333333333334,
+                    "f1-score": 0.5882352941176471,
+                    "support": 6.0
+                },
+                "accuracy": 0.5333333333333333,
+                "macro avg": {
+                    "precision": 0.6022727272727273,
+                    "recall": 0.5833333333333334,
+                    "f1-score": 0.5248868778280543,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 0.6318181818181817,
+                    "recall": 0.5333333333333333,
+                    "f1-score": 0.5122171945701358,
+                    "support": 15.0
+                }
+            },
+            "KPI_TREND": {
+                "0": {
+                    "precision": 0.75,
+                    "recall": 0.75,
+                    "f1-score": 0.75,
+                    "support": 8.0
+                },
+                "1": {
+                    "precision": 0.7142857142857143,
+                    "recall": 0.7142857142857143,
+                    "f1-score": 0.7142857142857143,
+                    "support": 7.0
+                },
+                "accuracy": 0.7333333333333333,
+                "macro avg": {
+                    "precision": 0.7321428571428572,
+                    "recall": 0.7321428571428572,
+                    "f1-score": 0.7321428571428572,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 0.7333333333333333,
+                    "recall": 0.7333333333333333,
+                    "f1-score": 0.7333333333333333,
+                    "support": 15.0
+                }
+            },
+            "KPI_HISTORICAL_COMPARISON": {
+                "0": {
+                    "precision": 0.9090909090909091,
+                    "recall": 0.7142857142857143,
+                    "f1-score": 0.8,
+                    "support": 14.0
+                },
+                "1": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 1.0
+                },
+                "accuracy": 0.6666666666666666,
+                "macro avg": {
+                    "precision": 0.45454545454545453,
+                    "recall": 0.35714285714285715,
+                    "f1-score": 0.4,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 0.8484848484848484,
+                    "recall": 0.6666666666666666,
+                    "f1-score": 0.7466666666666667,
+                    "support": 15.0
+                }
+            },
+            "TARGET_OUTLOOK": {
+                "0": {
+                    "precision": 0.9090909090909091,
+                    "recall": 0.7142857142857143,
+                    "f1-score": 0.8,
+                    "support": 14.0
+                },
+                "1": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 1.0
+                },
+                "accuracy": 0.6666666666666666,
+                "macro avg": {
+                    "precision": 0.45454545454545453,
+                    "recall": 0.35714285714285715,
+                    "f1-score": 0.4,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 0.8484848484848484,
+                    "recall": 0.6666666666666666,
+                    "f1-score": 0.7466666666666667,
+                    "support": 15.0
+                }
+            },
+            "NPS_GOAL_REACHED": {
+                "0": {
+                    "precision": 1.0,
+                    "recall": 0.7333333333333333,
+                    "f1-score": 0.8461538461538461,
+                    "support": 15.0
+                },
+                "1": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 0.0
+                },
+                "accuracy": 0.7333333333333333,
+                "macro avg": {
+                    "precision": 0.5,
+                    "recall": 0.36666666666666664,
+                    "f1-score": 0.4230769230769231,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 0.7333333333333333,
+                    "f1-score": 0.8461538461538461,
+                    "support": 15.0
+                }
+            },
+            "METHODOLOGY_DEFINITION": {
+                "0": {
+                    "precision": 0.9333333333333333,
+                    "recall": 1.0,
+                    "f1-score": 0.9655172413793104,
+                    "support": 14.0
+                },
+                "1": {
+                    "precision": 0.0,
+                    "recall": 0.0,
+                    "f1-score": 0.0,
+                    "support": 1.0
+                },
+                "accuracy": 0.9333333333333333,
+                "macro avg": {
+                    "precision": 0.4666666666666667,
+                    "recall": 0.5,
+                    "f1-score": 0.4827586206896552,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 0.8711111111111111,
+                    "recall": 0.9333333333333333,
+                    "f1-score": 0.9011494252873563,
+                    "support": 15.0
+                }
+            },
+            "QUALITATIVE_ONLY": {
+                "0": {
+                    "precision": 0.9166666666666666,
+                    "recall": 0.8461538461538461,
+                    "f1-score": 0.88,
+                    "support": 13.0
+                },
+                "1": {
+                    "precision": 0.3333333333333333,
+                    "recall": 0.5,
+                    "f1-score": 0.4,
+                    "support": 2.0
+                },
+                "accuracy": 0.8,
+                "macro avg": {
+                    "precision": 0.625,
+                    "recall": 0.6730769230769231,
+                    "f1-score": 0.64,
+                    "support": 15.0
+                },
+                "weighted avg": {
+                    "precision": 0.8388888888888888,
+                    "recall": 0.8,
+                    "f1-score": 0.8160000000000001,
+                    "support": 15.0
+                }
+            },
+            "time_per_snippet": 5.484516866666667
+        }
+    }
+}

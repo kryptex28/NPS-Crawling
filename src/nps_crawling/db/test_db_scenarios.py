@@ -6,24 +6,25 @@ from pathlib import Path
 src_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(src_dir))
 
-# Backup and mock active project for testing using the first available project config file
+# Backup and mock active project for testing using the first available project config file (skipped if under pytest)
 active_file = src_dir.parent / ".active_project"
 temp_backup = src_dir.parent / ".active_project.backup"
-
-if active_file.exists():
-    try:
-        active_file.rename(temp_backup)
-    except Exception:
-        pass
-
-# Use the dedicated test project config for database tests
 mock_project = "test_project"
 
-active_file.write_text(mock_project, encoding="utf-8")
+if "pytest" not in sys.modules:
+    if active_file.exists() and not temp_backup.exists():
+        try:
+            active_file.rename(temp_backup)
+        except Exception:
+            pass
+
+    active_file.write_text(mock_project, encoding="utf-8")
 
 from nps_crawling.db.db_adapter import DbAdapter
 
-if 'POSTGRES_ENGINE' not in os.environ:
+from nps_crawling.config import Config
+
+if not Config.LOCAL_MODE and 'POSTGRES_ENGINE' not in os.environ:
     os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
 
 
@@ -33,7 +34,8 @@ def test_scenarios() -> None:
     duplicate handling, array modifications (keywords), and the complete cycle
     of the new relational Classification table (multiple versions, updates, cascading deletes).
     """
-    print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
+    conn_str = os.environ.get('POSTGRES_ENGINE', Config.LOCAL_DB_CONNECTION)
+    print(f"Connecting to database using: {conn_str}")
     
     from nps_crawling.db.ensure_docker import ensure_docker_db_running
     ensure_docker_db_running()
@@ -181,7 +183,6 @@ def test_scenarios() -> None:
     print(f"Verification - Total Classifications found: {len(classifs_updated)} (Should STILL be 2, no new row)")
     print(f"Verification (v1 updated) - KPI_CURRENT_VALUE: {v1_data_updated.get('KPI_CURRENT_VALUE')} (Should be False)")
     print("\n--- Scenario 4.5: Dynamic Column Addition ---")
-    from nps_crawling.config import Config
     
     # Simulate adding a category in JSON config
     new_cat = {"name": "DYNAMIC_TEST_COLUMN", "type": "boolean"}

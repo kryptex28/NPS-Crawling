@@ -6,26 +6,26 @@ from pathlib import Path
 src_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(src_dir))
 
-# Backup and mock active project for testing using the first available project config file
+# Backup and mock active project for testing using the first available project config file (skipped if under pytest)
 active_file = src_dir.parent / ".active_project"
 temp_backup = src_dir.parent / ".active_project.backup"
-
-if active_file.exists():
-    try:
-        active_file.rename(temp_backup)
-    except Exception:
-        pass
-
-# Use the dedicated test project config for database tests
 mock_project = "test_project"
 
-active_file.write_text(mock_project, encoding="utf-8")
+if "pytest" not in sys.modules:
+    if active_file.exists() and not temp_backup.exists():
+        try:
+            active_file.rename(temp_backup)
+        except Exception:
+            pass
+
+    active_file.write_text(mock_project, encoding="utf-8")
 
 from nps_crawling.db.db_adapter import DbAdapter
 
-# Set mock environment for the test script (ensure this DB exists in your local postgres!)
-# Alternatively, replace this with your actual local test DB credentials.
-if 'POSTGRES_ENGINE' not in os.environ:
+from nps_crawling.config import Config
+
+# Set mock environment for the test script if not running under Config.LOCAL_MODE
+if not Config.LOCAL_MODE and 'POSTGRES_ENGINE' not in os.environ:
     os.environ['POSTGRES_ENGINE'] = 'postgres:postgres@localhost:5432/nps_db'
 
 
@@ -34,7 +34,8 @@ def test_adapter() -> None:
     Runs basic tests to verify that the DbAdapter can insert filings,
     update fields and file paths, and retrieve rows from the database.
     """
-    print(f"Connecting to database using: {os.environ['POSTGRES_ENGINE']}")
+    conn_str = os.environ.get('POSTGRES_ENGINE', Config.LOCAL_DB_CONNECTION)
+    print(f"Connecting to database using: {conn_str}")
     
     from nps_crawling.db.ensure_docker import ensure_docker_db_running
     ensure_docker_db_running()

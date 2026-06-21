@@ -1,0 +1,16 @@
+model,model_name,family,nps_category_mean_positive_f1,nps_category_mean_macro_f1,nps_category_time_per_snippet_s,has_numeric_f1_pos,has_numeric_accuracy,has_numeric_time_per_snippet_s,value_category_mean_correct_f1,value_category_time_per_snippet_s
+Qwen3-Embedding-4B,Qwen/Qwen3-Embedding-4B,Embedding,0.5695,0.7782,9.7175,,,,,
+gpt-5.4,gpt-5.4,LLM,0.5225,0.7141,1.3123,,,,,
+gpt-5.4,gpt-5.4,LLM,0.5225,0.7141,1.3123,,,,,
+bge-large-en-v1.5,BAAI/bge-large-en-v1.5,Embedding,0.4912,0.7343,1.0105,0.7210,0.7450,,,
+bge-large-en-v1.5,BAAI/bge-large-en-v1.5,Embedding,0.4912,0.7343,1.0105,0.7210,0.7450,,,
+gpt-5.4-mini,gpt-5.4-mini,LLM,0.4409,0.6677,1.3809,0.8772,0.9007,,0.7451,
+gpt-5.4-mini,gpt-5.4-mini,LLM,0.4409,0.6677,1.3809,0.8772,0.9007,,0.7451,
+bge-m3,BAAI/bge-m3,Embedding,0.4387,0.6711,0.1397,0.7250,0.7479,0.1326,,
+bge-m3,BAAI/bge-m3,Embedding,0.4387,0.6711,0.1397,0.7250,0.7479,0.1326,,
+all-MiniLM-L6-v2,sentence-transformers/all-MiniLM-L6-v2,Embedding,0.4032,0.6426,0.0152,0.6790,0.7020,0.0110,,
+paraphrase-multilingual-mpnet-base-v2,sentence-transformers/paraphrase-multilingual-mpnet-base-v2,Embedding,0.3888,0.6321,0.0524,0.6463,0.6676,0.0464,,
+paraphrase-multilingual-MiniLM-L12-v2,sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2,Embedding,0.3884,0.6316,0.0281,0.6066,0.6246,0.0211,,
+Qwen3-4B,Qwen/Qwen3-4B,LLM,0.3622,0.6543,32.9268,0.9091,0.9333,11.8285,1.0000,24.1288
+Mistral-7B-Instruct-v0.2,mistralai/Mistral-7B-Instruct-v0.2,LLM,0.2838,0.5147,5.4845,,,,,
+Qwen3-8B,Qwen/Qwen3-8B,LLM,,,,,,,1.0000,218.2602
