@@ -43,7 +43,7 @@ class ConfigScreen(ModalScreen):
         align: center middle;
     }
     ConfigScreen > Container {
-        width: 80;
+        width: 75%;
         max-height: 90%;
         background: $surface;
         border: thick $primary;
@@ -197,38 +197,12 @@ class ConfigScreen(ModalScreen):
                     )
 
                 with Vertical(classes="config-row"):
-                    yield Label("Persona prompt")
-                    yield Input(Config.OLLAMA_PERSONA, id="cfg-persona-prompt")
-
-                with Vertical(classes="config-row"):
                     yield Static("Experiment Versioning")
                     yield Label("Preprocessing Version")
                     yield Input(Config.PREPROCESSING_VERSION, id="cfg-preprocessing-version")
 
                     yield Label("Classification Version")
                     yield Input(Config.CLASSIFICATION_VERSION, id="cfg-classification-version")
-
-                with Vertical(classes="config-row"):
-                    yield Static("Class")
-                    yield Input("", id="cfg-prompt-class")
-                    yield Static("Prompt")
-                    yield Input("", id="cfg-prompt-prompt")
-                    yield Button("Add Class with Prompt", id="cfg-prompt-confirm", variant="success")
-                    yield DataTable(id="cfg-prompt-table", cursor_type="row", zebra_stripes=True)
-                    
-                with Vertical(classes="config-row"):
-                    yield Static("Database definition")
-                    yield Static("Column Name")
-                    yield Input("", id="cfg-table-col-name")
-                    yield Static("Column Datatype")
-                    yield Select(
-                        [("Boolean", "boolean"), ("Integer", "integer")],
-                        id="cfg-table-col-datatype",
-                        value="boolean",
-                    ) 
-                    yield Button("Add column to database", id="cfg-table-confirm", variant="success")
-                    
-                    yield DataTable(id="cfg-table-table", cursor_type="row", zebra_stripes=True)
 
             with Horizontal(classes="dialog-footer"):
                 yield Button("Save", variant="primary", id="cfg-save")
@@ -249,62 +223,8 @@ class ConfigScreen(ModalScreen):
         
         self.dismiss(True)
 
-    @on(Button.Pressed, "#cfg-prompt-confirm")
-    def add_prompts(self):
-        class_text: str = self.query_one("#cfg-prompt-class", Input).value.strip()
-        prompt_text: str = self.query_one("#cfg-prompt-prompt", Input).value.strip()
-
-        prompt_data: PromptData = PromptData(prompt_class=class_text,
-                                             prompt=prompt_text)
-
-        self.model.add_prompt(prompt_data)
-
-        self._refresh_prompt_table()
-
-    @on(Button.Pressed, "#cfg-table-confirm")
-    def add_column(self):
-        col_name: str = self.query_one("#cfg-table-col-name", Input).value.strip()
-        datatype: str = self.query_one("#cfg-table-col-datatype", Select).value.strip()
-
-        prompt_data: TableData = TableData(column_name=col_name,
-                                           datatype=datatype)
-
-        self.model.add_column(prompt_data)
-
-        self._refresh_table_table()
-
-
-    def _refresh_table_table(self):
-        table: DataTable = self.query_one("#cfg-table-table", DataTable)
-        table.clear()
-
-        for c in self.model.columns:
-            column_name = getattr(c, "column_name", None)
-            datatype = getattr(c, "datatype", None)
-            if column_name and datatype:
-                table.add_row(c.column_name, c.datatype)
-
-
-    def _refresh_prompt_table(self):
-        table: DataTable = self.query_one("#cfg-prompt-table", DataTable)
-        table.clear()
-
-        for p in self.model.prompts:
-            class_text = getattr(p, "prompt_class", None)
-            prompt_text = getattr(p, "prompt", None)
-            if class_text and prompt_text:
-                table.add_row(p.prompt_class, p.prompt)
-
     def on_mount(self) -> None:
-        table: DataTable = self.query_one("#cfg-prompt-table", DataTable)
-        table.add_columns("Class", "Prompt")
-        self.model.load_prompts()
-        self._refresh_prompt_table()
-
-        table: DataTable = self.query_one("#cfg-table-table", DataTable)
-        table.add_columns("Column Name", "Datatype")
-        self.model.load_columns()
-        self._refresh_table_table()
+        pass
 
     @on(Button.Pressed, "#cfg-cancel")
     def cancel(self) -> None:

@@ -28,3 +28,4 @@ pytest-mock
 crochet
 textual
 pyfiglet
+rapidfuzz

@@ -27,6 +27,7 @@ from textual.widgets import (
     Switch,
     TabbedContent,
     TabPane,
+    OptionList
 )
 from rich.text import Text
 from textual.widgets import SelectionList
@@ -38,13 +39,30 @@ from constants import US_STATES
 from models.query_model import QueryModel
 from screens.filing_types_screen import FilingTypesScreen
 from data_package.query_data import QueryData
+from data_package.entity_data import EntityData
 
 class QueryWidget(Container):
+
+    DEFAULT_CSS = """
+    QueryWidget #entity-fuzzy-results {
+        display: none;
+        height: auto;
+        max-height: 8;
+        margin-top: 1;
+        border: round $primary-darken-2;
+        background: $panel;
+    }
+    QueryWidget #entity-fuzzy-results.visible {
+        display: block;
+    }
+
+    """
 
     def __init__(self):
         super().__init__()
         self.model = QueryModel()
         self._selected_ids: set[str] = set()
+        self._fuzzy_results: dict[str, EntityData] = {}
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="crawl-layout"):
@@ -73,6 +91,8 @@ class QueryWidget(Container):
                         placeholder="Company, ticker, CIK or name",
                         id="inp-entity"
                     )
+                    yield Button("Start Fuzzy Search", id="inp-entity-fuzzy")
+                    yield OptionList(id="entity-fuzzy-results")
                 # Filing category + types
                 with Horizontal(classes="grid-2 form-row"):
                     with Vertical():
@@ -305,3 +325,41 @@ class QueryWidget(Container):
             if getattr(rb, "selected", False):
                 return name
         return "all"
+
+    @on(Button.Pressed, "#inp-entity-fuzzy")
+    def _fuzzy_search(self):
+        entity_text: str = self.query_one("#inp-entity", Input).value.strip()
+
+        if not entity_text:
+            self.notify("Enter a name, ticker, or CIK first.", severity="warning")
+            return
+
+        results: list[EntityData] = self.model.fuzzy_search(entity_text)
+
+        option_list = self.query_one("#entity-fuzzy-results", OptionList)
+        option_list.clear_options()
+
+        if not results:
+            option_list.remove_class("visible")
+            self.notify("No matches found.", severity="warning")
+            return
+
+        self._fuzzy_results = {}  # map prompt -> EntityData
+        for entity in results:
+            label = f"{entity.title}  (CIK: {entity.cik} TICKER: {entity.ticker})"
+            option_list.add_option(label)
+            self._fuzzy_results[label] = entity
+
+        option_list.add_class("visible")
+
+    @on(OptionList.OptionSelected, "#entity-fuzzy-results")
+    def _on_entity_selected(self, event: OptionList.OptionSelected) -> None:
+        label = str(event.option.prompt)
+        entity = self._fuzzy_results.get(label)
+
+        if entity:
+            self.query_one("#inp-entity", Input).value = entity.ticker
+
+        option_list = self.query_one("#entity-fuzzy-results", OptionList)
+        option_list.clear_options()
+        option_list.remove_class("visible")

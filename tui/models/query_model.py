@@ -11,10 +11,13 @@ from nps_crawling.crawler.pre_fetch_utils.sec_params import (
     store_config,
 )
 from nps_crawling.crawler.pre_fetch_utils.filings import FilingsCategoryCollectionCoarse
+from nps_crawling.crawler.pre_fetch_utils.sec_ticker_map import SecTickerMap
 from nps_crawling.config import Config
 from data_package.query_data import QueryData
-from uuid import uuid4
+from data_package.entity_data import EntityData
 
+from uuid import uuid4
+from rapidfuzz import process, fuzz
 
 class QueryModel():
 
@@ -30,14 +33,7 @@ class QueryModel():
             self.query_ids: list[str] = []
             self._initialized = True
             self.selected_queries: set[str] = set()
-#
-#    def create_query(self, data: dict) -> None:
-#        print(data)
-#        parameter: SecSearchParams = create_config_from_dict(data=data)
-#        parameter.query_base = "https://efts.sec.gov/LATEST/search-index?"
-#
-#        store_config(path=Config.GUI_QUERY_PATH, 
-#                     parameter=parameter)
+
 
     def get_query_ids(self) -> list[str]:
         return self.query_ids
@@ -45,7 +41,6 @@ class QueryModel():
     def accept_queries(self):
         # Technically nothing to do here lol
         pass
-
 
     def get_queries(self) -> list[QueryData]:
         params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.GUI_QUERY_PATH))
@@ -116,3 +111,22 @@ class QueryModel():
         # TODO: Maybe extract into param class
         if os.path.isdir(Config.GUI_QUERY_PATH):
             os.remove(join(Config.GUI_QUERY_PATH, f"{id}.json"))
+
+    def fuzzy_search(self, text: str):
+        data: list[tuple[str, str, str]] = SecTickerMap().get_fuzzy_data()
+        limit: int = 5
+        choices = {i: row[2] for i, row in enumerate(data)}
+
+        matches = process.extract(
+            text,
+            choices,
+            scorer=fuzz.WRatio,
+            limit=limit
+        )
+
+        entity_data: list[EntityData] = []
+        for _, _, idx in matches:
+            d = data[idx]
+            entity_data.append(EntityData(cik=d[0], ticker=d[1], title=d[2]))
+
+        return entity_data

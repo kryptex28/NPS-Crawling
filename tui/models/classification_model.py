@@ -1,6 +1,6 @@
 from typing_extensions import Self
 
-from nps_crawling.classification.utils import ClassificationPipeline
+from nps_crawling.classification.classification_pipeline import ClassificationPipeline
 
 class ClassificationModel():
 

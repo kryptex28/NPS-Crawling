@@ -36,8 +36,6 @@ from constants import US_STATES
 
 from models.database_model import DatabaseModel
 
-from models.database_model import DatabaseModel
-
 class DatabaseWidget(Container):
 
     def __init__(self):

@@ -52,6 +52,7 @@ NavigationWidget {
 
     def compose(self):
         with Horizontal(id="navigation"):
+            yield Button("Project", id="nav-project")
             yield Button("Query", id="nav-query")
             yield Button("Crawl", id="nav-crawl")
             yield Button("Preprocessing", id="nav-preprocessing")
