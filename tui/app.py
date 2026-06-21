@@ -47,6 +47,7 @@ from widgets.log_widget import (
 )
 
 from screens.config_screen import ConfigScreen
+from screens.splash_screen import SplashScreen
 
 from nps_crawling.db.db_adapter import DbAdapter
 
@@ -206,6 +207,13 @@ class CrawlerTuiApp(App):
         padding: 0 1;
         dock: bottom;
     }
+
+    Button {
+        width: auto;
+        min-width: 12;
+        height: 3;
+        margin-right: 1;
+    }
     """
 
     def __init__(self) -> None:
@@ -269,6 +277,8 @@ class CrawlerTuiApp(App):
         )
 
     def on_mount(self) -> None:
+        self.push_screen(SplashScreen())
+
         rich_log = self.query_one("#log-output", RichLog)
         handler = TextualLogHandler(rich_log)
         handler.setLevel(logging.INFO)
@@ -277,7 +287,6 @@ class CrawlerTuiApp(App):
             datefmt="%H:%M:%S",
         ))
 
-        # attach to your package's root logger so every sub-logger feeds in
         pkg_logger = logging.getLogger("nps_crawling") 
         pkg_logger.setLevel(logging.INFO)
         pkg_logger.addHandler(handler)

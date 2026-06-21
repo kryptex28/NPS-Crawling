@@ -19,3 +19,5 @@ python-dotenv
 openpyxl
 flask
 crochet
+textual
+pyfiglet
