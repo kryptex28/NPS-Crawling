@@ -34,36 +34,16 @@ class Config:
     QUERY_PATH = ROOT_DIR / "query"
 
     # Active Project
-    _active_project_file = ROOT_DIR / ".active_project"
-    ACTIVE_PROJECT: str | None = (
-        _active_project_file.read_text(encoding="utf-8").strip()
-        if _active_project_file.exists()
-        else None
-    )
-
-    # Load Active Project Configuration
-    ACTIVE_PROJECT_CONFIG: dict | None = None
-    if ACTIVE_PROJECT:
-        _project_file = ROOT_DIR / "projects" / f"{ACTIVE_PROJECT}.json"
-        if _project_file.exists():
-            try:
-                with open(_project_file, "r", encoding="utf-8") as _f:
-                    ACTIVE_PROJECT_CONFIG = json.load(_f)
-            except Exception:
-                pass
-
-
-
-    @classmethod
-    def get_active_project(cls) -> str | None:
-        """Returns the name of the active project, or None if no project is active."""
-        return cls.ACTIVE_PROJECT
-
-    @classmethod
-    def has_active_project(cls) -> bool:
-        """Returns True if a project is currently active, False otherwise."""
-        return bool(cls.ACTIVE_PROJECT)
-
+    ACTIVE_PROJECT: str | None = None
+    ACTIVE_PROJECT_DESCRIPTION: str | None = None
+    try:
+        from nps_crawling.utils.project_manager import get_active_project
+        _project_info = get_active_project()
+        if _project_info:
+            ACTIVE_PROJECT = _project_info[0]
+            ACTIVE_PROJECT_DESCRIPTION = _project_info[1]
+    except Exception:
+        pass
 
     @classmethod
     def get_classification_columns_sql(cls) -> str:
