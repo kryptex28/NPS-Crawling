@@ -51,6 +51,9 @@ class ProjectModel():
     def get_categories(self) -> list[dict[str, str]]:
         return self.categories
     
+    def is_project_active(self) -> bool:
+        return has_active_project()
+    
     def remove_category(self, category_name: str) -> None:
         self.categories = [category for category in self.categories if category["name"] != category_name]
     

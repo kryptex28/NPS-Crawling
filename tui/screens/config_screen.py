@@ -38,62 +38,7 @@ from models.config_model import ConfigModel
 from data_package.table_data import TableData
 
 class ConfigScreen(ModalScreen):
-    DEFAULT_CSS = """
-    ConfigScreen {
-        align: center middle;
-    }
-    ConfigScreen > Container {
-        width: 75%;
-        max-height: 90%;
-        background: $surface;
-        border: thick $primary;
-        padding: 0 1;
-    }
-    ConfigScreen .dialog-title {
-        background: $primary;
-        color: $text;
-        text-align: center;
-        padding: 0 1;
-        height: 3;
-        content-align: center middle;
-    }
-    ConfigScreen .section-header {
-        color: $accent;
-        text-style: bold;
-        margin-top: 1;
-        margin-bottom: 0;
-    }
-    ConfigScreen .config-row {
-        height: auto;
-        margin-bottom: 1;
-    }
-    ConfigScreen .config-row Label {
-        margin-bottom: 0;
-    }
-    ConfigScreen .config-row Input,
-    ConfigScreen .config-row Select {
-        width: 100%;
-    }
-    ConfigScreen .switch-row {
-        height: 3;
-        layout: horizontal;
-        align: left middle;
-    }
-    ConfigScreen .switch-row Label {
-        width: 1fr;
-        content-align: left middle;
-    }
-    ConfigScreen .dialog-footer {
-        height: 3;
-        layout: horizontal;
-        align: right middle;
-        margin-top: 1;
-        margin-bottom: 1;
-    }
-    ConfigScreen .dialog-footer Button {
-        margin-left: 1;
-    }
-    """
+    CSS_PATH = "config_screen.tcss"
 
     def __init__(self):
         super().__init__()

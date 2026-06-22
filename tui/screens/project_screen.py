@@ -11,59 +11,7 @@ from models.project_model import ProjectModel
 from data_package.project_data import ProjectData
 
 class ProjectScreen(ModalScreen):
-    DEFAULT_CSS = """
-    ProjectScreen {
-        align: center middle;
-    }
-
-    ProjectScreen > Vertical {
-        width: 75%;
-        max-height: 90%;
-        background: $surface;
-        border: thick $primary;
-        padding: 0 1;
-    }
-
-    ProjectScreen #project-title {
-        background: $primary;
-        color: $text;
-        text-align: center;
-        padding: 0 1;
-        height: 3;
-        content-align: center middle;
-    }
-
-    ProjectScreen #project-recent {
-        color: $accent;
-        text-style: bold;
-        margin-top: 1;
-        margin-bottom: 1;
-    }
-
-    ProjectScreen #project-table {
-        height: 1fr;
-        margin-bottom: 1;
-    }
-
-    ProjectScreen Button {
-        margin-top: 1;
-        width: 100%;
-    }
-
-    ProjectScreen #open-project-btn {
-        background: $primary;
-        color: $text;
-    }
-
-    ProjectScreen #delete-project-btn {
-        background: $error;
-        color: $text;
-    }
-
-    ProjectScreen #refresh-project-btn {
-        background: $surface-lighten-1;
-    }
-    """
+    CSS_PATH = "project_screen.tcss"
 
 
     def __init__(self) -> None:

@@ -6,42 +6,8 @@ from textual import on
 import pyfiglet
 
 class SplashScreen(ModalScreen):
-    CSS = """
-    SplashScreen {
-        align: center middle;
-        background: $background;
-    }
+    CSS_PATH = "splash_screen.tcss"
 
-    #splash-box {
-        width: auto;
-        height: auto;
-        padding: 2 4;
-        border: round $accent;
-        align: center middle;
-    }
-
-    #splash-logo {
-        text-align: center;
-        color: $accent;
-        text-style: bold;
-        width: auto;
-        margin-bottom: 1;
-    }
-
-    #splash-subtitle {
-        text-align: center;
-        color: $text-muted;
-        width: auto;
-        margin-bottom: 2;
-    }
-
-    #splash-continue {
-        width: auto;
-        min-width: 20;
-        height: 3;
-        align-horizontal: center;
-    }
-    """
     LOGO = pyfiglet.figlet_format("SEC Crawler\nTHU")
 
     def compose(self) -> ComposeResult:
