@@ -8,7 +8,8 @@ _project_file = Config.ROOT_DIR / "projects" / "test_project.json"
 if _project_file.exists():
     try:
         with open(_project_file, "r", encoding="utf-8") as f:
-            Config.ACTIVE_PROJECT_CONFIG = json.load(f)
+            _data = json.load(f)
+            Config.ACTIVE_PROJECT_DESCRIPTION = _data.get("description", "")
     except Exception:
         pass
 

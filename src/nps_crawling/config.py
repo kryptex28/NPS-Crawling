@@ -35,36 +35,42 @@ class Config:
     GUI_QUERY_PATH = ROOT_DIR / "gui_query"
 
     # Active Project
-    _active_project_file = ROOT_DIR / ".active_project"
-    ACTIVE_PROJECT: str | None = (
-        _active_project_file.read_text(encoding="utf-8").strip()
-        if _active_project_file.exists()
-        else None
-    )
-
-    # Load Active Project Configuration
-    ACTIVE_PROJECT_CONFIG: dict | None = None
-    if ACTIVE_PROJECT:
-        _project_file = ROOT_DIR / "projects" / f"{ACTIVE_PROJECT}.json"
-        if _project_file.exists():
-            try:
-                with open(_project_file, "r", encoding="utf-8") as _f:
-                    ACTIVE_PROJECT_CONFIG = json.load(_f)
-            except Exception:
-                pass
-
-
+    ACTIVE_PROJECT: str | None = None
+    ACTIVE_PROJECT_DESCRIPTION: str | None = None
+    try:
+        from nps_crawling.utils.project_manager import get_active_project
+        _project_info = get_active_project()
+        if _project_info:
+            ACTIVE_PROJECT = _project_info[0]
+            ACTIVE_PROJECT_DESCRIPTION = _project_info[1]
+    except Exception:
+        pass
 
     @classmethod
-    def get_active_project(cls) -> str | None:
-        """Returns the name of the active project, or None if no project is active."""
-        return cls.ACTIVE_PROJECT
+    def reload_config(cls) -> None:
+        """Reloads the active project from the project manager and recalculates all dependent configurations."""
+        from nps_crawling.utils.project_manager import get_active_project
+        _project_info = get_active_project()
+        if _project_info:
+            cls.ACTIVE_PROJECT = _project_info[0]
+            cls.ACTIVE_PROJECT_DESCRIPTION = _project_info[1]
+        else:
+            cls.ACTIVE_PROJECT = None
+            cls.ACTIVE_PROJECT_DESCRIPTION = None
 
-    @classmethod
-    def has_active_project(cls) -> bool:
-        """Returns True if a project is currently active, False otherwise."""
-        return bool(cls.ACTIVE_PROJECT)
+        cls.DATABASE_TABLE_NAME = (
+            f"{cls.ACTIVE_PROJECT}_db" if cls.ACTIVE_PROJECT else "default"
+        )
 
+        _proj_sub = cls.ACTIVE_PROJECT if cls.ACTIVE_PROJECT else "default"
+        cls.RAW_JSON_PATH_CRAWLER = cls.DATA_PATH / _proj_sub / "json_raw"
+        cls.PROCESSED_BASE_PATH = cls.DATA_PATH / _proj_sub / "json_processed"
+        cls.REJECTED_BASE_PATH = cls.DATA_PATH / _proj_sub / "json_rejected"
+        cls.CLASSIFIED_BASE_PATH = cls.DATA_PATH / _proj_sub / "json_classified"
+
+        cls.NPS_CONTEXT_JSON_PATH = cls.PROCESSED_BASE_PATH / cls.PREPROCESSING_VERSION
+        cls.NPS_REJECTED_JSON_PATH = cls.REJECTED_BASE_PATH / cls.PREPROCESSING_VERSION
+        cls.NPS_CLASSIFIED_JSON = cls.CLASSIFIED_BASE_PATH / cls.CLASSIFICATION_VERSION
 
     @classmethod
     def get_classification_columns_sql(cls) -> str:

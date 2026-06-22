@@ -93,11 +93,8 @@ def main(argv=None):
 
     try:
         if args.command == "load":
-            projects_dir = Config.ROOT_DIR / "projects"
-            if not projects_dir.exists():
-                projects_dir.mkdir(parents=True, exist_ok=True)
-            
-            available_projects = [f.stem for f in projects_dir.glob("*.json")]
+            from nps_crawling.utils.project_manager import get_available_projects, activate_project, get_git_root
+            available_projects = get_available_projects()
             
             if not args.project_name:
                 if not available_projects:
@@ -109,6 +106,7 @@ def main(argv=None):
                 print("\nBitte lade ein Projekt mit: nps-crawling load <projekt_name>")
                 return
 
+            projects_dir = get_git_root() / "projects"
             project_file = projects_dir / f"{args.project_name}.json"
             if not project_file.exists():
                 print(f"Fehler: Projekt-Datei '{project_file.name}' existiert nicht in '{projects_dir}'.")
@@ -127,13 +125,10 @@ def main(argv=None):
                 print(f"Fehler beim Lesen der Projekt-Datei '{project_file.name}': {e}")
                 sys.exit(1)
 
-            if not project_data.get("categories"):
-                print(f"Fehler beim Laden des Projekts '{args.project_name}': Das Projekt hat keine Kategorien.")
-                sys.exit(1)
+
 
             # Write active project state
-            active_file = Config.ROOT_DIR / ".active_project"
-            active_file.write_text(args.project_name, encoding="utf-8")
+            activate_project(args.project_name)
             print(f"Projekt '{args.project_name}' erfolgreich geladen.")
             return
 
@@ -141,7 +136,8 @@ def main(argv=None):
             if not Config.ACTIVE_PROJECT:
                 print("Bitte mit nps-crawling load ein projekt laden.")
                 sys.exit(1)
-            if not Config.ACTIVE_PROJECT_CONFIG:
+            project_file = Config.ROOT_DIR / "projects" / f"{Config.ACTIVE_PROJECT}.json"
+            if not project_file.exists():
                 print(f"Fehler: Die Konfigurationsdatei fuer das aktive Projekt '{Config.ACTIVE_PROJECT}' wurde nicht gefunden.")
                 print("Bitte lade ein existierendes Projekt mit: nps-crawling load <projekt_name>")
                 sys.exit(1)
