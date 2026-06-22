@@ -296,5 +296,10 @@ class CrawlerTuiApp(App):
         pkg_logger.addHandler(handler)
 
 
+
+    @on(Button.Pressed, "#show-projects-btn")
+    def show_projects_view(self):
+        self.push_screen(ProjectScreen())
+
 if __name__ == "__main__":
     CrawlerTuiApp().run()
