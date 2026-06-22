@@ -34,6 +34,14 @@ from textual.message import Message
 from textual.widgets import Button
 from textual.widget import Widget
 
+from dataclasses import dataclass
+
+@dataclass
+class NavigationItem:
+    id: str
+    label: str
+
+
 class NavigationWidget(Widget):
 
     CSS: str = """
@@ -44,6 +52,16 @@ NavigationWidget {
     height: auto;
 }
 """
+    NAVIGATION_ITEMS: list[NavigationItem] = [
+        NavigationItem("nav-project", "Project"),
+        NavigationItem("nav-query", "Query"),
+        NavigationItem("nav-crawl", "Crawl"),
+        NavigationItem("nav-preprocessing", "Preprocessing"),
+        NavigationItem("nav-classification", "Classification"),
+        NavigationItem("nav-results", "Results"),
+        NavigationItem("nav-database", "Database"),
+    ]
+
 
     class Navigate(Message):
         def __init__(self, page: str) -> None:
@@ -52,18 +70,9 @@ NavigationWidget {
 
     def compose(self):
         with Horizontal(id="navigation"):
-            yield Button("Project", id="nav-project")
-            yield Button("Query", id="nav-query")
-            yield Button("Crawl", id="nav-crawl")
-            yield Button("Preprocessing", id="nav-preprocessing")
-            yield Button("Classification", id="nav-classification")
-            yield Button("Results", id="nav-results")
-            yield Button("Database", id="nav-database")
-            yield Button("Settings", id="nav-settings")
-
+            for item in self.NAVIGATION_ITEMS:
+                yield Button(f"{item.label}", id=item.id)
+            
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        button_id = event.button.id
-        assert button_id is not None
-
-        self.post_message(self.Navigate(button_id))
-
+        event.stop()
+        self.post_message(self.Navigate(event.button.id))
