@@ -46,7 +46,9 @@ class DatabaseWidget(Container):
         with Horizontal():
             with Vertical():
                 yield Static("Database", classes="section-header")
-                yield Button("Show Database", id="btn-show-database")
+                with Horizontal():
+                    yield Button("Show Database", id="btn-show-database")
+                    yield Button("Clear Database", id="btn-clear-database")
                 yield DataTable(id="db-table")
 
     @on(Button.Pressed, "#btn-show-database")
@@ -70,3 +72,8 @@ class DatabaseWidget(Container):
 
         for row in rows:
             table.add_row(*(str(row.get(col, "")) for col in columns))
+
+    @on(Button.Pressed, "#btn-clear-database")
+    def on_database_clear(self):
+        database = self.query_one("#db-table", DataTable)
+        database.clear()
