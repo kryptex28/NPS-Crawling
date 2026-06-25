@@ -84,6 +84,10 @@ class ClassificationWidget(Container):
             self.app.notify("Classification failed", title="Error", severity="error")
         elif event.state == WorkerState.CANCELLED:
             self.app.notify("Classification stopped", title="Stopped")
+        else:
+            return
+        
+        self._stop_timer()
 
     @on(Button.Pressed, "#btn-start-classification")
     async def start_classification(self) -> None:

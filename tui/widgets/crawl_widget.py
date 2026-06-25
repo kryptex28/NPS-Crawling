@@ -65,6 +65,10 @@ class CrawlWidget(Container):
             self.app.notify("Crawl failed", title="Error", severity="error")
         elif event.state == WorkerState.CANCELLED:
             self.app.notify("Crawl stopped", title="Stopped")
+        else:
+            return
+        
+        self._stop_timer()
 
     @on(Button.Pressed, "#btn-stop-crawl")
     async def stop_crawl(self) -> None:
