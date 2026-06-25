@@ -32,6 +32,7 @@ class Config:
     ROOT_DIR = get_git_root()
     DATA_PATH = ROOT_DIR / "data"
     QUERY_PATH = ROOT_DIR / "query"
+    GUI_QUERY_PATH = ROOT_DIR / "gui_query"
 
     # Active Project
     ACTIVE_PROJECT: str | None = None
@@ -286,3 +287,11 @@ class Config:
             except Exception:
                 pass
     
+    CRAWLER_GLOBAL_LIMIT: int = -1 
+    CRAWLER_RECOVERY_ATTEMPTS: int = 10
+    CRAWLER_RECOVERY_TIMEOUT: int = 5
+    CRAWLER_DRY_RUN: bool = False
+    CRAWLER_DELAY: float = 0.1
+    CRAWLER_STATS_DUMP: bool = False
+
+    REQUEST_USER_AGENT: str = "user.name@email.com"

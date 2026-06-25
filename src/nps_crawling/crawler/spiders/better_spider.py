@@ -1,12 +1,16 @@
 """Improved Spider to crawl SEC filings for NPS mentions based on parameters and SEC search function."""
 from typing import Any, AsyncIterator, Iterable
+from typing_extensions import Self
 
 import scrapy
+from scrapy.crawler import Crawler
+from scrapy import signals
+from scrapy.exceptions import CloseSpider
 
 from nps_crawling.crawler.pattern_factory.processing_factory import ProcessingFactory
 from nps_crawling.crawler.items import FilingItem
 from nps_crawling.crawler.pre_fetch_utils.filings import Filing
-
+from nps_crawling.utils.event_bus import bus
 
 class BetterSpider(scrapy.Spider):
     """Improved Scrapy Spider for improved filing search (simply better)."""
@@ -23,15 +27,20 @@ class BetterSpider(scrapy.Spider):
         self.logger.info("Initializes spider.")
 
         self.filings: list[Filing] = filings
-
+        self._stop_requested: bool = False
+        bus.subscribe("crawler.stop", self._on_stop_requested)
 
     async def start(self) -> AsyncIterator[Any]:
         """Starts scrapy spider."""
         self.logger.info("Starting scrapy spider.")
+        bus.publish("crawler.status", "Starting", "")
 
         for i, filing in enumerate(self.filings):
+            
             self.logger.info(f"Dispatching filing {filing.file_path_name} - Number: {i}.")
             url: str = filing.get_url()[0]
+            bus.publish("crawler.status", "Dispatching", url)
+
             yield scrapy.Request(
                 url=url,
                 callback=self.parse,
@@ -41,12 +50,20 @@ class BetterSpider(scrapy.Spider):
                 dont_filter=True,
             )
 
+
     def parse(self, response: scrapy.http.Response) -> Iterable[FilingItem]:
         """Parses filing and redirects to specific content extractor."""
         self.logger.info(f"Parsing {response.url}")
         filing: Filing = response.meta['filing']
         keyword: str = filing.keyword
         url: str = response.meta['url']
+
+        if self._stop_requested:
+                self.logger.info("Stopping spider before parsing.")
+                bus.publish("crawler.status", "Stopped", "")
+                raise CloseSpider("stop_requested")
+
+        # bus.publish("crawler.status", "Parsing", url)
 
         # Extract text from response content
         try:
@@ -64,3 +81,20 @@ class BetterSpider(scrapy.Spider):
 
         # Dispatch into pipeline
         yield item
+
+    def item_scraped(self, item: FilingItem, spider: scrapy.Spider) -> None:
+        """Called when an item is scraped."""
+        self.logger.info(f"Item scraped: {item['filing'].file_path_name}")
+        filing: Filing = item['filing']
+        bus.publish("crawl.result", filing)
+
+    @classmethod
+    def from_crawler(cls, crawler: Crawler, *args, **kwargs):
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        # Connect the spider.item_scraped method to the item_scraped signal
+        crawler.signals.connect(spider.item_scraped, signal=signals.item_scraped)
+        return spider
+    
+    def _on_stop_requested(self, *args, **kwargs):
+        self.logger.info("Stop requested via event bus.")
+        self._stop_requested = True

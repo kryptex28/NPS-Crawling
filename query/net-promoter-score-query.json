@@ -10,7 +10,8 @@
       "individual_search_cik": "",
       "individual_search_title": "",
       "filing_category": "",
-      "filing_categories": []
+      "filing_categories": [],
+      "filing_limit": 500
     },
     "2": {
       "query_base": "https://efts.sec.gov/LATEST/search-index?",
@@ -22,7 +23,8 @@
       "individual_search_cik": "",
       "individual_search_title": "",
       "filing_category": "",
-      "filing_categories": []
+      "filing_categories": [],
+      "filing_limit": 500
     },
     "3": {
       "query_base": "https://efts.sec.gov/LATEST/search-index?",
@@ -46,7 +48,8 @@
       "individual_search_cik": "",
       "individual_search_title": "",
       "filing_category": "",
-      "filing_categories": []
+      "filing_categories": [],
+      "filing_limit": 500
     },
     "5": {
       "query_base": "https://efts.sec.gov/LATEST/search-index?",
@@ -58,7 +61,8 @@
       "individual_search_cik": "",
       "individual_search_title": "",
       "filing_category": "",
-      "filing_categories": []
+      "filing_categories": [],
+      "filing_limit": 500 
     }
   }
 }
