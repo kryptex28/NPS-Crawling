@@ -36,10 +36,11 @@ from constants import FILING_TYPES
 class FilingTypesScreen(ModalScreen):
     CSS_PATH = "filing_types_screen.tcss"
 
-    def __init__(self, selected: list[str]) -> None:
+    def __init__(self, selected: list[str] | None = None) -> None:
         super().__init__()
-        self._pre_selected = set(selected)
+        self._pre_selected = set(selected or [])
 
+    
     def compose(self) -> ComposeResult:
         with Container():
             yield Static("Select Filing Types", classes="picker-title")
@@ -69,6 +70,7 @@ class FilingTypesScreen(ModalScreen):
     @on(Button.Pressed, "#pick-confirm")
     def confirm(self) -> None:
         sl = self.query_one("#filing-types-list", SelectionList)
+
         self.dismiss(list(sl.selected))
 
     @on(Button.Pressed, "#pick-cancel")

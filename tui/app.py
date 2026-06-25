@@ -54,6 +54,7 @@ from screens.project_screen import ProjectScreen
 
 from nps_crawling.db.db_adapter import DbAdapter
 from models.project_model import ProjectModel
+from models.query_model import QueryModel
 
 
 class CrawlerTuiApp(App):
@@ -125,7 +126,18 @@ class CrawlerTuiApp(App):
     @on(Button.Pressed, "#btn-filing-types")
     def action_open_filing_types(self) -> None:
         self.push_screen(
-            FilingTypesScreen([]),
+            FilingTypesScreen(),
+            self._on_filing_types_confirmed,
+        )
+
+    def _on_filing_types_confirmed(self, results: list[str] | None) -> None:
+        if results is None:
+            return
+        
+        QueryModel().add_filing_categories(results)
+
+        self.query_one("#filing-types-label", Label).update(
+            ", ".join(results) or "None"
         )
 
     def on_mount(self) -> None:

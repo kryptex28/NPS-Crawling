@@ -109,7 +109,7 @@ class QueryWidget(Container):
                             id="btn-filing-types",
                             variant="default",
                         )
-                        yield Static("None selected", id="filing-types-badge")
+                        yield Label("None selected", id="filing-types-label")
 
                 # Date range
                 with Vertical(classes="form-row"):
@@ -167,10 +167,13 @@ class QueryWidget(Container):
         keyword: str = self.query_one("#inp-keyword", Input).value.strip()
         from_date: str = self.query_one("#inp-from-date", Input).value.strip()
         to_date: str = self.query_one("#inp-to-date", Input).value.strip()
-        filing_types: str #TODO Selected
+        entity: str = self.query_one("#inp-entity", Input).value.strip()
 
         cat_sel = self.query_one("#sel-category", Select)
         filing_category: str = str(cat_sel.value) if cat_sel.value != Select.BLANK else ""
+        if self.model.get_filing_categories():
+            filing_categories: list[str] = self.model.get_filing_categories()
+            filing_category = "custom"
 
 
         if not keyword:
@@ -193,9 +196,9 @@ class QueryWidget(Container):
             from_date=from_date,
             to_date=to_date,
             date_range=date_range,
-            entity="",
+            entity=entity,
             filing_category=filing_category,
-            filing_types=[],
+            filing_types=filing_categories,
             selected=False
         )
 

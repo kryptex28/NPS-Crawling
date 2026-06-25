@@ -18,6 +18,8 @@ from data_package.entity_data import EntityData
 
 from uuid import uuid4
 from rapidfuzz import process, fuzz
+from nps_crawling.crawler.pre_fetch_utils.sec_params import CompanyTicker
+from nps_crawling.crawler.pre_fetch_utils.sec_ticker_map import SecTickerMap
 
 class QueryModel():
 
@@ -33,6 +35,7 @@ class QueryModel():
             self.query_ids: list[str] = []
             self._initialized = True
             self.selected_queries: set[str] = set()
+            self.categories: list[str] = []
 
 
     def get_query_ids(self) -> list[str]:
@@ -76,6 +79,15 @@ class QueryModel():
 
     def _create_config_from_query(self, data: QueryData) -> SecSearchParams:
         data.id = str(uuid4())
+
+        ticker_map: SecTickerMap = SecTickerMap()
+        
+        individual_search: tuple[str, str, str] = ("", "", "")
+
+        for cik, ticker, title in ticker_map.get_fuzzy_data():
+            if ticker.lower() == data.entity.lower():
+                individual_search = (cik, ticker, title)
+
         return SecSearchParams(
             id=data.id,
             keyword=data.keyword,
@@ -83,6 +95,9 @@ class QueryModel():
             date_range=data.date_range,
             from_date=data.from_date,
             to_date=data.to_date,
+            individual_search=CompanyTicker(cik=individual_search[0],
+                                            ticker=[individual_search[1]],
+                                            title=individual_search[2]),
             filing_categories=data.filing_types,
             filing_category=FilingsCategoryCollectionCoarse.from_string(data.filing_category),
             force_crawl=False,
@@ -130,3 +145,9 @@ class QueryModel():
             entity_data.append(EntityData(cik=d[0], ticker=d[1], title=d[2]))
 
         return entity_data
+
+    def add_filing_categories(self, categories: list[str]):
+        self.categories = categories.copy()
+
+    def get_filing_categories(self) -> list[str]:
+        return self.categories
