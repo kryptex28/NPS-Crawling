@@ -18,7 +18,12 @@ from nps_crawling.classification.categories.category import (
 import json
 import os
 import logging
-from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.classification.common import (
+    load_json_file,
+    make_hashable,
+    resolve_config_path,
+    stable_serialize,
+)
 from nps_crawling.config import Config
 
 logger = logging.getLogger(__name__)
@@ -285,6 +290,11 @@ class ClassificationModel:
         kwargs = dict(data.get("kwargs", {}))
         model_input = data.get("model_input", "")
         return subclass(data["model_name"], model_input, **kwargs)
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "ClassificationModel":
+        """Load a model from a JSON file."""
+        return cls.from_dict(load_json_file(resolve_config_path(path)))
     
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
         """Classify given text according to the specified category."""

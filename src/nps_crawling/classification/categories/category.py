@@ -7,7 +7,12 @@ from pathlib import Path
 import re
 from typing import List, Optional
 
-from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.classification.common import (
+    load_json_file,
+    make_hashable,
+    resolve_config_path,
+    stable_serialize,
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -268,18 +273,25 @@ class ClassificationCategory:
     
     @classmethod
     def from_dict(cls, data):
+        class_name = data.get("class_name", cls.__name__)
+        target_cls = cls._registry.get(class_name, cls)
 
         raw_examples = data.get("examples") or []
         examples_arg = [Example.from_dict(example_data) for example_data in raw_examples]
 
-        return cls(
+        return target_cls(
             name=data["name"],
             properties=[ClassificationProperty.from_dict(prop_data) for prop_data in data["properties"]],
             prompt_base=data["prompt_base"],
-            csv_path=data["csv_path"],
+            csv_path=data.get("csv_path"),
             examples=examples_arg,
             num_examples=data.get("num_examples"),
         )
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "ClassificationCategory":
+        """Load a category from a JSON file."""
+        return cls.from_dict(load_json_file(resolve_config_path(path)))
 
     def is_valid(self, entry: DataEntry) -> bool:
         """Check if entry is valid for this category."""

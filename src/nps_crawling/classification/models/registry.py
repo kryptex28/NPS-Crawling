@@ -1,5 +1,4 @@
 from enum import Enum
-import json
 from nps_crawling.classification.models.model import ClassificationModel
 from nps_crawling.classification.models.hf_llm import HF_LLM
 from nps_crawling.classification.models.ollama_llm import Ollama_LLM
@@ -39,7 +38,5 @@ def get_model(model_class_name: ClassificationModelName, model_name: str, **kwar
     return model_class(model_name, **kwargs)
 
 def get_model_from_config(config_path: str):
-    """Get model instance from config dictionary."""
-    with open(config_path, "r") as f:
-        config = json.load(f)
-    return ClassificationModel.from_dict(config)
+    """Get model instance from a JSON config file."""
+    return ClassificationModel.from_json(config_path)

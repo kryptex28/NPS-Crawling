@@ -129,10 +129,12 @@ def main(argv=None):
 
             # Write active project state
             activate_project(args.project_name)
+            Config.reload_config()
             print(f"Projekt '{args.project_name}' erfolgreich geladen.")
             return
 
         if args.command in ["crawl", "process", "classify", "display"]:
+            Config.reload_config()
             if not Config.ACTIVE_PROJECT:
                 print("Bitte mit nps-crawling load ein projekt laden.")
                 sys.exit(1)

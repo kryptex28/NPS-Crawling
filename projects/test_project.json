@@ -1,4 +1,7 @@
 {
   "name": "test_project",
-  "description": "Project configuration used for database tests"
+  "description": "Project configuration used for database tests",
+  "crawl": "projects/configs/crawl/default.json",
+  "preprocess": "projects/configs/preprocess/version_2.json",
+  "classification": "projects/configs/classification/version_1.json"
 }

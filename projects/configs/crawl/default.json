@@ -1,0 +1,5 @@
+{
+  "query_path": "query",
+  "sec_query_limit_count": 10000,
+  "download_delay": 0.2
+}
