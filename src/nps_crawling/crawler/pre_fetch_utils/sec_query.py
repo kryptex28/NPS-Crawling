@@ -2,16 +2,16 @@
 import logging
 import sys
 import time
-
+import math
 import requests
 
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.crawler.pre_fetch_utils.filings import Filing
 from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams
 from nps_crawling.crawler.pre_fetch_utils.sec_ticker_map import SecTickerMap
+from nps_crawling.utils.event_bus import bus
 
 logger = logging.getLogger(__name__)
-
 
 def get_total_filings_count(data: dict) -> int:
     """Get total number of queried filings."""
@@ -30,6 +30,13 @@ class SecQuery:
         self.sec_params = sec_params
         self.results = -1
         self.keyword_filings = []
+
+        self.stop_querying: bool = False
+
+        bus.subscribe("crawler.stop", self._stop_prefetch)
+
+    def _stop_prefetch(self):
+        self.stop_querying = True
 
     def query_request(self, page: int) -> dict:
         """Queries the requested filings page."""
@@ -54,6 +61,7 @@ class SecQuery:
 
     def are_filings_present_in_db(self, filings: list[Filing], bypass_filter: bool = False) -> list[Filing]:
         temp: list[Filing] = []
+        duplicates: list[Filing] = []
         try:
             db: DbAdapter = DbAdapter()
 
@@ -66,7 +74,10 @@ class SecQuery:
                 else:
                     db.add_keyword(filing.id, filing.keyword)
                     logger.debug(f"Filing with ID {filing.get_id()} does exists in DB")
+                    duplicates.append(filing)
                     pass
+
+            bus.publish("crawler.duplicates", duplicates)
 
             old_length: int = len(filings)
             filings.clear()
@@ -94,6 +105,9 @@ class SecQuery:
         retries: int = 0
 
         while True:
+            if self.stop_querying:
+                return []
+
             if retries > maximum_retries:
                 logger.error(f"Unable to fetch filings after {retries} retries!")
                 exit(-1)
@@ -125,6 +139,7 @@ class SecQuery:
             query = len(hits)
 
             logger.info(f'Iterating through page: {page}')
+            bus.publish('paging.info', page, math.ceil(total / 100))
 
             if limit < query:
                 response['hits']['hits'] = hits[:limit]
@@ -222,6 +237,14 @@ class SecQuery:
         )
 
         return filing
+
+    def create_filing_from_db(self, data: dict) -> Filing:
+        wrapped = {
+            "_id": data["id"],
+            "_index": "edgar",
+            "_source": data
+        }
+        return self.create_filing(wrapped)
 
     def create_filings(self, data: list) -> list[Filing]:
         """Create list of filings based on JSON payload."""

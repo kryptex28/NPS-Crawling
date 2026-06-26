@@ -24,3 +24,8 @@ scikit-learn
 pytest
 pytest-mock
 
+
+crochet
+textual
+pyfiglet
+rapidfuzz

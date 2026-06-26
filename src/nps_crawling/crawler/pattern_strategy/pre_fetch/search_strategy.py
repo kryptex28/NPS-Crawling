@@ -2,6 +2,7 @@ from nps_crawling.crawler.pattern_strategy.pre_fetch.fetch_strategy import Fetch
 from nps_crawling.crawler.pre_fetch_utils.filings import Filing
 from nps_crawling.crawler.pre_fetch_utils.sec_params import SecSearchParams, create_search_params_from_config
 from nps_crawling.crawler.pre_fetch_utils.sec_query import SecQuery
+from nps_crawling.utils.event_bus import bus
 
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
@@ -43,6 +44,7 @@ class SearchStrategy(FetchStrategy):
             if ignore_lookup:
                 logger.info("Ignoring database.")
                 filings = temp
+                bus.publish("prefetch.result", temp)
             else:
                 logger.info("Using database for duplicate-check.")
                 temp = query.are_filings_present_in_db(filings=temp.copy())
@@ -57,7 +59,9 @@ class SearchStrategy(FetchStrategy):
                     else:
                         filings_dict[filing.id] = filing
 
-                filings = list(filings_dict.values())
+                new_list: list[Filing] = list(filings_dict.values())
+                bus.publish("prefetch.result", new_list)
+                filings = new_list
 
                 for _id, dupes in duplicates.items():
                     logger.info(f"Found for ID {_id} {len(dupes)} duplicates.")
