@@ -249,6 +249,53 @@ def load_project_file(project_file: Path, *, root_dir: Path | None = None) -> di
     }
 
 
+def section_config_path(
+    section_ref: str | dict | None,
+    section: str,
+    root_dir: Path,
+) -> Path:
+    """Resolve the JSON file path for a crawl/preprocess/classification section."""
+    if isinstance(section_ref, str):
+        return resolve_project_config_path(section_ref, root_dir)
+    return root_dir / CONFIG_TREE_PATHS[section]
+
+
+def active_project_file(root_dir: Path) -> Path | None:
+    """Return the active project JSON path, if any."""
+    from nps_crawling.utils.project_manager import get_active_project_name
+
+    project_name = get_active_project_name()
+    if not project_name:
+        return None
+    return root_dir / "projects" / f"{project_name}.json"
+
+
+def save_project_section(
+    section: str,
+    updates: dict[str, Any],
+    root_dir: Path,
+) -> Path:
+    """Merge ``updates`` into a project section JSON file and return its path."""
+    project_file = active_project_file(root_dir)
+    if project_file is None or not project_file.is_file():
+        raise RuntimeError("No active project loaded.")
+
+    with open(project_file, encoding="utf-8") as f:
+        project_raw = json.load(f)
+
+    path = section_config_path(
+        project_raw.get(section, CONFIG_TREE_PATHS[section]),
+        section,
+        root_dir,
+    )
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    merged = deep_merge(data, updates)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(merged, f, indent=2, ensure_ascii=False)
+    return path
+
+
 def classification_configuration_entries(classification: dict[str, Any]) -> list[dict[str, Any]]:
     """Return category/model pairs from a classification section."""
     entries = classification.get("classification_configuration")

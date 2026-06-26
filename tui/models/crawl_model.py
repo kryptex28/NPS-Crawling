@@ -30,11 +30,12 @@ class CrawlModel():
         return self._crawl
 
     def start_crawl(self) -> bool:
+        Config.reload_config()
         model = QueryModel()
         parameters: list[str] = []
 
         for id in model.selected_queries:
-            path: str = get_search_params_from_id(Config.GUI_QUERY_PATH, id=id)
+            path: str = get_search_params_from_id(str(Config.QUERY_PATH), id=id)
             parameters.append(path)
 
         self.crawl.crawler_workflow(search_parameter_files=parameters)
