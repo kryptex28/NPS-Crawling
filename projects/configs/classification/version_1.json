@@ -6,6 +6,8 @@
   "few_shot_text_column": "snippet_text_short",
   "few_shot_sample_seed": 43,
   "config_use_name_files": false,
+  "embedding_batch_size": 32,
+  "llm_batch_size": 8,
   "classification_configuration": [
     {
       "category": "src/nps_crawling/classification/configurations/categories/NPS Category/c0b1409c1550fcafe2a84875f32bb495385beac0eccf6d09d7e9eac4c266c1f7.json",

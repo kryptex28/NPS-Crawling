@@ -137,11 +137,27 @@ class ClassificationModelPipeline(Config):
         )
 
     def model_workflow(self, records, source_filename):
-        """Classify all context windows in the given records and save as JSON."""
-        total_windows = sum(len(record.get("context", [])) for record in records)
-        done = 0
+        """Classify all context windows in the given records and save as JSON.
+
+        All windows of the file are classified per category in one batched call,
+        so models can use GPU batching instead of per-window inference.
+        """
+        windows = [window for record in records for window in record.get("context", [])]
+        total_windows = len(windows)
 
         logger.info(f"Starting file: {source_filename} ({total_windows} windows)")
+
+        if windows:
+            texts = [window["context"] for window in windows]
+            for category, model in self.category_model.items():
+                logger.info(
+                    f"{source_filename}: classifying {total_windows} windows "
+                    f"for category '{category.name}'"
+                )
+                batch_results = model.classify_batch(texts, category)
+                for window, results in zip(windows, batch_results):
+                    for result in results:
+                        window[result.column_name] = result.value
 
         default_results = {}
         for category in self.category_model:
@@ -151,15 +167,11 @@ class ClassificationModelPipeline(Config):
         for record in records:
             record_results = default_results.copy()
             for window in record.get("context", []):
-                for category, model in self.category_model.items():
-                    results = model.classify(window["context"], category)
-                    for result in results:
-                        window[result.column_name] = result.value
-                        if result.value != category.get_property(result.column_name).default_value:
-                            record_results[result.column_name] = result.value
-
-                done += 1
-                logger.info(f"{source_filename}: {done}/{total_windows}")
+                for category in self.category_model:
+                    for prop in category.properties:
+                        value = window.get(prop.name, prop.default_value)
+                        if value != prop.default_value:
+                            record_results[prop.name] = value
             self._write_to_db(record["metadata"]["filing"]["id"], record_results)
 
         file_path = self.out_path / "files" / f"{source_filename}.json"
