@@ -334,11 +334,13 @@ class ClassificationModel:
             for i, data_entries in enumerate(all_data_entries):
                 for entry in data_entries:
                     if entry.column_name == classification_property.name:
+                        true_label_raw = test_df.iloc[i][classification_property.name]
+                        true_label = classification_property.cast_value(true_label_raw)
                         logger.debug(
-                            f"True label: {test_df.iloc[i][classification_property.name]}\n"
+                            f"True label: {true_label}\n"
                             f"Prediction: {entry.value}\n"
                         )
-                        true_labels.append(test_df.iloc[i][classification_property.name])
+                        true_labels.append(true_label)
                         predictions.append(entry.value)
                         break
 
