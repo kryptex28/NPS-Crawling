@@ -166,7 +166,7 @@ class Config:
     # Define Threshold for similarity search here. Context windows that fall below
     # this value will be filtered out. This means the higher you set this value, the
     # more strict the filtering will be, and more context windows will be rejected.
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.8
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.34
 
     # Define keywords here that will be searched for in the core_text
     # of the raw filings from crawler
