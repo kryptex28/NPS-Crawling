@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Optional
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -28,6 +30,8 @@ from nps_crawling.classification.models.model import (
 )
 from nps_crawling.config import Config
 
+logger = logging.getLogger(__name__)
+
 
 class QWEN_Advanced(ClassificationModel):
     """Qwen embedding model + per-property linear SVMs."""
@@ -37,8 +41,13 @@ class QWEN_Advanced(ClassificationModel):
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name, cache_dir=self.cache_dir, padding_side="left"
         )
-        self.model = AutoModel.from_pretrained(model_name, cache_dir=self.cache_dir)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        dtype = torch.float16 if self.device.type == "cuda" else torch.float32
+        self.model = AutoModel.from_pretrained(
+            model_name, cache_dir=self.cache_dir, torch_dtype=dtype
+        ).to(self.device)
         self.model.eval()
+        self._svm_cache: dict[Path, object] = {}
 
     @staticmethod
     def _last_token_pool(last_hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
@@ -62,36 +71,56 @@ class QWEN_Advanced(ClassificationModel):
             return f"Represent the text for classification: {desc}"
         return "Represent the text for classification."
 
-    def _get_embedding(self, text: str, classification_property: ClassificationProperty):
+    def _embed_texts(
+        self,
+        texts: list[str],
+        classification_property: ClassificationProperty,
+    ) -> np.ndarray:
+        """Embed all texts for one property, batched on the model device."""
         instruction = self._get_instruction(classification_property)
-        formatted_text = self._format_instruction(instruction, text)
+        formatted_texts = [self._format_instruction(instruction, text) for text in texts]
 
-        encoded_input = self.tokenizer(
-            formatted_text,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
+        batch_size = Config.CLASSIFICATION_EMBEDDING_BATCH_SIZE
+        embeddings = []
+        for start in range(0, len(formatted_texts), batch_size):
+            batch = formatted_texts[start : start + batch_size]
+            encoded_input = self.tokenizer(
+                batch,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+            ).to(self.device)
 
-        with torch.no_grad():
-            model_output = self.model(**encoded_input)
-            sentence_embedding = self._last_token_pool(
-                model_output.last_hidden_state,
-                encoded_input["attention_mask"],
-            )
+            with torch.no_grad():
+                model_output = self.model(**encoded_input)
+                sentence_embeddings = self._last_token_pool(
+                    model_output.last_hidden_state,
+                    encoded_input["attention_mask"],
+                )
 
-        sentence_embedding = F.normalize(sentence_embedding, p=2, dim=1)
-        return sentence_embedding.squeeze(0).float().cpu().numpy()
+            sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
+            embeddings.append(sentence_embeddings.float().cpu().numpy())
+
+        return np.vstack(embeddings)
+
+    def _get_embedding(self, text: str, classification_property: ClassificationProperty):
+        return self._embed_texts([text], classification_property)[0]
 
     def _svm_path(self, category: ClassificationCategory, class_property: ClassificationProperty) -> Path:
         return Path(self.cache_dir) / self.model_name.split("/")[-1] / f"{class_property.name}.joblib"
-    
+
+    def _load_svm(self, category: ClassificationCategory, class_property: ClassificationProperty):
+        svm_path = self._svm_path(category, class_property)
+        if svm_path not in self._svm_cache:
+            self._svm_cache[svm_path] = joblib.load(svm_path)
+        return self._svm_cache[svm_path]
+
     def is_supported(self, category: ClassificationCategory) -> bool:
         for property in category.properties:
             if not property.type == ClassificationType.BOOLEAN:
                 return False
         return True
-    
+
     def is_trained(self, category: ClassificationCategory) -> bool:
         for property in category.properties:
             svm_path = self._svm_path(category, property)
@@ -100,22 +129,32 @@ class QWEN_Advanced(ClassificationModel):
         return True
 
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
+        return self.classify_batch([text], category)[0]
+
+    def classify_batch(
+        self,
+        texts: list[str],
+        category: ClassificationCategory,
+    ) -> list[list[DataEntry]]:
         if not self.is_supported(category):
             raise NotSupportedError(
                 "SVM models are only supported for boolean classification."
             )
         if not self.is_trained(category):
             raise NotTrainedError(
-                f"SVM model for {category.name}/{class_property.name} not found at {svm_path}. "
-                "Train the model first."
+                f"SVM models for {category.name} not found. Train the model first."
             )
-        data_entries: list[DataEntry] = []
+        data_entries: list[list[DataEntry]] = [[] for _ in texts]
         for class_property in category.properties:
-            svm_path = self._svm_path(category, class_property)
-            embedding = self._get_embedding(text, class_property).reshape(1, -1)
-            svm_model = joblib.load(svm_path)
-            prediction = svm_model.predict(embedding)
-            data_entries.append(DataEntry(column_name=class_property.name, value=int(prediction[0])))
+            svm_model = self._load_svm(category, class_property)
+            embeddings = self._embed_texts(texts, class_property)
+            predictions = svm_model.predict(embeddings)
+            for entries, prediction in zip(data_entries, predictions):
+                entries.append(DataEntry(column_name=class_property.name, value=int(prediction)))
+            logger.info(
+                f"{self.model_name}: {category.name}/{class_property.name} "
+                f"classified {len(texts)} texts"
+            )
 
         return data_entries
 
@@ -140,7 +179,7 @@ class QWEN_Advanced(ClassificationModel):
 
         for class_property in category.properties:
             labels = train_df[class_property.name].tolist()
-            embeddings = [self._get_embedding(t, class_property) for t in texts]
+            embeddings = self._embed_texts(texts, class_property)
             svm_model = make_pipeline(
                 StandardScaler(),
                 SVC(kernel="linear", random_state=Config.CLASSIFICATION_RANDOM_SEED),
@@ -149,3 +188,4 @@ class QWEN_Advanced(ClassificationModel):
             svm_path = self._svm_path(category, class_property)
             svm_path.parent.mkdir(parents=True, exist_ok=True)
             joblib.dump(svm_model, svm_path)
+            self._svm_cache[svm_path] = svm_model

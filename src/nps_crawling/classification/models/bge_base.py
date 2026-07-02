@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Optional
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -21,6 +23,8 @@ from nps_crawling.classification.models.model import (
 )
 from nps_crawling.config import Config
 
+logger = logging.getLogger(__name__)
+
 
 class BGE_Base(ClassificationModel):
     """BGE embedding (shared) + per-property linear SVMs."""
@@ -28,26 +32,52 @@ class BGE_Base(ClassificationModel):
     def __init__(self, model_name: str, model_input: str = "", **kwargs):
         super().__init__(model_name, model_input, **kwargs)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=self.cache_dir)
-        self.model = AutoModel.from_pretrained(model_name, cache_dir=self.cache_dir)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        dtype = torch.float16 if self.device.type == "cuda" else torch.float32
+        self.model = AutoModel.from_pretrained(
+            model_name, cache_dir=self.cache_dir, torch_dtype=dtype
+        ).to(self.device)
         self.model.eval()
+        self._svm_cache: dict[Path, object] = {}
+
+    def _embed_texts(self, texts: list[str]) -> np.ndarray:
+        """Embed all texts (shared across properties), batched on the model device."""
+        batch_size = Config.CLASSIFICATION_EMBEDDING_BATCH_SIZE
+        embeddings = []
+        for start in range(0, len(texts), batch_size):
+            batch = texts[start : start + batch_size]
+            encoded_input = self.tokenizer(
+                batch,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+            ).to(self.device)
+            with torch.no_grad():
+                model_output = self.model(**encoded_input)
+                sentence_embeddings = model_output[0][:, 0]
+            sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+            embeddings.append(sentence_embeddings.float().cpu().numpy())
+
+        return np.vstack(embeddings)
 
     def _get_embedding(self, text: str):
-        encoded_input = self.tokenizer(text, padding=True, truncation=True, return_tensors="pt")
-        with torch.no_grad():
-            model_output = self.model(**encoded_input)
-            sentence_embeddings = model_output[0][:, 0]
-        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-        return sentence_embeddings.squeeze(0).cpu().numpy()
+        return self._embed_texts([text])[0]
 
     def _svm_path(self, category: ClassificationCategory, class_property) -> Path:
         return Path(self.cache_dir) / self.model_name.split("/")[-1] / f"{category.name}_{class_property.name}.joblib"
+
+    def _load_svm(self, category: ClassificationCategory, class_property):
+        svm_path = self._svm_path(category, class_property)
+        if svm_path not in self._svm_cache:
+            self._svm_cache[svm_path] = joblib.load(svm_path)
+        return self._svm_cache[svm_path]
 
     def is_supported(self, category: ClassificationCategory) -> bool:
         for property in category.properties:
             if not property.type == ClassificationType.BOOLEAN:
                 return False
         return True
-    
+
     def is_trained(self, category: ClassificationCategory) -> bool:
         for property in category.properties:
             svm_path = self._svm_path(category, property)
@@ -56,22 +86,29 @@ class BGE_Base(ClassificationModel):
         return True
 
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
+        return self.classify_batch([text], category)[0]
+
+    def classify_batch(
+        self,
+        texts: list[str],
+        category: ClassificationCategory,
+    ) -> list[list[DataEntry]]:
         if not self.is_supported(category):
             raise NotSupportedError(
                 "SVM models are only supported for boolean classification."
             )
         if not self.is_trained(category):
             raise NotTrainedError(
-                f"SVM model for {category.name}/{class_property.name} not found at {svm_path}. "
-                "Train the model first."
+                f"SVM models for {category.name} not found. Train the model first."
             )
-        embedding = self._get_embedding(text).reshape(1, -1)
-        data_entries: list[DataEntry] = []
+        embeddings = self._embed_texts(texts)
+        data_entries: list[list[DataEntry]] = [[] for _ in texts]
         for class_property in category.properties:
-            svm_path = self._svm_path(category, class_property)
-            svm_model = joblib.load(svm_path)
-            prediction = svm_model.predict(embedding)
-            data_entries.append(DataEntry(column_name=class_property.name, value=int(prediction[0])))
+            svm_model = self._load_svm(category, class_property)
+            predictions = svm_model.predict(embeddings)
+            for entries, prediction in zip(data_entries, predictions):
+                entries.append(DataEntry(column_name=class_property.name, value=int(prediction)))
+        logger.info(f"{self.model_name}: {category.name} classified {len(texts)} texts")
 
         return data_entries
 
@@ -93,7 +130,7 @@ class BGE_Base(ClassificationModel):
         train_df = train_df[train_df[text_column].astype(str).str.strip() != ""]
         texts = train_df[text_column].tolist()
 
-        shared_embeddings = [self._get_embedding(t) for t in texts]
+        shared_embeddings = self._embed_texts(texts)
 
         for class_property in category.properties:
             if not class_property.type == ClassificationType.BOOLEAN:
@@ -109,3 +146,4 @@ class BGE_Base(ClassificationModel):
             svm_path = self._svm_path(category, class_property)
             svm_path.parent.mkdir(parents=True, exist_ok=True)
             joblib.dump(svm_model, svm_path)
+            self._svm_cache[svm_path] = svm_model

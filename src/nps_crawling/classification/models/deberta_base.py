@@ -163,25 +163,39 @@ class DeBERTa_Base(ClassificationModel):
         self._loaded_category_id = category.stable_id
 
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
+        return self.classify_batch([text], category)[0]
+
+    def classify_batch(
+        self,
+        texts: list[str],
+        category: ClassificationCategory,
+    ) -> list[list[DataEntry]]:
         self._load_head_for_category(category)
         assert self._tokenizer is not None and self._model is not None
         tw = self._train_kw()
-        enc = self._tokenizer(
-            text,
-            padding=True,
-            truncation=True,
-            max_length=tw["train_max_length"],
-            return_tensors="pt",
-        )
-        enc = {k: v.to(self._device) for k, v in enc.items()}
-        with torch.inference_mode():
-            logits = self._model(**enc).logits
-            probs = torch.sigmoid(logits).squeeze(0).cpu()
-        preds = (probs >= 0.5).tolist()
-        return [
-            DataEntry(column_name=p.name, value=bool(preds[i]))
-            for i, p in enumerate(category.properties)
-        ]
+        batch_size = Config.CLASSIFICATION_EMBEDDING_BATCH_SIZE
+        results: list[list[DataEntry]] = []
+        for start in range(0, len(texts), batch_size):
+            batch = texts[start : start + batch_size]
+            enc = self._tokenizer(
+                batch,
+                padding=True,
+                truncation=True,
+                max_length=tw["train_max_length"],
+                return_tensors="pt",
+            )
+            enc = {k: v.to(self._device) for k, v in enc.items()}
+            with torch.inference_mode():
+                logits = self._model(**enc).logits
+                probs = torch.sigmoid(logits).cpu()
+            for row in (probs >= 0.5).tolist():
+                results.append(
+                    [
+                        DataEntry(column_name=p.name, value=bool(row[i]))
+                        for i, p in enumerate(category.properties)
+                    ]
+                )
+        return results
 
     def train(
         self,

@@ -300,7 +300,21 @@ class ClassificationModel:
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
         """Classify given text according to the specified category."""
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
+    def classify_batch(
+        self,
+        texts: list[str],
+        category: ClassificationCategory,
+    ) -> list[list[DataEntry]]:
+        """Classify many texts at once; subclasses override with true batched inference."""
+        results = []
+        for i, text in enumerate(texts, start=1):
+            results.append(self.classify(text, category))
+            if i % 25 == 0 or i == len(texts):
+                logger.info(f"{self.model_name}: classified {i}/{len(texts)}")
+        return results
+
+
     def evaluate(
         self,
         category: ClassificationCategory,
@@ -316,15 +330,10 @@ class ClassificationModel:
         df = pd.read_csv(resolved_category_csv_path(category.csv_path))
         _, test_df = ground_truth_train_test_split(df, test_size=test_size)
         texts = test_df[text_column].tolist()
-        all_data_entries = []
         all_evaluation_results = {}
-        time_per_snippet = 0
 
         current_time = datetime.now()
-        for i, text in enumerate(texts):
-            logger.info(f"Classifying text {i+1}/{len(texts)}")
-            data_entries = self.classify(text, category)
-            all_data_entries.append(data_entries)
+        all_data_entries = self.classify_batch(texts, category)
 
         time_per_snippet = (datetime.now() - current_time).total_seconds() / len(texts)
 

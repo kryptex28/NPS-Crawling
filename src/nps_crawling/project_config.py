@@ -101,6 +101,8 @@ DEFAULT_CLASSIFICATION_CONFIG: dict[str, Any] = {
     "few_shot_text_column": "snippet_text_short",
     "few_shot_sample_seed": 43,
     "config_use_name_files": False,
+    "embedding_batch_size": 32,
+    "llm_batch_size": 8,
     "classification_configuration": [
         {
             "category": (
@@ -427,6 +429,12 @@ def apply_project_data(config_cls, project_data: dict[str, Any], root_dir: Path)
     config_cls.CLASSIFICATION_CONFIG_USE_NAME_FILES = classification[
         "config_use_name_files"
     ]
+    config_cls.CLASSIFICATION_EMBEDDING_BATCH_SIZE = classification.get(
+        "embedding_batch_size", 32
+    )
+    config_cls.CLASSIFICATION_LLM_BATCH_SIZE = classification.get(
+        "llm_batch_size", 8
+    )
 
     config_cls.CLASSIFICATION_CONFIGURATION = classification_configuration_entries(
         classification,
