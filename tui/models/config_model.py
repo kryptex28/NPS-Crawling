@@ -33,14 +33,3 @@ class ConfigModel():
 
     def add_column(self, data: TableData) -> None:
         self.columns.append(data)
-
-    def load_prompts(self) -> None:
-        # TODO Load Prompts from Config
-        # self.prompts = Config.prompts
-        pass
-
-    def load_columns(self) -> None:
-        # TODO Load Prompts from Config
-        # self.columns = Config.columns
-        pass
-        

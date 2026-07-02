@@ -14,6 +14,7 @@ class QueryData:
     date_range: str = "all"
     from_date: str = ""
     to_date: str = ""
+    limit: int = -1
     selected: bool = False
 
     def summary(self) -> str:

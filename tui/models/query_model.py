@@ -101,7 +101,7 @@ class QueryModel():
             filing_categories=data.filing_types,
             filing_category=FilingsCategoryCollectionCoarse.from_string(data.filing_category),
             force_crawl=False,
-            filing_limit=-1
+            filing_limit=data.limit,
         )
 
     def create_query(self, data: QueryData) -> None:

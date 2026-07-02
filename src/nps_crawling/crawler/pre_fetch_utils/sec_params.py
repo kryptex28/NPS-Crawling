@@ -200,7 +200,7 @@ class SecSearchParams:
             individual_search_cik = self.individual_search.cik
             individual_search_title = self.individual_search.title
 
-        return { self.id: {
+        data_dict: dict = { self.id: {
             'query_base': self.query_base,
             'keyword': self.keyword,
             'from_date': self.from_date,
@@ -212,6 +212,11 @@ class SecSearchParams:
             'filing_category': self.filing_category.to_string(),
             'filing_categories': self.filing_categories,
         }}
-    
+
+        if self.filing_limit > 0:
+            data_dict[self.id]['filing_limit'] = self.filing_limit
+        
+        return data_dict
+
     def __hash__(self) -> int:
         return hash((self.keyword, self.from_date, self.to_date, self.individual_search.ticker, self.individual_search.cik))

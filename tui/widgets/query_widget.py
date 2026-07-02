@@ -168,11 +168,13 @@ class QueryWidget(Container):
         from_date: str = self.query_one("#inp-from-date", Input).value.strip()
         to_date: str = self.query_one("#inp-to-date", Input).value.strip()
         entity: str = self.query_one("#inp-entity", Input).value.strip()
+        limit: int = int(self.query_one("#query-filing-limit", Input).value)
 
         cat_sel = self.query_one("#sel-category", Select)
         filing_category: str = str(cat_sel.value) if cat_sel.value != Select.BLANK else ""
-        if self.model.get_filing_categories():
-            filing_categories: list[str] = self.model.get_filing_categories()
+        filing_categories: list[str] = self.model.get_filing_categories()
+
+        if filing_categories:
             filing_category = "custom"
 
 
@@ -199,7 +201,8 @@ class QueryWidget(Container):
             entity=entity,
             filing_category=filing_category,
             filing_types=filing_categories,
-            selected=False
+            selected=False,
+            limit=limit,
         )
 
         self.model.create_query(data=data)
