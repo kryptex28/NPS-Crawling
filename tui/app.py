@@ -148,11 +148,11 @@ class CrawlerTuiApp(App):
         self.query_one("#log-panel", LogWidget).display = show_log
         self.query_one(".log-container", Container).display = show_log
         self._setup_logging()
-        self.push_screen(SplashScreen(), callback=self._on_splash_dismissed())
+        self.push_screen(SplashScreen(), callback=self._on_splash_dismissed)
         
-    def _on_splash_dismissed(self):
+    def _on_splash_dismissed(self, result: bool | None = None) -> None:
         if not ProjectModel().is_project_active():
-            self.push_screen(ProjectScreen())
+            self.push_screen(ProjectScreen(), callback=self._on_project_selected)
         else:
             Config.reload_config()
             active = ProjectModel().get_active_project()
@@ -178,7 +178,15 @@ class CrawlerTuiApp(App):
 
     @on(Button.Pressed, "#show-projects-btn")
     def show_projects_view(self):
-        self.push_screen(ProjectScreen())
+        self.push_screen(ProjectScreen(), callback=self._on_project_selected)
+
+    def _on_project_selected(self, result: bool | None = None) -> None:
+        if result:
+            try:
+                project_widget = self.query_one(ProjectWidget)
+                project_widget._show_active_project()
+            except Exception:
+                pass
 
     def watch_current_page(self, page: str) -> None:
         for key, widget in self.widget_map.items():

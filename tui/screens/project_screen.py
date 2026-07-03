@@ -51,10 +51,14 @@ class ProjectScreen(ModalScreen):
         self.app.notify(f"Loaded project '{row[0]}'.", severity="information")
         self.dismiss(True)
 
+    @on(DataTable.RowSelected, "#project-table")
+    def on_row_selected(self) -> None:
+        self.open_project()
+
     @on(Button.Pressed, "#refresh-project-btn")
     def refresh_projects(self) -> None:
         self._refresh_table()
 
     @on(Button.Pressed, "#close-project-btn")
     def close_project_view(self):
-        self.dismiss(True)
+        self.dismiss(False)
