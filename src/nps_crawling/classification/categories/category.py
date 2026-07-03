@@ -7,7 +7,12 @@ from pathlib import Path
 import re
 from typing import List, Optional
 
-from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.classification.common import (
+    load_json_file,
+    make_hashable,
+    resolve_config_path,
+    stable_serialize,
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -111,6 +116,10 @@ class ClassificationProperty:
         )
     
     def cast_value(self, value : any):
+        # Missing values (None / NaN, e.g. empty ground-truth cells) mean
+        # "no value" for every type, not a castable value.
+        if value is None or (isinstance(value, float) and math.isnan(value)):
+            return self.default_value
         if self.type == ClassificationType.BOOLEAN:
             try:
                 return bool(value)
@@ -125,7 +134,8 @@ class ClassificationProperty:
                 return self.default_value
         if self.type == ClassificationType.FLOAT:
             try:
-                return float(str(value).replace(",", "."))
+                result = float(str(value).replace(",", "."))
+                return self.default_value if math.isnan(result) else result
             except Exception as e:
                 logger.debug(
                     "Value %r was not valid for float %s:\n%s\nReturning default %s",
@@ -268,18 +278,25 @@ class ClassificationCategory:
     
     @classmethod
     def from_dict(cls, data):
+        class_name = data.get("class_name", cls.__name__)
+        target_cls = cls._registry.get(class_name, cls)
 
         raw_examples = data.get("examples") or []
         examples_arg = [Example.from_dict(example_data) for example_data in raw_examples]
 
-        return cls(
+        return target_cls(
             name=data["name"],
             properties=[ClassificationProperty.from_dict(prop_data) for prop_data in data["properties"]],
             prompt_base=data["prompt_base"],
-            csv_path=data["csv_path"],
+            csv_path=data.get("csv_path"),
             examples=examples_arg,
             num_examples=data.get("num_examples"),
         )
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "ClassificationCategory":
+        """Load a category from a JSON file."""
+        return cls.from_dict(load_json_file(resolve_config_path(path)))
 
     def is_valid(self, entry: DataEntry) -> bool:
         """Check if entry is valid for this category."""
@@ -346,7 +363,15 @@ class ClassificationCategory:
 
         return labels, predictions
     
+    @staticmethod
+    def _none_if_nan(value: Optional[float]) -> Optional[float]:
+        if isinstance(value, float) and math.isnan(value):
+            return None
+        return value
+
     def _is_close(self, a: Optional[float], b: Optional[float], tol=1e-5) -> bool:
+        a = self._none_if_nan(a)
+        b = self._none_if_nan(b)
         if a is None and b is None:
             return True
         if a is None or b is None:
@@ -354,7 +379,7 @@ class ClassificationCategory:
         return math.isclose(a, b, abs_tol=tol)
 
     def _to_label(self,gt: Optional[float], pred: Optional[float]) -> str:
-        if pred is None:
+        if self._none_if_nan(pred) is None:
             return "no_value"
         elif self._is_close(gt, pred):
             return "correct_value"

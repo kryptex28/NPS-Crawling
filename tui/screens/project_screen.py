@@ -29,15 +29,31 @@ class ProjectScreen(ModalScreen):
             yield Button("Close", id="close-project-btn")
 
     def on_mount(self) -> None:
+        self._refresh_table()
+
+    def _refresh_table(self) -> None:
         table = self.query_one("#project-table", DataTable)
-
+        table.clear(columns=True)
         table.add_columns("Project Name", "Project Description")
+        for data in self.model.get_projects():
+            table.add_row(data.name, data.description)
 
-        project_data: list[ProjectData] = self.model.get_projects()
+    @on(Button.Pressed, "#open-project-btn")
+    def open_project(self) -> None:
+        table = self.query_one("#project-table", DataTable)
+        if table.cursor_row is None:
+            self.app.notify("Select a project first.", severity="warning")
+            return
+        row = table.get_row_at(table.cursor_row)
+        self.model.load_project(
+            ProjectData(name=str(row[0]), description=str(row[1]), id=1),
+        )
+        self.app.notify(f"Loaded project '{row[0]}'.", severity="information")
+        self.dismiss(True)
 
-        for data in project_data:
-            table.add_row(data.name, 
-                          data.description)
+    @on(Button.Pressed, "#refresh-project-btn")
+    def refresh_projects(self) -> None:
+        self._refresh_table()
 
     @on(Button.Pressed, "#close-project-btn")
     def close_project_view(self):

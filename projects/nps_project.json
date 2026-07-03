@@ -1,4 +1,7 @@
 {
   "name": "nps_project",
-  "description": "Dies ist ein Beispiel-Projekt fuer NPS-Crawling"
+  "description": "Dies ist ein Beispiel-Projekt fuer NPS-Crawling",
+  "crawl": "projects/configs/crawl/default.json",
+  "preprocess": "projects/configs/preprocess/version_2.json",
+  "classification": "projects/configs/classification/version_1.json"
 }

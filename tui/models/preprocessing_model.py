@@ -1,4 +1,6 @@
 from typing_extensions import Self
+
+from nps_crawling.config import Config
 from nps_crawling.preprocessing.utils import PreProcessingPipeline
 
 class PreprocessingModel():
@@ -19,4 +21,6 @@ class PreprocessingModel():
         return self._preprocessing
 
     def run_preprocessing(self) -> None:
+        Config.reload_config()
+        self._preprocessing = None
         self.preprocessing.pre_processing_workflow()
