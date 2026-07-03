@@ -8,6 +8,7 @@ from nps_crawling.crawler.pre_fetch_utils.sec_params import (
     SecSearchParams,
     get_search_params_from_id
 )
+from nps_crawling.db.db_adapter import DbAdapter
 
 class CrawlModel():
 
@@ -31,6 +32,7 @@ class CrawlModel():
 
     def start_crawl(self) -> bool:
         Config.reload_config()
+        DbAdapter().ensure_table_exists()
         model = QueryModel()
         parameters: list[str] = []
 

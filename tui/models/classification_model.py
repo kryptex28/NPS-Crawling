@@ -2,6 +2,7 @@ from typing_extensions import Self
 
 from nps_crawling.config import Config
 from nps_crawling.classification.classification_pipeline import ClassificationPipeline
+from nps_crawling.db.db_adapter import DbAdapter
 
 class ClassificationModel():
 
@@ -24,6 +25,7 @@ class ClassificationModel():
 
     def start_classification(self) -> bool:
         Config.reload_config()
+        DbAdapter().ensure_table_exists()
         self._classification = None
         self.classification.classification_workflow()
 

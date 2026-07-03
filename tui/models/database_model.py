@@ -8,4 +8,5 @@ class DatabaseModel():
         self.db = DbAdapter()
 
     def get_all_filings(self) -> list[dict]:
+        DbAdapter().ensure_table_exists()
         return self.db.get_all_filings()

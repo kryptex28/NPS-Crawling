@@ -2,6 +2,7 @@ from typing_extensions import Self
 
 from nps_crawling.config import Config
 from nps_crawling.preprocessing.utils import PreProcessingPipeline
+from nps_crawling.db.db_adapter import DbAdapter
 
 class PreprocessingModel():
     instance = None
@@ -21,6 +22,8 @@ class PreprocessingModel():
         return self._preprocessing
 
     def run_preprocessing(self) -> None:
+        DbAdapter().ensure_table_exists()
+
         Config.reload_config()
         self._preprocessing = None
         self.preprocessing.pre_processing_workflow()
