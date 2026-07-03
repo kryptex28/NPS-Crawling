@@ -65,8 +65,87 @@ NPS_VALUE_FIELDS = [
     "nps_goal_change",
 ]
 
+TASK_NPS_ALL = "NPS All"
+
 # class_name -> coarse model family. Falls back to "available tasks" if unknown.
-EMBEDDING_CLASSES = {"BGE_Base", "BGE_Advanced", "QWEN_Advanced"}
+EMBEDDING_CLASSES = {
+    "BGE_Base",
+    "BGE_Advanced",
+    "QWEN_Advanced",
+    "QWEN_Candidate",
+    "QWEN_Unified",
+    "DeBERTa_Base",
+}
+
+# Short strategy tags used to disambiguate configs sharing a model folder.
+CLASS_SHORT = {
+    "BGE_Base": "SVM",
+    "BGE_Advanced": "SVM",
+    "QWEN_Advanced": "SVM",
+    "QWEN_Candidate": "Candidate",
+    "QWEN_Unified": "Unified",
+    "DeBERTa_Base": "DeBERTa",
+    "HF_LLM": "LLM",
+    "Ollama_LLM": "Ollama",
+    "OpenAIModel": "GPT",
+}
+
+
+def _compact_kwargs(kwargs: dict) -> str:
+    """Human-readable kwargs summary: flags stay bare, values become k=v."""
+    parts = []
+    for key, value in sorted((kwargs or {}).items()):
+        if str(value).strip().lower() in ("1", "true", "yes"):
+            parts.append(key)
+        else:
+            parts.append(f"{key}={value}")
+    return ", ".join(parts)
+
+
+def _split_nps_all(results: dict) -> dict:
+    """Distribute an 'NPS All' block onto the three canonical tasks.
+
+    Mixed-category models (QWEN_Unified, gpt on 'NPS All') store every label
+    under one task. Each label report is routed to the task whose vocabulary it
+    belongs to; the single time_per_snippet is attached to every derived task
+    because the labels are produced by one joint run.
+    """
+    if TASK_NPS_ALL not in results:
+        return results
+    results = dict(results)
+    block = results.pop(TASK_NPS_ALL)
+    time_per_snippet = block.get("time_per_snippet", np.nan)
+    buckets = {TASK_NPS_CATEGORY: {}, TASK_HAS_NUMERIC: {}, TASK_VALUE_CATEGORY: {}}
+    for label, report in block.items():
+        if label == "time_per_snippet":
+            continue
+        if label in NPS_CATEGORY_LABELS:
+            buckets[TASK_NPS_CATEGORY][label] = report
+        elif label in NPS_VALUE_FIELDS:
+            buckets[TASK_VALUE_CATEGORY][label] = report
+        elif label == "has_numeric_nps":
+            buckets[TASK_HAS_NUMERIC][label] = report
+    for task, labels in buckets.items():
+        if labels and task not in results:
+            labels["time_per_snippet"] = time_per_snippet
+            results[task] = labels
+    return results
+
+
+def _value_results_stale(results: dict) -> bool:
+    """True when a value-category eval predates the NaN-handling fix.
+
+    The broken evaluation labeled every empty ground-truth cell 'wrong_value',
+    so that class has nonzero support; fixed runs never produce it in y_true.
+    Stale scores are inflated and must not be compared at face value.
+    """
+    task = results.get(TASK_VALUE_CATEGORY) or {}
+    for field in NPS_VALUE_FIELDS:
+        report = task.get(field) or {}
+        wrong = report.get("wrong_value")
+        if isinstance(wrong, dict) and wrong.get("support", 0) > 0:
+            return True
+    return False
 
 
 # --------------------------------------------------------------------------- #
@@ -75,13 +154,15 @@ EMBEDDING_CLASSES = {"BGE_Base", "BGE_Advanced", "QWEN_Advanced"}
 def load_models(config_dir: Path) -> list[dict]:
     """Read every ``<model>/<hash>.json`` config and return parsed records.
 
-    The ``graphics`` output directory is skipped. Each record keeps the model's
-    display name (the parent folder), its python class, the family
-    (Embedding/LLM) and the raw ``evaluation_results`` block.
+    The ``graphics`` output directory is skipped. Each record keeps a display
+    name (parent folder, disambiguated by strategy/kwargs when a folder holds
+    several evaluated configs), its python class, the family (Embedding/LLM)
+    and the ``evaluation_results`` block with 'NPS All' split into the three
+    canonical tasks.
     """
     records: list[dict] = []
     for json_path in sorted(config_dir.glob("*/*.json")):
-        if json_path.parent.name == "graphics":
+        if json_path.parent.name in ("graphics", "categories"):
             continue
         with open(json_path, encoding="utf-8") as fh:
             data = json.load(fh)
@@ -93,16 +174,59 @@ def load_models(config_dir: Path) -> list[dict]:
         # Family is a property of the model class, not of which tasks happened to
         # be evaluated (e.g. Mistral is an LLM even if only run on NPS Category).
         family = "Embedding" if class_name in EMBEDDING_CLASSES else "LLM"
+        results = _split_nps_all(results)
         records.append(
             {
-                "display_name": json_path.parent.name,
+                "folder": json_path.parent.name,
+                "hash": json_path.stem,
+                "display_name": json_path.parent.name,  # refined below
                 "model_name": data.get("model_name", json_path.parent.name),
                 "class_name": class_name,
+                "kwargs": data.get("kwargs", {}) or {},
                 "family": family,
                 "results": results,
+                "value_stale": _value_results_stale(results),
             }
         )
+
+    # Disambiguate display names within each model folder: add the strategy tag
+    # when classes differ, the kwargs when configs of one class differ, and the
+    # config hash as a last resort.
+    by_folder: dict[str, list[dict]] = {}
+    for rec in records:
+        by_folder.setdefault(rec["folder"], []).append(rec)
+    for folder, group in by_folder.items():
+        if len(group) == 1:
+            continue
+        multiple_classes = len({r["class_name"] for r in group}) > 1
+        for rec in group:
+            parts = []
+            if multiple_classes:
+                parts.append(CLASS_SHORT.get(rec["class_name"], rec["class_name"]))
+            kw = _compact_kwargs(rec["kwargs"])
+            if kw:
+                parts.append(kw)
+            rec["display_name"] = folder + (f" [{', '.join(parts)}]" if parts else "")
+        seen: dict[str, int] = {}
+        for rec in group:
+            seen[rec["display_name"]] = seen.get(rec["display_name"], 0) + 1
+        for rec in group:
+            if seen[rec["display_name"]] > 1:
+                rec["display_name"] += f" [{rec['hash'][:6]}]"
     return records
+
+
+# Depending on ground-truth casting, sklearn labels the binary classes either
+# "0"/"1" (older evals) or "False"/"True" (evals after the NaN-handling fix).
+_CLASS_KEY_ALIASES = {"1": ("1", "True"), "0": ("0", "False")}
+
+
+def _class_block(label_report: dict, key: str):
+    for alias in _CLASS_KEY_ALIASES.get(key, (key,)):
+        block = label_report.get(alias)
+        if isinstance(block, dict):
+            return block
+    return None
 
 
 def positive_f1(label_report: dict, positive_key: str = "1") -> float:
@@ -112,7 +236,7 @@ def positive_f1(label_report: dict, positive_key: str = "1") -> float:
     bge-large on NPS_GOAL_REACHED) and emits an all-zero block with support 0 in
     other cases (e.g. gpt). Both are "not measurable", so we return NaN.
     """
-    block = label_report.get(positive_key)
+    block = _class_block(label_report, positive_key)
     if not isinstance(block, dict) or block.get("support", 0) == 0:
         return float("nan")
     return float(block.get("f1-score", float("nan")))
@@ -120,7 +244,7 @@ def positive_f1(label_report: dict, positive_key: str = "1") -> float:
 
 def metric(label_report: dict, key: str, field: str) -> float:
     """Generic getter for a (class, metric) pair, NaN-safe."""
-    block = label_report.get(key)
+    block = _class_block(label_report, key)
     if not isinstance(block, dict) or block.get("support", 0) == 0:
         return float("nan")
     return float(block.get(field, float("nan")))
@@ -157,13 +281,18 @@ def build_nps_category_frames(records: list[dict]):
 
 
 def build_value_category_frame(records: list[dict]) -> pd.DataFrame:
-    """correct_value F1 per value field, indexed by LLM model."""
+    """correct_value F1 per value field, indexed by model/strategy.
+
+    Models whose value eval predates the NaN-handling fix are marked with a
+    dagger; their scores are inflated and only kept for reference.
+    """
     rows = {}
     for rec in records:
         task = rec["results"].get(TASK_VALUE_CATEGORY)
         if not task:
             continue
-        rows[rec["display_name"]] = [
+        name = rec["display_name"] + (" †" if rec["value_stale"] else "")
+        rows[name] = [
             metric(task.get(field, {}), "correct_value", "f1-score")
             for field in NPS_VALUE_FIELDS
         ]
@@ -305,13 +434,17 @@ def plot_quality_vs_speed(pos_df: pd.DataFrame, timing_df: pd.DataFrame, familie
     pts = pd.DataFrame({"quality": quality, "time": speed}).dropna()
 
     fam_color = {"Embedding": "#1f78b4", "LLM": "#e31a1c"}
-    fig, ax = plt.subplots(figsize=(10, 7))
-    for name, row in pts.iterrows():
+    fig, ax = plt.subplots(figsize=(12, 8))
+    # Stagger the label offsets by quality rank so nearby points stay readable.
+    offsets = [(8, 5), (8, -12), (-8, 10), (8, 14), (-8, -16)]
+    for i, (name, row) in enumerate(pts.sort_values("quality").iterrows()):
         fam = families.get(name, "LLM")
         ax.scatter(row["time"], row["quality"], s=120, color=fam_color[fam],
                    edgecolor="black", zorder=3)
+        dx, dy = offsets[i % len(offsets)]
         ax.annotate(name, (row["time"], row["quality"]),
-                    textcoords="offset points", xytext=(8, 4), fontsize=9)
+                    textcoords="offset points", xytext=(dx, dy), fontsize=8,
+                    ha="right" if dx < 0 else "left")
 
     # Pareto frontier: want HIGH quality at LOW time. Sort by time ascending,
     # keep points whose quality exceeds everything seen so far (cheaper & better).
@@ -353,7 +486,7 @@ def plot_has_numeric(frame: pd.DataFrame, out: Path):
     ax.set_xticklabels(df.index, rotation=15, ha="right")
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("score")
-    ax.set_title("Has Numeric NPS - binary classification metrics (LLM models)")
+    ax.set_title("Has Numeric NPS - binary classification metrics")
     ax.legend(ncol=2)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
@@ -368,8 +501,9 @@ def plot_value_category_heatmap(frame: pd.DataFrame, out: Path):
     im = _annotated_heatmap(ax, df, cmap="PuBuGn", vmin=0.0, vmax=1.0, fmt=".2f")
     fig.colorbar(im, ax=ax, fraction=0.025, pad=0.02, label="F1 (correct_value)")
     ax.set_title(
-        "NPS Value Category - value-extraction F1 per field (LLM models)\n"
-        "F1 of the 'correct_value' class; 'n/a' = field absent from test set",
+        "NPS Value Category - value-extraction F1 per field\n"
+        "F1 of the 'correct_value' class; 'n/a' = field absent from test set\n"
+        "† = evaluated before the NaN-handling eval fix; scores are inflated",
         fontsize=12,
     )
     fig.tight_layout()
@@ -387,7 +521,10 @@ def write_summary_csv(records, pos_df, macro_df, timing_df, has_numeric_df, valu
     def cell(frame: pd.DataFrame, name: str, col: str, *, mean: bool = False):
         """NaN-safe lookup so models missing a whole task still get a row."""
         if name not in frame.index:
-            return np.nan
+            if name + " †" in frame.index:  # stale-marked value rows
+                name = name + " †"
+            else:
+                return np.nan
         return frame.loc[name].mean(skipna=True) if mean else frame.loc[name, col]
 
     for rec in records:  # iterate the full set so no model is dropped

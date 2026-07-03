@@ -55,7 +55,9 @@ class CrawlerPipeline(Config):
         settings.update({'CRAWL_DRY_RUN': dry_run})
         settings.update({'CRAWL_DB_ONLY': db_only})
         settings.update({'CRAWL_IGNORE_LOOKUP': ignore_lookup})
-        if settings.get("SEC_QUERY_LIMIT_COUNT", None) is not None:
+        settings.update({'SEC_QUERY_LIMIT_COUNT': Config.CRAWL_SEC_QUERY_LIMIT_COUNT})
+        settings.update({'DOWNLOAD_DELAY': Config.CRAWL_DOWNLOAD_DELAY})
+        if limit >= 0:
             settings.update({'SEC_QUERY_LIMIT_COUNT': limit})
 
         settings.update({'LOG_LEVEL': logger.getEffectiveLevel()})

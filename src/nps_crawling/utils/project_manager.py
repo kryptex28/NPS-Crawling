@@ -4,6 +4,9 @@ import json
 import subprocess
 from pathlib import Path
 
+from nps_crawling.project_config import default_project_data, ensure_config_tree
+
+
 def get_git_root() -> Path:
     """Return the root directory of the current Git repository."""
     try:
@@ -21,25 +24,23 @@ def get_git_root() -> Path:
         ) from exc
 
 
-def create_project(name: str, description: str) -> Path:
-    """Creates a new project configuration JSON file in the projects directory.
+def projects_dir() -> Path:
+    return get_git_root() / "projects"
 
-    Args:
-        name: Name of the project.
-        description: Description of the project.
 
-    Returns:
-        The Path to the created project configuration file.
-    """
-    root_dir = get_git_root()
-    projects_dir = root_dir / "projects"
-    projects_dir.mkdir(parents=True, exist_ok=True)
+def active_project_marker() -> Path:
+    return get_git_root() / ".active_project"
 
-    project_file = projects_dir / f"{name}.json"
-    project_data = {
-        "name": name,
-        "description": description,
-    }
+
+def create_project(name: str, description: str = "") -> Path:
+    """Creates a new project configuration JSON file with default pipeline settings."""
+    root = get_git_root()
+    ensure_config_tree(root)
+    projects_root = projects_dir()
+    projects_root.mkdir(parents=True, exist_ok=True)
+
+    project_file = projects_root / f"{name}.json"
+    project_data = default_project_data(name, description)
 
     with open(project_file, "w", encoding="utf-8") as f:
         json.dump(project_data, f, indent=2, ensure_ascii=False)
@@ -49,34 +50,41 @@ def create_project(name: str, description: str) -> Path:
 
 def get_available_projects() -> list[str]:
     """Returns a list of all available project names in the projects directory."""
-    root_dir = get_git_root()
-    projects_dir = root_dir / "projects"
-    if not projects_dir.exists():
+    root = projects_dir()
+    if not root.exists():
         return []
-    return [f.stem for f in projects_dir.glob("*.json")]
+    return sorted(f.stem for f in root.glob("*.json"))
+
+
+def get_active_project_name() -> str | None:
+    """Return the active project name, or None if no project is active."""
+    marker = active_project_marker()
+    if not marker.exists():
+        return None
+    name = marker.read_text(encoding="utf-8").strip()
+    return name or None
 
 
 def get_active_project() -> tuple[str, str] | None:
-    """Returns the name and description of the active project, or None if no project is active."""
-    root_dir = get_git_root()
-    active_file = root_dir / ".active_project"
-    if active_file.exists():
-        name = active_file.read_text(encoding="utf-8").strip()
-        project_file = root_dir / "projects" / f"{name}.json"
-        if project_file.exists():
-            try:
-                with open(project_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                return data.get("name"), data.get("description", "")
-            except Exception:
-                return name, ""
-        return name, ""
-    return None
+    """Returns the name and description of the active project, or None."""
+    name = get_active_project_name()
+    if not name:
+        return None
+
+    project_file = projects_dir() / f"{name}.json"
+    if project_file.exists():
+        try:
+            with open(project_file, encoding="utf-8") as f:
+                data = json.load(f)
+            return data.get("name", name), data.get("description", "")
+        except Exception:
+            return name, ""
+    return name, ""
 
 
 def has_active_project() -> bool:
     """Returns True if a project is currently active, False otherwise."""
-    return get_active_project() is not None
+    return get_active_project_name() is not None
 
 
 def has_active_projects() -> bool:
@@ -85,24 +93,16 @@ def has_active_projects() -> bool:
 
 
 def activate_project(name: str) -> None:
-    """Sets the active project by writing its name to .active_project.
-
-    Args:
-        name: Name of the project to activate.
-    """
-    root_dir = get_git_root()
-    projects_dir = root_dir / "projects"
-    project_file = projects_dir / f"{name}.json"
+    """Sets the active project by writing its name to .active_project."""
+    project_file = projects_dir() / f"{name}.json"
     if not project_file.exists():
-        raise FileNotFoundError(f"Project '{name}' does not exist in '{projects_dir}'.")
+        raise FileNotFoundError(f"Project '{name}' does not exist in '{projects_dir()}'.")
 
-    active_file = root_dir / ".active_project"
-    active_file.write_text(name, encoding="utf-8")
+    active_project_marker().write_text(name, encoding="utf-8")
 
 
 def deactivate_project() -> None:
     """Clears the active project by removing the .active_project file."""
-    root_dir = get_git_root()
-    active_file = root_dir / ".active_project"
-    if active_file.exists():
-        active_file.unlink()
+    marker = active_project_marker()
+    if marker.exists():
+        marker.unlink()

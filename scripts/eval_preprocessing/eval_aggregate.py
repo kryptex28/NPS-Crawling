@@ -71,6 +71,27 @@ def parse_metrics_csv(path: Path) -> dict | None:
     return best
 
 
+def read_sweep(path: Path) -> list[dict]:
+    """Read every threshold row from one metrics CSV, sorted by threshold."""
+    rows = []
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                rows.append({
+                    "threshold": float(row["threshold"]),
+                    "precision": float(row["precision"]),
+                    "recall": float(row["recall"]),
+                    "F1": float(row["F1"]),
+                    "TP": int(row["TP"]),
+                    "FP": int(row["FP"]),
+                })
+            except (KeyError, TypeError, ValueError):
+                continue
+    rows.sort(key=lambda r: r["threshold"])
+    return rows
+
+
 def collect() -> list[dict]:
     """Walk every metrics CSV in EVAL_DIR and return one record per file."""
     records = []
@@ -335,6 +356,117 @@ def write_separation_histograms(records: list[dict], path: Path) -> None:
     plt.close(fig)
 
 
+def write_threshold_sweep(records: list[dict], path: Path, n: int = 2) -> None:
+    """Plot precision / recall / F1 against threshold for the top-N (model, ref) combos.
+
+    Justifies the chosen operating point: shows whether the F1 peak is a sharp
+    spike or a broad plateau, and how precision trades against recall as the
+    threshold moves. Reads the full sweep straight from each combo's metrics CSV.
+    """
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import numpy as np
+    except ImportError as exc:
+        print(f"  Skipping threshold sweep ({exc}).")
+        return
+
+    top = pick_top_models(records, n=n)
+    if not top:
+        return
+
+    fig, axes = plt.subplots(1, len(top), figsize=(6.0 * len(top), 4.2), sharey=True)
+    if len(top) == 1:
+        axes = [axes]
+
+    for ax, rec in zip(axes, top):
+        sweep = read_sweep(EVAL_DIR / rec["source_file"])
+        if not sweep:
+            ax.set_title(f"{rec['model']} (metrics CSV missing)")
+            continue
+        thr = [r["threshold"] for r in sweep]
+        # Precision is 0/0 (undefined) once nothing is predicted positive; the CSV
+        # records it as 0.0. Mask those points so the line ends instead of diving
+        # to zero, which would misread as a precision collapse.
+        precision = [
+            r["precision"] if (r["TP"] + r["FP"]) > 0 else np.nan
+            for r in sweep
+        ]
+        ax.plot(thr, precision, color="#1f77b4", label="Precision")
+        ax.plot(thr, [r["recall"] for r in sweep], color="#ff7f0e", label="Recall")
+        ax.plot(thr, [r["F1"] for r in sweep], color="#2ca02c", linewidth=2.2, label="F1")
+        ax.axvline(rec["threshold"], color="black", linestyle="--", linewidth=1.2,
+                   label=f"Best F1 @ {rec['threshold']:.2f}")
+        ax.set_xlabel("Threshold")
+        ax.set_xlim(min(thr), max(thr))
+        ax.set_ylim(0.0, 1.02)
+        ax.set_title(
+            f"{rec['model']}\n{format_ref_id(rec['reference_text_id'])}  |  "
+            f"best F1 = {rec['F1']:.3f}"
+        )
+        ax.legend(loc="lower center", fontsize=8)
+        ax.grid(alpha=0.25)
+
+    axes[0].set_ylabel("Score")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def write_speed_quality_scatter(records: list[dict], path: Path) -> None:
+    """Scatter best-F1 against embedding cost (ms/context), one point per model.
+
+    Makes the model-choice trade-off visual: a model that is both cheap and
+    top-scoring dominates the larger, slower ones, so paying for a bigger model
+    is only worth it if it buys F1. Uses each model's best reference text.
+    """
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError as exc:
+        print(f"  Skipping speed/quality scatter ({exc}).")
+        return
+
+    # Best (max-F1) combo per model.
+    best_per_model: dict[str, dict] = {}
+    for r in records:
+        cur = best_per_model.get(r["model"])
+        if cur is None or r["F1"] > cur["F1"]:
+            best_per_model[r["model"]] = r
+    points = [r for r in best_per_model.values() if r.get("embedding_ms_per_context")]
+    if not points:
+        print("  Skipping speed/quality scatter (no timing data).")
+        return
+
+    fig, ax = plt.subplots(figsize=(7.5, 5.0))
+    xs = [r["embedding_ms_per_context"] for r in points]
+    ys = [r["F1"] for r in points]
+    ax.scatter(xs, ys, s=80, color="#1f77b4", zorder=3)
+
+    for r in points:
+        ax.annotate(
+            f"{r['model']}\n({format_ref_id(r['reference_text_id'])})",
+            (r["embedding_ms_per_context"], r["F1"]),
+            textcoords="offset points", xytext=(9, 4), fontsize=8,
+        )
+
+    ax.set_xscale("log")
+    # Headroom so the point annotations don't collide with the frame.
+    ax.set_xlim(min(xs) * 0.7, max(xs) * 2.2)
+    y_lo, y_hi = min(ys), max(ys)
+    pad = (y_hi - y_lo) * 0.15 or 0.02
+    ax.set_ylim(y_lo - pad, y_hi + pad)
+    ax.set_xlabel("Embedding cost  (ms / context, log scale)")
+    ax.set_ylabel("Best F1")
+    ax.set_title("Embedding model: quality vs. cost  (best reference text per model)")
+    ax.grid(alpha=0.25, which="both")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     records = collect()
     if not records:
@@ -348,6 +480,8 @@ def main():
     f1_thr_path = RESULTS_DIR / "summary_best_f1_at_threshold.csv"
     heatmap_path = RESULTS_DIR / "heatmap_best_f1.png"
     hist_path = RESULTS_DIR / "score_separation_top_models.png"
+    sweep_path = RESULTS_DIR / "threshold_sweep_top_models.png"
+    scatter_path = RESULTS_DIR / "speed_vs_quality.png"
 
     write_long_csv(records, long_path)
     write_pivot_csv(records, f1_path, value_fn=lambda r: f"{r['F1']:.3f}")
@@ -357,10 +491,13 @@ def main():
     )
     write_heatmap(records, heatmap_path)
     write_separation_histograms(records, hist_path)
+    write_threshold_sweep(records, sweep_path)
+    write_speed_quality_scatter(records, scatter_path)
 
     print(
         f"Wrote {long_path.name}, {f1_path.name}, {f1_thr_path.name}, "
-        f"{heatmap_path.name}, {hist_path.name} → {RESULTS_DIR}"
+        f"{heatmap_path.name}, {hist_path.name}, {sweep_path.name}, "
+        f"{scatter_path.name} -> {RESULTS_DIR}"
     )
 
     print_markdown_table(

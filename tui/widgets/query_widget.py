@@ -173,7 +173,6 @@ class QueryWidget(Container):
         cat_sel = self.query_one("#sel-category", Select)
         filing_category: str = str(cat_sel.value) if cat_sel.value != Select.BLANK else ""
         filing_categories: list[str] = self.model.get_filing_categories()
-
         if filing_categories:
             filing_category = "custom"
 

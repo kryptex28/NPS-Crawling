@@ -1,5 +1,4 @@
 from enum import Enum
-import json
 from nps_crawling.classification.models.model import ClassificationModel
 from nps_crawling.classification.models.hf_llm import HF_LLM
 from nps_crawling.classification.models.ollama_llm import Ollama_LLM
@@ -7,6 +6,8 @@ from nps_crawling.classification.models.bge_base import BGE_Base
 from nps_crawling.classification.models.bge_advanced import BGE_Advanced
 from nps_crawling.classification.models.deberta_base import DeBERTa_Base
 from nps_crawling.classification.models.qwen_advanced import QWEN_Advanced
+from nps_crawling.classification.models.qwen_candidate import QWEN_Candidate
+from nps_crawling.classification.models.qwen_unified import QWEN_Unified
 from nps_crawling.classification.models.openai import OpenAIModel
 
 class ClassificationModelName(str, Enum):
@@ -17,6 +18,8 @@ class ClassificationModelName(str, Enum):
     BGE_ADVANCED = "BGE Advanced"
     DEBERTA_BASE = "DeBERTa Base"
     QWEN_ADVANCED = "QWEN Advanced"
+    QWEN_CANDIDATE = "QWEN Candidate"
+    QWEN_UNIFIED = "QWEN Unified"
     OPENAI = "OpenAI"
     def __repr__(self):
         return self.value
@@ -28,6 +31,8 @@ _MODEL_REGISTRY = {
     ClassificationModelName.BGE_ADVANCED: BGE_Advanced,
     ClassificationModelName.DEBERTA_BASE: DeBERTa_Base,
     ClassificationModelName.QWEN_ADVANCED: QWEN_Advanced,
+    ClassificationModelName.QWEN_CANDIDATE: QWEN_Candidate,
+    ClassificationModelName.QWEN_UNIFIED: QWEN_Unified,
     ClassificationModelName.OPENAI: OpenAIModel,
 }
 
@@ -39,7 +44,5 @@ def get_model(model_class_name: ClassificationModelName, model_name: str, **kwar
     return model_class(model_name, **kwargs)
 
 def get_model_from_config(config_path: str):
-    """Get model instance from config dictionary."""
-    with open(config_path, "r") as f:
-        config = json.load(f)
-    return ClassificationModel.from_dict(config)
+    """Get model instance from a JSON config file."""
+    return ClassificationModel.from_json(config_path)

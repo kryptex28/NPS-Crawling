@@ -23,7 +23,7 @@ def test_project_manager_workflow(tmp_path, monkeypatch):
         data = json.load(f)
     assert data["name"] == proj_name
     assert data["description"] == proj_desc
-    assert set(data.keys()) == {"name", "description"}
+    assert set(data.keys()) >= {"name", "description", "crawl", "preprocess", "classification"}
 
     # 3. Available projects
     assert project_manager.get_available_projects() == [proj_name]

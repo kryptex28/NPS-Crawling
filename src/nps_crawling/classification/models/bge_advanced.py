@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Optional
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -26,6 +28,8 @@ from nps_crawling.classification.models.model import (
 )
 from nps_crawling.config import Config
 
+logger = logging.getLogger(__name__)
+
 
 class BGE_Advanced(ClassificationModel):
     """BGE embedding + per-property linear SVMs (instruction per property)."""
@@ -33,36 +37,63 @@ class BGE_Advanced(ClassificationModel):
     def __init__(self, model_name: str, model_input: str = "", **kwargs):
         super().__init__(model_name, model_input, **kwargs)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=self.cache_dir)
-        self.model = AutoModel.from_pretrained(model_name, cache_dir=self.cache_dir)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        dtype = torch.float16 if self.device.type == "cuda" else torch.float32
+        self.model = AutoModel.from_pretrained(
+            model_name, cache_dir=self.cache_dir, torch_dtype=dtype
+        ).to(self.device)
         self.model.eval()
+        self._svm_cache: dict[Path, object] = {}
 
     def _encode_input(self, text: str, classification_property: ClassificationProperty) -> str:
         desc = (classification_property.description or "").strip()
         prefix = desc if desc else "Represent the sentence for classification."
         return prefix + " Sentence: " + text
 
+    def _embed_texts(
+        self,
+        texts: list[str],
+        classification_property: ClassificationProperty,
+    ) -> np.ndarray:
+        """Embed all texts for one property, batched on the model device."""
+        encoded_texts = [self._encode_input(text, classification_property) for text in texts]
+
+        batch_size = Config.CLASSIFICATION_EMBEDDING_BATCH_SIZE
+        embeddings = []
+        for start in range(0, len(encoded_texts), batch_size):
+            batch = encoded_texts[start : start + batch_size]
+            encoded_input = self.tokenizer(
+                batch,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
+            ).to(self.device)
+            with torch.no_grad():
+                model_output = self.model(**encoded_input)
+                sentence_embeddings = model_output[0][:, 0]
+            sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+            embeddings.append(sentence_embeddings.float().cpu().numpy())
+
+        return np.vstack(embeddings)
+
     def _get_embedding(self, text: str, classification_property: ClassificationProperty):
-        encoded_input = self.tokenizer(
-            self._encode_input(text, classification_property),
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
-        with torch.no_grad():
-            model_output = self.model(**encoded_input)
-            sentence_embeddings = model_output[0][:, 0]
-        sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-        return sentence_embeddings.squeeze(0).cpu().numpy()
+        return self._embed_texts([text], classification_property)[0]
 
     def _svm_path(self, category: ClassificationCategory, class_property: ClassificationProperty) -> Path:
         return Path(self.cache_dir) / self.model_name.split("/")[-1] / f"{category.name}_{class_property.name}.joblib"
-    
+
+    def _load_svm(self, category: ClassificationCategory, class_property: ClassificationProperty):
+        svm_path = self._svm_path(category, class_property)
+        if svm_path not in self._svm_cache:
+            self._svm_cache[svm_path] = joblib.load(svm_path)
+        return self._svm_cache[svm_path]
+
     def is_supported(self, category: ClassificationCategory) -> bool:
         for property in category.properties:
             if not property.type == ClassificationType.BOOLEAN:
                 return False
         return True
-    
+
     def is_trained(self, category: ClassificationCategory) -> bool:
         for property in category.properties:
             svm_path = self._svm_path(category, property)
@@ -71,22 +102,32 @@ class BGE_Advanced(ClassificationModel):
         return True
 
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
+        return self.classify_batch([text], category)[0]
+
+    def classify_batch(
+        self,
+        texts: list[str],
+        category: ClassificationCategory,
+    ) -> list[list[DataEntry]]:
         if not self.is_supported(category):
             raise NotSupportedError(
                 "SVM models are only supported for boolean classification."
             )
         if not self.is_trained(category):
             raise NotTrainedError(
-                f"SVM model for {category.name}/{class_property.name} not found at {svm_path}. "
-                "Train the model first."
+                f"SVM models for {category.name} not found. Train the model first."
             )
-        data_entries: list[DataEntry] = []
+        data_entries: list[list[DataEntry]] = [[] for _ in texts]
         for class_property in category.properties:
-            svm_path = self._svm_path(category, class_property)
-            embedding = self._get_embedding(text, class_property).reshape(1, -1)
-            svm_model = joblib.load(svm_path)
-            prediction = svm_model.predict(embedding)
-            data_entries.append(DataEntry(column_name=class_property.name, value=int(prediction[0])))
+            svm_model = self._load_svm(category, class_property)
+            embeddings = self._embed_texts(texts, class_property)
+            predictions = svm_model.predict(embeddings)
+            for entries, prediction in zip(data_entries, predictions):
+                entries.append(DataEntry(column_name=class_property.name, value=int(prediction)))
+            logger.info(
+                f"{self.model_name}: {category.name}/{class_property.name} "
+                f"classified {len(texts)} texts"
+            )
 
         return data_entries
 
@@ -114,7 +155,7 @@ class BGE_Advanced(ClassificationModel):
                     "SVM models are only supported for boolean classification."
                 )
             labels = train_df[class_property.name].tolist()
-            embeddings = [self._get_embedding(t, class_property) for t in texts]
+            embeddings = self._embed_texts(texts, class_property)
             svm_model = make_pipeline(
                 StandardScaler(),
                 SVC(kernel="linear", random_state=Config.CLASSIFICATION_RANDOM_SEED),
@@ -123,3 +164,4 @@ class BGE_Advanced(ClassificationModel):
             svm_path = self._svm_path(category, class_property)
             svm_path.parent.mkdir(parents=True, exist_ok=True)
             joblib.dump(svm_model, svm_path)
+            self._svm_cache[svm_path] = svm_model
