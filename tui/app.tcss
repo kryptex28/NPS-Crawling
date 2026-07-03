@@ -146,3 +146,18 @@ Button {
     height: 3;
     margin-right: 1;
 }
+
+.config-row {
+    height: auto;
+    align: left middle;
+    layout: horizontal;
+    margin-bottom: 1;
+}
+.config-row Input {
+    width: 80%;
+}
+.config-row Button {
+    width: 20%;
+    margin-left: 1;
+    height: 3;
+}
