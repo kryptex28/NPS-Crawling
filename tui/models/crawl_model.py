@@ -7,7 +7,6 @@ from typing_extensions import Self
 from models.query_model import QueryModel
 
 from nps_crawling.config import Config
-from nps_crawling.crawler.utils import CrawlerPipeline
 from nps_crawling.crawler.pre_fetch_utils.sec_params import (
     SecSearchParams,
     get_search_params_from_id
@@ -29,12 +28,13 @@ class CrawlModel():
     def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._initialized = True
-            self._crawl: CrawlerPipeline | None = None
+            self._crawl = None
             self.queries: list[str] = []
 
     @property
-    def crawl(self) -> CrawlerPipeline:
+    def crawl(self) -> Any:
         if self._crawl is None:
+            from nps_crawling.crawler.utils import CrawlerPipeline
             self._crawl = CrawlerPipeline()
         return self._crawl
 

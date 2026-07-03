@@ -5,7 +5,6 @@ from typing import Any
 from typing_extensions import Self
 
 from nps_crawling.config import Config
-from nps_crawling.preprocessing.utils import PreProcessingPipeline
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.project_manager import get_git_root
 from nps_crawling.project_config import active_project_file, resolve_project_config_path
@@ -22,11 +21,12 @@ class PreprocessingModel():
     def __init__(self) -> None:
         if not hasattr(self, "_initialized"):
             self._initialized = True
-            self._preprocessing: PreProcessingPipeline | None = None
+            self._preprocessing = None
 
     @property
-    def preprocessing(self) -> PreProcessingPipeline:
+    def preprocessing(self) -> Any:
         if self._preprocessing is None:
+            from nps_crawling.preprocessing.utils import PreProcessingPipeline
             self._preprocessing = PreProcessingPipeline()
         return self._preprocessing
 
