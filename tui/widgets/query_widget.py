@@ -38,6 +38,7 @@ from constants import US_STATES
 
 from models.query_model import QueryModel
 from screens.filing_types_screen import FilingTypesScreen
+from screens.query_config_screen import QueryConfigScreen
 from data_package.query_data import QueryData
 from data_package.entity_data import EntityData
 
@@ -168,7 +169,9 @@ class QueryWidget(Container):
         from_date: str = self.query_one("#inp-from-date", Input).value.strip()
         to_date: str = self.query_one("#inp-to-date", Input).value.strip()
         entity: str = self.query_one("#inp-entity", Input).value.strip()
-        limit: int = int(self.query_one("#query-filing-limit", Input).value)
+
+        limit_value: str = self.query_one("#query-filing-limit", Input).value.strip()
+        limit: int = int(limit_value) if limit_value else -1
 
         cat_sel = self.query_one("#sel-category", Select)
         filing_category: str = str(cat_sel.value) if cat_sel.value != Select.BLANK else ""
@@ -244,7 +247,7 @@ class QueryWidget(Container):
             style = ""
         else:
             self.model.add_selected(row_id)
-            style = "bold white on green"
+            style = "bold green"
         
         table = self.query_one("#query-table", DataTable)
         cols = table.ordered_columns
@@ -255,6 +258,29 @@ class QueryWidget(Container):
             table.update_cell(event.row_key, col.key, Text(plain, style=style))
 
         self._update_row_highlight(event.row_key, row_id)
+
+    @on(Button.Pressed, "#btn-view")
+    def view_selected(self) -> None:
+        table = self.query_one("#query-table", DataTable)
+        if table.cursor_row is not None:
+            row = table.get_row_at(table.cursor_row)
+            cell = row[0]
+            row_id = str(cell.plain if hasattr(cell, "plain") else cell)
+            # Find the query config and display in modal
+            for q in self.model.get_queries():
+                if str(q.id) == row_id:
+                    self.app.push_screen(QueryConfigScreen(q))
+                    break
+        else:
+            self.notify("Please select a query in the table first.", severity="warning")
+
+    @on(RadioSet.Changed, "#date-range-set")
+    def on_date_range_changed(self, event: RadioSet.Changed) -> None:
+        custom_dates = self.query_one("#custom-dates", Horizontal)
+        if event.pressed.id == "dr-custom":
+            custom_dates.add_class("visible")
+        else:
+            custom_dates.remove_class("visible")
 
     def _update_row_highlight(self, row_key, row_id: str) -> None:
         table = self.query_one("#query-table", DataTable)

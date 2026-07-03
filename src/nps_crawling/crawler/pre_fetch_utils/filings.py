@@ -120,10 +120,16 @@ class FilingsCategoryCollectionCoarse(Enum):
     @classmethod
     def from_string(cls, type_str: str) -> Optional["FilingsCategoryCollectionCoarse"]:
         """Convert a string to an enum."""
-        try:
-            return cls[type_str]
-        except KeyError:
+        if not isinstance(type_str, str):
             return cls.ALL
+        try:
+            return cls[type_str.upper()]
+        except KeyError:
+            pass
+        for member in cls:
+            if member.value == type_str:
+                return member
+        return cls.ALL
 
     def to_string(self) -> str:
         """Convert an enum to a string."""

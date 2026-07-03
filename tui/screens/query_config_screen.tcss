@@ -1,0 +1,40 @@
+QueryConfigScreen {
+    align: center middle;
+}
+QueryConfigScreen > Container {
+    width: 60%;
+    height: auto;
+    max-height: 85%;
+    background: $surface;
+    border: thick $primary;
+    padding: 0 1;
+}
+QueryConfigScreen .modal-title {
+    background: $primary;
+    color: $text;
+    text-align: center;
+    padding: 0 1;
+    height: 3;
+    content-align: center middle;
+    text-style: bold;
+}
+QueryConfigScreen #config-details-container {
+    margin-top: 1;
+    margin-bottom: 1;
+    padding: 1 2;
+    background: $panel;
+    border: round $primary-darken-2;
+    height: auto;
+}
+QueryConfigScreen #config-details-container Static {
+    margin-bottom: 1;
+}
+QueryConfigScreen .modal-footer {
+    height: 3;
+    layout: horizontal;
+    align: center middle;
+    margin-bottom: 1;
+}
+QueryConfigScreen .modal-footer Button {
+    width: 30%;
+}

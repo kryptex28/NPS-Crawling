@@ -142,6 +142,12 @@ class CrawlerTuiApp(App):
             ", ".join(results) or "None"
         )
 
+        if results:
+            try:
+                self.query_one("#sel-category", Select).value = "custom"
+            except Exception:
+                pass
+
     def on_mount(self) -> None:
         Config.reload_config()
         show_log = self.current_page not in self.PAGES_WITHOUT_LOG

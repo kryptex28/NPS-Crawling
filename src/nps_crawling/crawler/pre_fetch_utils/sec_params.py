@@ -14,10 +14,16 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
     """Create params from config file."""
     params: list[SecSearchParams] = []
 
-    with open(path, 'r') as f:
-        config: dict = json.load(f)
+    try:
+        with open(path, 'r') as f:
+            config: dict = json.load(f)
+    except Exception as e:
+        print(f"Error loading config from {path}: {e}")
+        return params
 
-    queries = config['queries']
+    queries = config.get('queries', {})
+    if not isinstance(queries, dict):
+        return params
 
     for query_id, query_data in queries.items():
         query_base: str = query_data.get('query_base', '')
@@ -34,9 +40,9 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
 
         individual_search: CompanyTicker = None
         if individual_search_title and individual_search_cik and individual_search_ticker:
-            individual_search: CompanyTicker = CompanyTicker(ticker=query_data.get('individual_search', ''),
-                                                             cik=query_data.get('individual_search_cik', ''),
-                                                             title=query_data.get('individual_search_title', ''))
+            individual_search: CompanyTicker = CompanyTicker(ticker=individual_search_ticker,
+                                                             cik=individual_search_cik,
+                                                             title=individual_search_title)
 
         filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(
             query_data.get('filing_category', ''),

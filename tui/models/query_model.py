@@ -54,15 +54,30 @@ class QueryModel():
         return queries
     
     def _create_query_data_from_config(self, params: SecSearchParams) -> QueryData:
+        entity = ""
+        cik = ""
+        entity_title = ""
+        if params.individual_search:
+            if getattr(params.individual_search, "ticker", None):
+                if isinstance(params.individual_search.ticker, list) and len(params.individual_search.ticker) > 0:
+                    entity = params.individual_search.ticker[0]
+                elif isinstance(params.individual_search.ticker, str):
+                    entity = params.individual_search.ticker
+            cik = getattr(params.individual_search, "cik", "")
+            entity_title = getattr(params.individual_search, "title", "")
         return QueryData(
             id=params.id,
             query_base=params.query_base,
             keyword=params.keyword,
             from_date=params.from_date,
             to_date=params.to_date,
-            entity="",
+            entity=entity,
+            cik=cik,
+            entity_title=entity_title,
             filing_category=params.filing_category.to_string(),
-            filing_types=params.filing_categories
+            filing_types=params.filing_categories,
+            date_range=params.date_range or "all",
+            limit=params.filing_limit,
         )
 
     def update_queries(self) -> list[QueryData]:

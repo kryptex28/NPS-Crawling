@@ -9,6 +9,8 @@ class QueryData:
     query_base: str = ""
     keyword: str = ""
     entity: str = ""
+    cik: str = ""
+    entity_title: str = ""
     filing_category: str = ""
     filing_types: list[str] = field(default_factory=list)
     date_range: str = "all"
