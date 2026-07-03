@@ -243,5 +243,6 @@ def _ensure_docker_db_running() -> None:
 
 
 if __name__ == "__main__":
-    _ensure_docker_db_running()
+    if Config.LOCAL_MODE:
+        _ensure_docker_db_running()
     CrawlerTuiApp().run()
