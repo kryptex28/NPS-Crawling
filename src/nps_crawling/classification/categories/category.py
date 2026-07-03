@@ -116,6 +116,10 @@ class ClassificationProperty:
         )
     
     def cast_value(self, value : any):
+        # Missing values (None / NaN, e.g. empty ground-truth cells) mean
+        # "no value" for every type, not a castable value.
+        if value is None or (isinstance(value, float) and math.isnan(value)):
+            return self.default_value
         if self.type == ClassificationType.BOOLEAN:
             try:
                 return bool(value)
@@ -130,7 +134,8 @@ class ClassificationProperty:
                 return self.default_value
         if self.type == ClassificationType.FLOAT:
             try:
-                return float(str(value).replace(",", "."))
+                result = float(str(value).replace(",", "."))
+                return self.default_value if math.isnan(result) else result
             except Exception as e:
                 logger.debug(
                     "Value %r was not valid for float %s:\n%s\nReturning default %s",
@@ -358,7 +363,15 @@ class ClassificationCategory:
 
         return labels, predictions
     
+    @staticmethod
+    def _none_if_nan(value: Optional[float]) -> Optional[float]:
+        if isinstance(value, float) and math.isnan(value):
+            return None
+        return value
+
     def _is_close(self, a: Optional[float], b: Optional[float], tol=1e-5) -> bool:
+        a = self._none_if_nan(a)
+        b = self._none_if_nan(b)
         if a is None and b is None:
             return True
         if a is None or b is None:
@@ -366,7 +379,7 @@ class ClassificationCategory:
         return math.isclose(a, b, abs_tol=tol)
 
     def _to_label(self,gt: Optional[float], pred: Optional[float]) -> str:
-        if pred is None:
+        if self._none_if_nan(pred) is None:
             return "no_value"
         elif self._is_close(gt, pred):
             return "correct_value"

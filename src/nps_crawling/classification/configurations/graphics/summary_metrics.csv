@@ -1,16 +1,25 @@
 model,model_name,family,nps_category_mean_positive_f1,nps_category_mean_macro_f1,nps_category_time_per_snippet_s,has_numeric_f1_pos,has_numeric_accuracy,has_numeric_time_per_snippet_s,value_category_mean_correct_f1,value_category_time_per_snippet_s
-Qwen3-Embedding-4B,Qwen/Qwen3-Embedding-4B,Embedding,0.5695,0.7782,9.7175,,,,,
+Qwen3-Embedding-4B [SVM],Qwen/Qwen3-Embedding-4B,Embedding,0.5695,0.7782,9.7175,,,,,
+gpt-5.4 [examples=handselected],gpt-5.4,LLM,0.5482,0.7255,1.6111,0.8809,0.8768,1.6111,0.8249,1.6111
+bge-m3,BAAI/bge-m3,Embedding,0.5386,0.7575,0.1506,,,,,
 gpt-5.4,gpt-5.4,LLM,0.5225,0.7141,1.3123,,,,,
-gpt-5.4,gpt-5.4,LLM,0.5225,0.7141,1.3123,,,,,
-bge-large-en-v1.5,BAAI/bge-large-en-v1.5,Embedding,0.4912,0.7343,1.0105,0.7210,0.7450,,,
-bge-large-en-v1.5,BAAI/bge-large-en-v1.5,Embedding,0.4912,0.7343,1.0105,0.7210,0.7450,,,
-gpt-5.4-mini,gpt-5.4-mini,LLM,0.4409,0.6677,1.3809,0.8772,0.9007,,0.7451,
-gpt-5.4-mini,gpt-5.4-mini,LLM,0.4409,0.6677,1.3809,0.8772,0.9007,,0.7451,
-bge-m3,BAAI/bge-m3,Embedding,0.4387,0.6711,0.1397,0.7250,0.7479,0.1326,,
-bge-m3,BAAI/bge-m3,Embedding,0.4387,0.6711,0.1397,0.7250,0.7479,0.1326,,
+bge-large-en-v1.5,BAAI/bge-large-en-v1.5,Embedding,0.4912,0.7343,1.0105,,,,,
+"Qwen3-Embedding-4B [SVM, optimized]",Qwen/Qwen3-Embedding-4B,Embedding,0.4623,0.6909,1.1944,0.8274,0.8338,0.0001,,
+Qwen3-Embedding-4B [Unified],Qwen/Qwen3-Embedding-4B,Embedding,0.4623,0.6909,3.5650,0.8274,0.8338,3.5650,0.5442,3.5650
+Qwen3-8B,Qwen/Qwen3-8B,LLM,0.4586,0.6357,43.6431,0.8544,0.8936,20.3327,0.7388,43.0939
+gpt-5.4-mini [c8c1da],gpt-5.4-mini,LLM,0.4409,0.6677,1.3809,,,,,
+bge-m3 [examples=handselected],BAAI/bge-m3,Embedding,0.4387,0.6711,0.1397,0.7250,0.7479,0.1326,,
+Qwen3-4B,Qwen/Qwen3-4B,LLM,0.4324,0.6165,94.3142,0.8627,0.9007,13.5210,0.7854,32.1117
+gpt-5.4-mini [197b0e],gpt-5.4-mini,LLM,0.4250,0.6086,0.9175,0.8772,0.9007,0.0003,0.8136,1.0399
+bge-large-en-v1.5 [examples=handselected],BAAI/bge-large-en-v1.5,Embedding,0.4206,0.6565,0.9197,0.7210,0.7450,0.1328,,
+Qwen3-8B [enable_thinking=False],Qwen/Qwen3-8B,LLM,0.4145,0.5952,2.2034,0.7541,0.7872,1.1588,0.7141,3.4556
 all-MiniLM-L6-v2,sentence-transformers/all-MiniLM-L6-v2,Embedding,0.4032,0.6426,0.0152,0.6790,0.7020,0.0110,,
+Qwen3-Embedding-0.6B [Unified],Qwen/Qwen3-Embedding-0.6B,Embedding,0.3959,0.6442,0.0847,0.7720,0.7851,0.0847,0.3739,0.0847
+"Qwen3-Embedding-0.6B [SVM, optimized]",Qwen/Qwen3-Embedding-0.6B,Embedding,0.3959,0.6442,0.0102,0.7720,0.7851,0.0000,,
 paraphrase-multilingual-mpnet-base-v2,sentence-transformers/paraphrase-multilingual-mpnet-base-v2,Embedding,0.3888,0.6321,0.0524,0.6463,0.6676,0.0464,,
 paraphrase-multilingual-MiniLM-L12-v2,sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2,Embedding,0.3884,0.6316,0.0281,0.6066,0.6246,0.0211,,
-Qwen3-4B,Qwen/Qwen3-4B,LLM,0.3622,0.6543,32.9268,0.9091,0.9333,11.8285,1.0000,24.1288
+Mistral-7B-Instruct-v0.2 [enable_thinking=False],mistralai/Mistral-7B-Instruct-v0.2,LLM,0.3523,0.5135,3.5138,0.6364,0.6028,2.0860,0.6812,7.3644
 Mistral-7B-Instruct-v0.2,mistralai/Mistral-7B-Instruct-v0.2,LLM,0.2838,0.5147,5.4845,,,,,
-Qwen3-8B,Qwen/Qwen3-8B,LLM,,,,,,,1.0000,218.2602
+deberta-v3-base,microsoft/deberta-v3-base,Embedding,0.0000,0.4508,0.0217,0.0000,0.5244,0.0171,,
+Qwen3-Embedding-0.6B [Candidate],Qwen/Qwen3-Embedding-0.6B,Embedding,,,,,,,0.3739,0.0794
+Qwen3-Embedding-4B [Candidate],Qwen/Qwen3-Embedding-4B,Embedding,,,,,,,0.5442,4.0501
