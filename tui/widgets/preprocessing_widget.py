@@ -53,9 +53,15 @@ class PreprocessingWidget(Container):
             with Vertical():
                 yield Static("Preprocessing", classes="section-header")
                 with Horizontal():
+                    yield Button("Configure Preprocess", id="btn-configure-preprocessing")
                     yield Button("Start Preprocessing", id="btn-start-preprocessing")
                     yield Button("Stop Preprocessing", id="btn-stop-preprocessing")
                     yield Label("", id="preprocessing-timer")
+
+    @on(Button.Pressed, "#btn-configure-preprocessing")
+    def open_preprocess_config(self) -> None:
+        from screens.preprocess_config_screen import PreprocessConfigScreen
+        self.app.push_screen(PreprocessConfigScreen())
 
 
     def watch_elapsed(self, value: int) -> None:
