@@ -37,6 +37,34 @@ class DbAdapter:
         self._db = NpsFilingsDB(self.engine)
         self.table_name = self._db.TABLE
 
+    def is_db_available(self) -> bool:
+        """
+        Checks if the database is currently reachable and responding.
+        If LOCAL_MODE is active and the first attempt fails, it tries to start
+        the Docker container via ensure_docker_db_running and retries.
+
+        Returns:
+            bool: True if connection is successful, False otherwise.
+        """
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+                return True
+        except Exception as e:
+            if Config.LOCAL_MODE:
+                try:
+                    from nps_crawling.db.ensure_docker import ensure_docker_db_running
+                    ensure_docker_db_running()
+                    # Retry connection test
+                    with self.engine.connect() as conn:
+                        conn.execute(text("SELECT 1"))
+                        return True
+                except Exception as docker_exc:
+                    print(f"\n[Verbindungsfehler] Docker-Auto-Start fehlgeschlagen: {docker_exc}", flush=True)
+            else:
+                print(f"\n[Verbindungsfehler] Keine Datenbankverbindung möglich: {e}", flush=True)
+            return False
+
     def ensure_table_exists(
         self,
         include_classifications: bool = False,
@@ -375,3 +403,142 @@ class DbAdapter:
             path_to_preprocessed (str | None): Path to the preprocessed JSON file.
         """
         self._db.upsert_preprocessing_result(filing_id, version, project_relevant, path_to_preprocessed)
+
+    def export_csv(self, filename: str | None = None, only_relevant: bool = False) -> str:
+        """
+        Exports all filings from the main table, joined with their classification results
+        for the current active classification version, into a CSV file.
+        
+        The CSV file is saved in the 'output' directory under the project root.
+        Rows are expanded ("atomized") so that if a filing has multiple tickers,
+        a separate row is written for each ticker.
+        
+        Args:
+            filename (str | None): Optional filename for the export. Defaults to the active project name.
+            only_relevant (bool): If True, filters where project_relevant is True.
+            
+        Returns:
+            str: Absolute path of the exported CSV file.
+        """
+        import csv
+        from pathlib import Path
+        from nps_crawling.utils.project_manager import get_active_project_name
+        
+        # 1. Determine active project name, raise error if none loaded
+        project_name = get_active_project_name()
+        if not project_name:
+            raise ValueError("Kein aktives Projekt geladen. Bitte laden Sie zuerst ein Projekt.")
+
+        # Check database availability
+        if not self.is_db_available():
+            raise ConnectionError("Datenbank ist nicht erreichbar. Export abgebrochen.")
+
+        # 2. Determine filename and filepath
+        if not filename:
+            filename = f"{project_name}.csv"
+        else:
+            if not filename.lower().endswith(".csv"):
+                filename = f"{filename}.csv"
+                
+        output_dir = Config.ROOT_DIR / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        filepath = output_dir / filename
+        
+        # 3. Get classification columns from schema if table exists
+        class_table = f"{self.table_name}_classifications".lower()
+        classification_cols = []
+        
+        with self.engine.connect() as conn:
+            # Check if table exists
+            table_exists_stmt = text(
+                "SELECT EXISTS ("
+                "   SELECT FROM information_schema.tables "
+                "   WHERE table_name = :table_name"
+                ")"
+            )
+            exists = conn.execute(table_exists_stmt, {"table_name": class_table}).scalar()
+            
+            if exists:
+                cols_stmt = text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = :table_name"
+                )
+                all_cols = [
+                    row["column_name"]
+                    for row in conn.execute(cols_stmt, {"table_name": class_table}).mappings().all()
+                ]
+                # Exclude standard fields to avoid duplicate column names
+                exclude = {"id", "filing_id", "experiment_version", "classified_at"}
+                classification_cols = [col for col in all_cols if col.lower() not in exclude]
+                classification_cols.sort()
+            else:
+                print(f"Hinweis: Die Klassifikationstabelle '{class_table}' existiert nicht da noch nichts klassifiziert wurde. Es werden nur die Rohdaten aus '{self.table_name}' exportiert.")
+                
+        # 3. Construct and run SELECT query
+        select_parts = ["m.*"]
+        for col in classification_cols:
+            select_parts.append(f'c."{col}"')
+            
+        where_clause = ""
+        if only_relevant:
+            where_clause = "WHERE m.project_relevant = TRUE"
+            
+        if classification_cols:
+            stmt = text(f"""
+                SELECT {", ".join(select_parts)}
+                FROM {self.table_name} m
+                LEFT JOIN {self.table_name}_classifications c
+                    ON m.id = c.filing_id AND c.experiment_version = :class_version
+                {where_clause}
+            """)
+        else:
+            stmt = text(f"""
+                SELECT m.*
+                FROM {self.table_name} m
+                {where_clause}
+            """)
+            
+        with self.engine.connect() as conn:
+            results = conn.execute(stmt, {"class_version": Config.CLASSIFICATION_VERSION}).mappings().all()
+            
+        # Determine the header columns
+        if not results:
+            # Table is empty, write header anyway
+            main_cols = []
+            cols_stmt = text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = :table_name"
+            )
+            with self.engine.connect() as conn:
+                main_cols = [
+                    row["column_name"]
+                    for row in conn.execute(cols_stmt, {"table_name": self.table_name.lower()}).mappings().all()
+                ]
+            headers = main_cols + classification_cols
+        else:
+            headers = list(results[0].keys())
+            
+        # 4. Atomize / Split rows by ticker list
+        exported_rows = []
+        for row in results:
+            row_dict = dict(row)
+            ticker_list = row_dict.get("ticker")
+            
+            if isinstance(ticker_list, list) and len(ticker_list) > 0:
+                for t in ticker_list:
+                    new_row = row_dict.copy()
+                    new_row["ticker"] = [t]
+                    exported_rows.append(new_row)
+            else:
+                # Keep as is (or if ticker is None / empty, write it)
+                exported_rows.append(row_dict)
+                
+        # 5. Write to CSV file
+        with open(filepath, mode="w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=headers)
+            writer.writeheader()
+            for row in exported_rows:
+                writer.writerow(row)
+                
+        return str(filepath.resolve())
+
