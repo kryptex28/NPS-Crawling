@@ -41,7 +41,8 @@ ClassificationConfigScreen .form-row Label {
     content-align: left middle;
 }
 
-ClassificationConfigScreen .form-row Input {
+ClassificationConfigScreen .form-row Input,
+ClassificationConfigScreen .form-row Select {
     width: 65%;
 }
 
