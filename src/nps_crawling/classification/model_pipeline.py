@@ -1,7 +1,6 @@
 """Classification model pipeline."""
 
 import json
-import hashlib
 from pathlib import Path
 
 from nps_crawling.db.db_adapter import DbAdapter
@@ -118,8 +117,9 @@ class ClassificationModelPipeline(Config):
 
 
     def _write_to_db(self, id, results):
-        payload = json.dumps(self.CLASSIFICATION_CONFIG, sort_keys=True, separators=(",", ":"))
-        experiment_version = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        # Same value export_csv joins on (Config.CLASSIFICATION_VERSION), so
+        # written rows and exports always refer to the same version.
+        experiment_version = self.CLASSIFICATION_VERSION
 
         self.adapter.upsert_classification(
             # --- Pflicht- und Metadaten-Felder ---
