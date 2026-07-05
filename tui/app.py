@@ -73,7 +73,7 @@ class CrawlerTuiApp(App):
 
     CSS_PATH = "app.tcss"
 
-    PAGES_WITHOUT_LOG = {"nav-project", "nav-database"}
+    PAGES_WITHOUT_LOG = {"nav-project", "nav-database", "nav-query"}
 
     current_page: reactive[str] = reactive("nav-project", init=False)
 

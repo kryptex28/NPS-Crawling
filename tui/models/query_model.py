@@ -54,6 +54,7 @@ class QueryModel():
         return queries
     
     def _create_query_data_from_config(self, params: SecSearchParams) -> QueryData:
+        import datetime
         entity = ""
         cik = ""
         entity_title = ""
@@ -65,6 +66,17 @@ class QueryModel():
                     entity = params.individual_search.ticker
             cik = getattr(params.individual_search, "cik", "")
             entity_title = getattr(params.individual_search, "title", "")
+
+        created_at = ""
+        file_path = join(Config.QUERY_PATH, f"{params.id}.json")
+        if os.path.exists(file_path):
+            try:
+                # Use mtime as it represents when the file was written, formatted as string
+                mtime = os.path.getmtime(file_path)
+                created_at = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                pass
+
         return QueryData(
             id=params.id,
             query_base=params.query_base,
@@ -78,6 +90,7 @@ class QueryModel():
             filing_types=params.filing_categories,
             date_range=params.date_range or "all",
             limit=params.filing_limit,
+            created_at=created_at,
         )
 
     def update_queries(self) -> list[QueryData]:

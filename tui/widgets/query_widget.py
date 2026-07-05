@@ -220,6 +220,7 @@ class QueryWidget(Container):
             if query_display is None:
                 query_display = getattr(q, "keyword", "")
             date_range = getattr(q, "date_range", "")
+            created_at = getattr(q, "created_at", "")
 
             row_id = q.id
 
@@ -228,6 +229,7 @@ class QueryWidget(Container):
                     Text(str(row_id), style="bold green"),
                     Text(query_display, style="bold green"), 
                     Text(date_range, style="bold green"),
+                    Text(created_at, style="bold green"),
                     key=row_id
                 )
             else:
@@ -235,6 +237,7 @@ class QueryWidget(Container):
                     Text(str(row_id)),
                     Text(query_display), 
                     Text(date_range),
+                    Text(created_at),
                     key=row_id
                 )
         self._update_row_highlight(None, "")
@@ -334,7 +337,7 @@ class QueryWidget(Container):
 
     def on_mount(self) -> None:
         table = self.query_one("#query-table", DataTable)
-        table.add_columns("ID", "Query", "Date range")
+        table.add_columns("ID", "Query", "Date range", "Created At")
         self._selected_ids = set(self.model.selected_queries)
         self._refresh_table()
 

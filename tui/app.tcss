@@ -21,14 +21,16 @@ Screen {
     height: 1fr;
 }
 #left-panel {
-    width: 1fr;
+    width: 50%;
+    min-width: 35;
     height: 1fr;
     overflow-y: auto;
     border-right: solid $primary-darken-2;
     padding: 0 1;
 }
 #right-panel {
-    width: 55;
+    width: 50%;
+    min-width: 45;
     height: 1fr;
     padding: 0 1;
 }
@@ -115,6 +117,7 @@ Screen {
 #query-toolbar Button {
     margin-right: 1;
     height: 3;
+    min-width: 6;
 }
 #query-table {
     height: 1fr;

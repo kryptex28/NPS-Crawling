@@ -18,6 +18,7 @@ class QueryData:
     to_date: str = ""
     limit: int = -1
     selected: bool = False
+    created_at: str = ""
 
     def summary(self) -> str:
         parts = []
