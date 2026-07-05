@@ -206,9 +206,9 @@ class QWEN_Advanced(ClassificationModel):
         texts: list[str],
         category: ClassificationCategory,
         properties: list[ClassificationProperty],
-    ) -> list[dict[str, int]]:
+    ) -> list[dict[str, bool]]:
         """Predict the boolean ``properties`` for every text via per-property SVMs."""
-        results: list[dict[str, int]] = [{} for _ in texts]
+        results: list[dict[str, bool]] = [{} for _ in texts]
         shared_embeddings: Optional[np.ndarray] = None
         if self.optimized:
             shared_embeddings = self._embed_texts_memoized(texts, self.SHARED_INSTRUCTION)
@@ -220,7 +220,7 @@ class QWEN_Advanced(ClassificationModel):
                 embeddings = self._embed_texts(texts, self._get_instruction(class_property))
             predictions = svm_model.predict(embeddings)
             for result, prediction in zip(results, predictions):
-                result[class_property.name] = int(prediction)
+                result[class_property.name] = class_property.cast_value(prediction)
             logger.info(
                 f"{self.model_name}: {category.name}/{class_property.name} "
                 f"classified {len(texts)} texts"

@@ -89,7 +89,7 @@ class ClassificationProperty:
         self.description = description
         self.type : ClassificationType = type
         if self.type == ClassificationType.BOOLEAN:
-            self.default_value = 0
+            self.default_value = False
         else:
             self.default_value = None
 
@@ -148,7 +148,8 @@ class ClassificationProperty:
                 return self.default_value
         if self.type == ClassificationType.INTEGER:
             try:
-                return int(str(value))
+                # Accept float-shaped inputs like 61.0 or "61.0".
+                return int(round(float(str(value).replace(",", "."))))
             except Exception as e:
                 logger.debug(
                     "Value %r was not valid for float %s:\n%s\nReturning default %s",

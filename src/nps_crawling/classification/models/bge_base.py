@@ -107,7 +107,9 @@ class BGE_Base(ClassificationModel):
             svm_model = self._load_svm(category, class_property)
             predictions = svm_model.predict(embeddings)
             for entries, prediction in zip(data_entries, predictions):
-                entries.append(DataEntry(column_name=class_property.name, value=int(prediction)))
+                entries.append(
+                    DataEntry(column_name=class_property.name, value=class_property.cast_value(prediction))
+                )
         logger.info(f"{self.model_name}: {category.name} classified {len(texts)} texts")
 
         return data_entries

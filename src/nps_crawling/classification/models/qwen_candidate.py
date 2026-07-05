@@ -148,9 +148,7 @@ class QWEN_Candidate(QWEN_Advanced):
 
     @staticmethod
     def _cast_candidate(value: float, prop: ClassificationProperty):
-        if prop.type == ClassificationType.INTEGER:
-            return int(round(value))
-        return float(value)
+        return prop.cast_value(value)
 
     def _classify_candidate_batch(
         self,
