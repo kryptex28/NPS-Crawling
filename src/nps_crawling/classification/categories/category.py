@@ -7,13 +7,13 @@ from pathlib import Path
 import re
 from typing import List, Optional
 
-from nps_crawling.classification.common import classification_config_basename, make_hashable, stable_serialize
+from nps_crawling.classification.common import classification_config_basename, load_json_file, make_hashable, resolve_config_path, stable_serialize
 
 import logging
 logger = logging.getLogger(__name__)
 
 current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_FILE = current_dir.parent / "configurations" / "categories" / "Default" / "1661ea62d36667f0ef1f0c1ea6fd5281231de88e9e3d016b71bb1e55f8831688.json"
+DEFAULT_FILE = current_dir.parent / "configurations" / "categories" / "Default.json"
 
 class ClassificationType(str, Enum):
     """Classification types."""

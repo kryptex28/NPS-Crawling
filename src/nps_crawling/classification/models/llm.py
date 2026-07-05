@@ -16,7 +16,7 @@ from nps_crawling.config import Config
 logger = logging.getLogger(__name__)
 
 
-class HF_LLM(ClassificationModel):
+class LLM(ClassificationModel):
     """Hugging Face causal LM for JSON classification."""
 
     def __init__(self, model_name: str, model_input: Any = "", **kwargs):

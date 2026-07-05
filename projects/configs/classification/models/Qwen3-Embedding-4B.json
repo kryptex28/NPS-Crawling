@@ -1,5 +1,5 @@
 {
-    "class_name": "QWEN_Unified",
+    "class_name": "SVM",
     "model_name": "Qwen/Qwen3-Embedding-4B",
     "model_input": "",
     "kwargs": {},
