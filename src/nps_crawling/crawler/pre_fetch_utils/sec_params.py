@@ -5,7 +5,7 @@ import uuid
 import json
 import os
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, isdir
 
 from nps_crawling.crawler.pre_fetch_utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
 
@@ -71,6 +71,9 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
 
 def create_search_params_from_config_dir(query_dir: str) -> list[SecSearchParams]:
     """Create params from config files inside directory."""
+    if not isdir(query_dir):
+        os.makedirs(query_dir, exist_ok=True)
+        return []
     queries: list = [join(query_dir, f) for f in listdir(query_dir) if isfile(join(query_dir, f))]
     search_parameters: list[SecSearchParams] = []
 
