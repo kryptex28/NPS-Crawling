@@ -85,6 +85,7 @@ def test_load_project_file_merges_partial_config(tmp_path):
 
 def test_apply_project_file_updates_config(tmp_path, monkeypatch):
     monkeypatch.setattr(project_manager, "get_git_root", lambda: tmp_path)
+    monkeypatch.setattr(Config, "ROOT_DIR", tmp_path)
     ensure_config_tree(tmp_path)
 
     project_file = project_manager.create_project("cfg_test", "Config test project")

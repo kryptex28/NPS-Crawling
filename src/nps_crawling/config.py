@@ -124,6 +124,12 @@ class Config:
         cls.NPS_REJECTED_JSON_PATH = cls.REJECTED_BASE_PATH / cls.PREPROCESSING_VERSION
         cls.NPS_CLASSIFIED_JSON = cls.CLASSIFIED_BASE_PATH / cls.CLASSIFICATION_VERSION
 
+        try:
+            from nps_crawling.db.nps_filings_db import NpsFilingsDB
+            NpsFilingsDB.TABLE = cls.DATABASE_TABLE_NAME
+        except (ImportError, AttributeError):
+            pass
+
     @classmethod
     def _ensure_project_directories(cls) -> None:
         if not cls.ACTIVE_PROJECT:

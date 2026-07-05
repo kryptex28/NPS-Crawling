@@ -38,6 +38,7 @@ from constants import US_STATES
 
 from models.query_model import QueryModel
 from screens.filing_types_screen import FilingTypesScreen
+from screens.query_config_screen import QueryConfigScreen
 from data_package.query_data import QueryData
 from data_package.entity_data import EntityData
 
@@ -144,6 +145,8 @@ class QueryWidget(Container):
             # Right: query list
             with Vertical(id="right-panel"):
                 yield Static("Query Queue", id="right-panel-title")
+                yield Label("0 selected", id="selected-count")
+
                 with Horizontal(id="query-toolbar"):
                     yield Button("Select All", id="btn-select-all", variant="default")
                     yield Button("Delete", id="btn-delete", variant="error")
@@ -169,6 +172,9 @@ class QueryWidget(Container):
         to_date: str = self.query_one("#inp-to-date", Input).value.strip()
         entity: str = self.query_one("#inp-entity", Input).value.strip()
 
+        limit_value: str = self.query_one("#query-filing-limit", Input).value.strip()
+        limit: int = int(limit_value) if limit_value else -1
+
         cat_sel = self.query_one("#sel-category", Select)
         filing_category: str = str(cat_sel.value) if cat_sel.value != Select.BLANK else ""
         filing_categories: list[str] = self.model.get_filing_categories()
@@ -176,9 +182,9 @@ class QueryWidget(Container):
             filing_category = "custom"
 
 
-        if not keyword:
-            self.notify("Please fill in at least one search field.", severity="warning")
-            return
+        #   if not keyword and not entity:
+        #       self.notify("Please fill in at least one search field (keyword or entity).", severity="warning")
+        #       return
 
         rs = self.query_one("#date-range-set", RadioSet)
         date_range_map = {
@@ -199,7 +205,8 @@ class QueryWidget(Container):
             entity=entity,
             filing_category=filing_category,
             filing_types=filing_categories,
-            selected=False
+            selected=False,
+            limit=limit,
         )
 
         self.model.create_query(data=data)
@@ -213,6 +220,7 @@ class QueryWidget(Container):
             if query_display is None:
                 query_display = getattr(q, "keyword", "")
             date_range = getattr(q, "date_range", "")
+            created_at = getattr(q, "created_at", "")
 
             row_id = q.id
 
@@ -221,6 +229,7 @@ class QueryWidget(Container):
                     Text(str(row_id), style="bold green"),
                     Text(query_display, style="bold green"), 
                     Text(date_range, style="bold green"),
+                    Text(created_at, style="bold green"),
                     key=row_id
                 )
             else:
@@ -228,8 +237,10 @@ class QueryWidget(Container):
                     Text(str(row_id)),
                     Text(query_display), 
                     Text(date_range),
+                    Text(created_at),
                     key=row_id
                 )
+        self._update_row_highlight(None, "")
 
     @on(DataTable.RowSelected, "#query-table")
     def on_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -239,10 +250,12 @@ class QueryWidget(Container):
 
         if row_id in self._selected_ids:
             self.model.remove_selected(row_id)
+            self._selected_ids.remove(row_id)
             style = ""
         else:
             self.model.add_selected(row_id)
-            style = "bold white on green"
+            self._selected_ids.add(row_id)
+            style = "bold green"
         
         table = self.query_one("#query-table", DataTable)
         cols = table.ordered_columns
@@ -254,10 +267,35 @@ class QueryWidget(Container):
 
         self._update_row_highlight(event.row_key, row_id)
 
-    def _update_row_highlight(self, row_key, row_id: str) -> None:
+    @on(Button.Pressed, "#btn-view")
+    def view_selected(self) -> None:
         table = self.query_one("#query-table", DataTable)
-        #selected_label = self.query_one("#selected-count", Static)
-        #selected_label.update(f"{len(self._selected_ids)} selected")
+        if table.cursor_row is not None:
+            row = table.get_row_at(table.cursor_row)
+            cell = row[0]
+            row_id = str(cell.plain if hasattr(cell, "plain") else cell)
+            # Find the query config and display in modal
+            for q in self.model.get_queries():
+                if str(q.id) == row_id:
+                    self.app.push_screen(QueryConfigScreen(q))
+                    break
+        else:
+            self.notify("Please select a query in the table first.", severity="warning")
+
+    @on(RadioSet.Changed, "#date-range-set")
+    def on_date_range_changed(self, event: RadioSet.Changed) -> None:
+        custom_dates = self.query_one("#custom-dates", Horizontal)
+        if event.pressed.id == "dr-custom":
+            custom_dates.add_class("visible")
+        else:
+            custom_dates.remove_class("visible")
+
+    def _update_row_highlight(self, row_key, row_id: str) -> None:
+        try:
+            selected_label = self.query_one("#selected-count", Label)
+            selected_label.update(f"{len(self._selected_ids)} selected")
+        except Exception:
+            pass
 
     @on(Button.Pressed, "#btn-select-all")
     def select_all(self) -> None:
@@ -283,6 +321,7 @@ class QueryWidget(Container):
                 current = table.get_cell(row_key, col.key)
                 plain = current.plain if hasattr(current, "plain") else str(current)
                 table.update_cell(row_key, col.key, Text(plain, style=style))
+        self._update_row_highlight(None, "")
 
     @on(Button.Pressed, "#btn-delete")
     def delete_selected(self) -> None:
@@ -292,12 +331,15 @@ class QueryWidget(Container):
         self.model.selected_queries.clear()
         self._selected_ids.clear()
         self._refresh_table()
+        self._update_row_highlight(None, "")
 
         self.notify(title="Queries deleted", message="All selected queries were deleted successfully")
 
     def on_mount(self) -> None:
         table = self.query_one("#query-table", DataTable)
-        table.add_columns("ID", "Query", "Date range")
+        table.add_columns("ID", "Query", "Date range", "Created At")
+        self._selected_ids = set(self.model.selected_queries)
+        self._refresh_table()
 
     def _get_date_range(self) -> str:
         """Return the selected date range key from the radio buttons.

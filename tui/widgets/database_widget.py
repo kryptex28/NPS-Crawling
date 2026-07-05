@@ -45,7 +45,7 @@ class DatabaseWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Database", classes="section-header")
+                yield Static("Database", classes="panel-title")
                 with Horizontal():
                     yield Button("Show Database", id="btn-show-database")
                     yield Button("Clear Database", id="btn-clear-database")

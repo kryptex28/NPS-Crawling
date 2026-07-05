@@ -50,11 +50,17 @@ class ClassificationWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Classification", classes="section-header")
+                yield Static("Classification", classes="panel-title")
                 with Horizontal():
+                    yield Button("Configure Classification", id="btn-configure-classification")
                     yield Button("Start Classification", id="btn-start-classification")
                     yield Button("Stop Classification", id="btn-stop-classification")
                     yield Label("", id="classification-timer")
+
+    @on(Button.Pressed, "#btn-configure-classification")
+    def open_classification_config(self) -> None:
+        from screens.classification_config_screen import ClassificationConfigScreen
+        self.app.push_screen(ClassificationConfigScreen())
 
 
     def watch_elapsed(self, value: int) -> None:

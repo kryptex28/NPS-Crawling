@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import json
 import uuid
+import subprocess
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Optional
@@ -65,14 +66,11 @@ class CrawlerTuiApp(App):
     BINDINGS = [
         Binding("ctrl+c", "quit", "Quit"),
         Binding("ctrl+q", "quit", "Quit"),
-        Binding("f1", "open_config", "Configuration"),
-        Binding("f2", "open_filing_types", "Filing Types"),
-        Binding("ctrl+r", "reset_form", "Reset form"),
     ]
 
     CSS_PATH = "app.tcss"
 
-    PAGES_WITHOUT_LOG = {"nav-project", "nav-database"}
+    PAGES_WITHOUT_LOG = {"nav-project", "nav-database", "nav-query"}
 
     current_page: reactive[str] = reactive("nav-project", init=False)
 
@@ -141,17 +139,23 @@ class CrawlerTuiApp(App):
             ", ".join(results) or "None"
         )
 
+        if results:
+            try:
+                self.query_one("#sel-category", Select).value = "custom"
+            except Exception:
+                pass
+
     def on_mount(self) -> None:
         Config.reload_config()
         show_log = self.current_page not in self.PAGES_WITHOUT_LOG
         self.query_one("#log-panel", LogWidget).display = show_log
         self.query_one(".log-container", Container).display = show_log
         self._setup_logging()
-        self.push_screen(SplashScreen(), callback=self._on_splash_dismissed())
+        self.push_screen(SplashScreen(), callback=self._on_splash_dismissed)
         
-    def _on_splash_dismissed(self):
+    def _on_splash_dismissed(self, result: bool | None = None) -> None:
         if not ProjectModel().is_project_active():
-            self.push_screen(ProjectScreen())
+            self.push_screen(ProjectScreen(), callback=self._on_project_selected)
         else:
             Config.reload_config()
             active = ProjectModel().get_active_project()
@@ -177,7 +181,15 @@ class CrawlerTuiApp(App):
 
     @on(Button.Pressed, "#show-projects-btn")
     def show_projects_view(self):
-        self.push_screen(ProjectScreen())
+        self.push_screen(ProjectScreen(), callback=self._on_project_selected)
+
+    def _on_project_selected(self, result: bool | None = None) -> None:
+        if result:
+            try:
+                project_widget = self.query_one(ProjectWidget)
+                project_widget._show_active_project()
+            except Exception:
+                pass
 
     def watch_current_page(self, page: str) -> None:
         for key, widget in self.widget_map.items():
@@ -191,5 +203,57 @@ class CrawlerTuiApp(App):
     def handle_navigation(self, event: NavigationWidget.Navigate) -> None:
         self.current_page = event.page
 
+
+def _ensure_docker_db_running() -> None:
+    """Startet den Docker-Postgres-Container wenn er noch nicht laeuft.
+
+    Prueft zuerst via ``docker compose ps`` ob der Container bereits laeuft.
+    Falls ja: kein Start, kein Warten - sofort weiter.
+    Falls nein: ``docker compose up -d`` und kurz warten bis Postgres bereit ist.
+    """
+    import time
+
+    compose_file = Config.ROOT_DIR / "docker" / "database" / "docker-compose.yml"
+
+    # Pruefen ob der Container bereits laeuft
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "ps", "--services", "--filter", "status=running"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        already_running = bool(result.stdout.strip())
+    except FileNotFoundError:
+        raise RuntimeError(
+            "'docker' wurde nicht gefunden. Bitte Docker Desktop installieren und starten.",
+        ) from None
+    except subprocess.CalledProcessError:
+        already_running = False
+
+    if already_running:
+        print("Docker-Postgres laeuft bereits.", flush=True)
+        return
+
+    # Container starten
+    print("LOCAL_MODE aktiv - starte Docker-Postgres...", flush=True)
+    try:
+        subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "up", "-d"],
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"'docker compose up -d' ist fehlgeschlagen (Exit-Code {exc.returncode}). "
+            "Bitte Docker Desktop starten und erneut versuchen.",
+        ) from exc
+
+    # Kurz warten, bis Postgres vollstaendig hochgefahren ist
+    time.sleep(3)
+    print("Docker-Postgres laeuft.", flush=True)
+
+
 if __name__ == "__main__":
+    if Config.LOCAL_MODE:
+        _ensure_docker_db_running()
     CrawlerTuiApp().run()

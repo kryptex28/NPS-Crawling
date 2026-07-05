@@ -5,7 +5,9 @@ from nps_crawling.db.db_adapter import DbAdapter
 class DatabaseModel():
 
     def __init__(self) -> None:
-        self.db = DbAdapter()
+        pass
 
     def get_all_filings(self) -> list[dict]:
-        return self.db.get_all_filings()
+        db = DbAdapter()
+        db.ensure_table_exists()
+        return db.get_all_filings()
