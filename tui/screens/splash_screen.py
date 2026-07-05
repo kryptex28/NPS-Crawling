@@ -11,6 +11,7 @@ class SplashScreen(ModalScreen):
     LOGO = pyfiglet.figlet_format("SEC Crawler\nTHU")
 
     def compose(self) -> ComposeResult:
+        """Compose the splash screen design and ASCII art."""
         yield Container(
             Static(self.LOGO, id="splash-logo"),
             Button("Continue", id="splash-continue"),
@@ -18,9 +19,11 @@ class SplashScreen(ModalScreen):
         )
 
     def on_mount(self) -> None:
+        """Set up a timer to auto-dismiss the splash screen."""
         self._timer = self.set_timer(5, self._dismiss)
 
     @on(Button.Pressed, "#splash-continue")
     def _dismiss(self) -> None:
+        """Dismiss the splash screen."""
         self._timer.stop()
         self.dismiss()

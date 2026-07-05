@@ -13,12 +13,14 @@ class PreprocessConfigScreen(ModalScreen):
     CSS_PATH = "preprocess_config_screen.tcss"
 
     def __init__(self) -> None:
+        """Initialize the PreprocessConfigScreen."""
         super().__init__()
         self.model = PreprocessingModel()
         self.config_path = self.model.get_config_path()
         self.config_data = self.model.get_config()
 
     def compose(self) -> ComposeResult:
+        """Compose the preprocess configuration editor form."""
         with Container():
             yield Static(f"Configure Preprocess ({self.config_path.name})", classes="modal-title")
             
@@ -107,10 +109,12 @@ class PreprocessConfigScreen(ModalScreen):
 
     @on(Button.Pressed, "#cancel-config-btn")
     def cancel(self) -> None:
+        """Discard changes and close the preprocess config screen."""
         self.dismiss()
 
     @on(Button.Pressed, "#save-config-btn")
     def save(self) -> None:
+        """Read form inputs, save the preprocess configuration, and close the screen."""
         try:
             # Parse list fields
             scope_raw = self.query_one("#prep-threshold-keyword-scope", Input).value

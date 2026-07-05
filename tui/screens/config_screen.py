@@ -4,7 +4,7 @@ from textual import on
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.screen import ModalScreen
 from textual.validation import Number
-from textual.widgets import Button, Input, Label, Select, Static, Switch
+from textual.widgets import Button, Input, Label, Static, Switch
 
 from data_package.config_data import ConfigData
 from models.config_model import ConfigModel
@@ -15,10 +15,12 @@ class ConfigScreen(ModalScreen):
     CSS_PATH = "config_screen.tcss"
 
     def __init__(self):
+        """Initialize the ConfigScreen."""
         super().__init__()
         self.model = ConfigModel()
 
     def compose(self):
+        """Compose the application configuration editor layout."""
         with Container():
             yield Static("Configuration", classes="dialog-title")
             with ScrollableContainer():
@@ -92,9 +94,11 @@ class ConfigScreen(ModalScreen):
                 yield Button("Cancel", variant="default", id="cfg-cancel")
 
     def on_mount(self) -> None:
+        """Populate configuration fields when the screen is mounted."""
         self._populate(self.model.get_config())
 
     def _populate(self, config_data: ConfigData) -> None:
+        """Fill the form inputs with data from the config model."""
         self.query_one("#cfg-active-project", Input).value = config_data.active_project or ""
         self.query_one("#cfg-query-path", Input).value = config_data.crawl_query_path
         self.query_one("#cfg-global-limit", Input).value = str(
@@ -123,10 +127,12 @@ class ConfigScreen(ModalScreen):
         )
 
     def _parse_csv_list(self, raw: str) -> list[str]:
+        """Parse a comma-separated string into a list of cleaned values."""
         return [part.strip() for part in raw.split(",") if part.strip()]
 
     @on(Button.Pressed, "#cfg-save")
     def save(self) -> None:
+        """Save the application configuration updates and dismiss the screen."""
         if not Config.ACTIVE_PROJECT:
             self.app.notify(
                 "Load a project before saving configuration.",
@@ -173,4 +179,5 @@ class ConfigScreen(ModalScreen):
 
     @on(Button.Pressed, "#cfg-cancel")
     def cancel(self) -> None:
+        """Discard config updates and dismiss the screen."""
         self.dismiss(False)

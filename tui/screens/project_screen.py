@@ -15,10 +15,12 @@ class ProjectScreen(ModalScreen):
 
 
     def __init__(self) -> None:
+        """Initialize the ProjectScreen."""
         super().__init__()
         self.model = ProjectModel()
         
     def compose(self) -> ComposeResult:
+        """Compose the project selection dialog, containing a project list table and actions."""
         with Vertical():
             yield Static("Project View", id="project-title")
             yield Static("Recent Projects", id="project-recent")
@@ -29,9 +31,11 @@ class ProjectScreen(ModalScreen):
             yield Button("Close", id="close-project-btn")
 
     def on_mount(self) -> None:
+        """Refresh table contents on mount."""
         self._refresh_table()
 
     def _refresh_table(self) -> None:
+        """Populate the table with the available projects."""
         table = self.query_one("#project-table", DataTable)
         table.clear(columns=True)
         table.add_columns("Project Name", "Project Description")
@@ -40,6 +44,7 @@ class ProjectScreen(ModalScreen):
 
     @on(Button.Pressed, "#open-project-btn")
     def open_project(self) -> None:
+        """Activate the selected project and dismiss the screen."""
         table = self.query_one("#project-table", DataTable)
         if table.cursor_row is None:
             self.app.notify("Select a project first.", severity="warning")
@@ -53,12 +58,15 @@ class ProjectScreen(ModalScreen):
 
     @on(DataTable.RowSelected, "#project-table")
     def on_row_selected(self) -> None:
+        """Activate the double-clicked project."""
         self.open_project()
 
     @on(Button.Pressed, "#refresh-project-btn")
     def refresh_projects(self) -> None:
+        """Scan the projects directory and reload the list."""
         self._refresh_table()
 
     @on(Button.Pressed, "#close-project-btn")
     def close_project_view(self):
+        """Dismiss the projects screen."""
         self.dismiss(False)

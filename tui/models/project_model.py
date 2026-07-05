@@ -6,8 +6,6 @@ from data_package.project_data import ProjectData
 from nps_crawling.config import Config
 from nps_crawling.utils.project_manager import (
     activate_project,
-    create_project,
-    get_active_project,
     get_available_projects,
     get_git_root,
     has_active_project,
@@ -21,23 +19,27 @@ class ProjectModel:
     instance = None
 
     def __new__(cls) -> Self:
+        """Create or return the singleton instance of ProjectModel."""
         if cls.instance is None:
             cls.instance = super().__new__(cls)
         return cls.instance
 
     def __init__(self) -> None:
+        """Initialize the ProjectModel instance."""
         if not hasattr(self, "_initialized"):
             self._initialized = True
             self.categories: list[dict[str, str]] = []
             self.projects: list[ProjectData] = []
 
     def load_project(self, project_data: ProjectData) -> None:
+        """Load the given project data, activate it, reload config, and reset other pipeline models."""
         activate_project(project_data.name)
         Config.reload_config()
         reset_pipeline_models()
         self.categories = list(Config.PROJECT_CATEGORIES)
 
     def create_config_file(self, ref: str, section: str) -> str:
+        """Create a new default configuration file for a section (crawl/preprocess/classification)."""
         root = get_git_root()
         if not ref.strip():
             from nps_crawling.project_config import CONFIG_TREE_PATHS
@@ -100,6 +102,7 @@ class ProjectModel:
         return ref_path
 
     def _resolve_or_create_config(self, ref: str, section: str, root_dir: Path) -> str:
+        """Resolve the path to a section's configuration file, creating a default one if it doesn't exist."""
         from nps_crawling.project_config import CONFIG_TREE_PATHS
         if not ref.strip():
             return CONFIG_TREE_PATHS[section]
@@ -157,6 +160,7 @@ class ProjectModel:
         return ref_path
 
     def save_project(self, project_data: ProjectData) -> None:
+        """Save the project configuration JSON file and activate it."""
         root = get_git_root()
         projects_root = projects_dir()
         projects_root.mkdir(parents=True, exist_ok=True)
@@ -189,6 +193,7 @@ class ProjectModel:
         self.categories = list(Config.PROJECT_CATEGORIES)
 
     def get_active_project(self) -> ProjectData | None:
+        """Retrieve the currently active project metadata from the project config file."""
         from nps_crawling.utils.project_manager import get_active_project_name
         name = get_active_project_name()
         if not name:
@@ -223,6 +228,7 @@ class ProjectModel:
         )
 
     def get_projects(self) -> list[ProjectData]:
+        """Scan the projects directory and return a list of all available projects."""
         self.projects.clear()
         projects_dir = get_git_root() / "projects"
 
@@ -256,20 +262,25 @@ class ProjectModel:
         return self.projects
 
     def add_category(self, category_name: str, category_type: str) -> None:
+        """Add a search category to the project."""
         self.categories.append({"name": category_name, "type": category_type})
 
     def get_categories(self) -> list[dict[str, str]]:
+        """Retrieve the search categories defined for the active project."""
         if not self.categories and Config.ACTIVE_PROJECT:
             self.categories = list(Config.PROJECT_CATEGORIES)
         return self.categories
 
     def is_project_active(self) -> bool:
+        """Check if there is currently an active project loaded."""
         return has_active_project()
 
     def remove_category(self, category_name: str) -> None:
+        """Remove a search category by name."""
         self.categories = [
             category for category in self.categories if category["name"] != category_name
         ]
 
     def clear_categories(self) -> None:
+        """Clear all search categories."""
         self.categories.clear()

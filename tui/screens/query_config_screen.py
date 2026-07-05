@@ -9,10 +9,12 @@ class QueryConfigScreen(ModalScreen):
     CSS_PATH = "query_config_screen.tcss"
 
     def __init__(self, query: QueryData) -> None:
+        """Initialize the QueryConfigScreen."""
         super().__init__()
         self.query_data = query
 
     def compose(self) -> ComposeResult:
+        """Compose the query configuration display layout."""
         with Container():
             yield Static("Query Configuration Details", classes="modal-title")
             
@@ -35,4 +37,5 @@ class QueryConfigScreen(ModalScreen):
 
     @on(Button.Pressed, "#close-config-btn")
     def close(self) -> None:
+        """Close the query config details screen."""
         self.dismiss()

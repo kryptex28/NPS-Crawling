@@ -13,6 +13,7 @@ class ClassificationConfigScreen(ModalScreen):
     CSS_PATH = "classification_config_screen.tcss"
 
     def __init__(self) -> None:
+        """Initialize the ClassificationConfigScreen."""
         super().__init__()
         self.model = ClassificationModel()
         self.config_path = self.model.get_config_path()
@@ -20,6 +21,7 @@ class ClassificationConfigScreen(ModalScreen):
         self.current_class, self.current_model = self._get_current_model_info()
 
     def _get_current_model_info(self) -> tuple[str, str]:
+        """Read configuration to retrieve names and parameters of current models."""
         entries = self.config_data.get("classification_configuration", [])
         if not entries:
             return "HF_LLM", ""
@@ -47,6 +49,7 @@ class ClassificationConfigScreen(ModalScreen):
         return "HF_LLM", ""
 
     def compose(self) -> ComposeResult:
+        """Compose the classification configuration editor form."""
         display_class = "HF_LLM"
         if self.current_class in ("OpenAIModel", "OpenAI", "openai"):
             display_class = "OpenAI"
@@ -127,10 +130,12 @@ class ClassificationConfigScreen(ModalScreen):
 
     @on(Button.Pressed, "#cancel-config-btn")
     def cancel(self) -> None:
+        """Discard changes and close the classification config screen."""
         self.dismiss()
 
     @on(Button.Pressed, "#save-config-btn")
     def save(self) -> None:
+        """Read form inputs, save the classification configuration, and close the screen."""
         try:
             updates = {
                 "version": self.query_one("#class-version", Input).value.strip(),
