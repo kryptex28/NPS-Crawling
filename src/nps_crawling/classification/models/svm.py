@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 _NUMERIC_TYPES = (ClassificationType.FLOAT, ClassificationType.INTEGER)
 
 
-class QWEN_Unified(QWEN_Candidate):
+class SVM(QWEN_Candidate):
     """Qwen embeddings for every property type, one class.
 
     Routes each property of a category to the strategy that fits its type:
