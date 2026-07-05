@@ -120,11 +120,6 @@ class ClassificationModelPipeline(Config):
     def _write_to_db(self, id, results):
         payload = json.dumps(self.CLASSIFICATION_CONFIG, sort_keys=True, separators=(",", ":"))
         experiment_version = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-        for key, value in results.items():
-            if value == 0:
-                results[key] = False
-            elif value == 1:
-                results[key] = True
 
         self.adapter.upsert_classification(
             # --- Pflicht- und Metadaten-Felder ---
@@ -172,6 +167,7 @@ class ClassificationModelPipeline(Config):
                         value = window.get(prop.name, prop.default_value)
                         if value != prop.default_value:
                             record_results[prop.name] = value
+            record["classification"] = record_results
             self._write_to_db(record["metadata"]["filing"]["id"], record_results)
 
         file_path = self.out_path / "files" / f"{source_filename}.json"

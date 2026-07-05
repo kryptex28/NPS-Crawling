@@ -73,7 +73,8 @@ EMBEDDING_CLASSES = {
     "BGE_Advanced",
     "QWEN_Advanced",
     "QWEN_Candidate",
-    "QWEN_Unified",
+    "QWEN_Unified",  # pre-rename alias of SVM, still present in archived configs
+    "SVM",
     "DeBERTa_Base",
 }
 
@@ -84,6 +85,7 @@ CLASS_SHORT = {
     "QWEN_Advanced": "SVM",
     "QWEN_Candidate": "Candidate",
     "QWEN_Unified": "Unified",
+    "SVM": "Unified",
     "DeBERTa_Base": "DeBERTa",
     "HF_LLM": "LLM",
     "Ollama_LLM": "Ollama",

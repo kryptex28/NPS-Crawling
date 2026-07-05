@@ -105,34 +105,8 @@ DEFAULT_CLASSIFICATION_CONFIG: dict[str, Any] = {
     "llm_batch_size": 8,
     "classification_configuration": [
         {
-            "category": (
-                "src/nps_crawling/classification/configurations/categories/"
-                "NPS Category/c0b1409c1550fcafe2a84875f32bb495385beac0eccf6d09d7e9eac4c266c1f7.json"
-            ),
-            "model": (
-                "src/nps_crawling/classification/configurations/Qwen3-Embedding-4B/"
-                "c7d19631b6aeaf2445204a81e778ec2d639ba3c7b02be9416c61e98c5245f3a6.json"
-            ),
-        },
-        {
-            "category": (
-                "src/nps_crawling/classification/configurations/categories/"
-                "Has Numeric NPS/ee63ed22edbeb29b02a976cfdd209f172cff421b5bde2009e1a0c0193f83a38f.json"
-            ),
-            "model": (
-                "src/nps_crawling/classification/configurations/Qwen3-Embedding-4B/"
-                "c7d19631b6aeaf2445204a81e778ec2d639ba3c7b02be9416c61e98c5245f3a6.json"
-            ),
-        },
-        {
-            "category": (
-                "src/nps_crawling/classification/configurations/categories/"
-                "NPS Value Category/12b0b9acf27aee693b1d518d68a4b6e9481a53fb55245ab4f08e7c50274f433b.json"
-            ),
-            "model": (
-                "src/nps_crawling/classification/configurations/Qwen3-8B/"
-                "6cd28608db45079139f438ef355a2f901be42efb24f9a4ae1155ebbfa8d957ff.json"
-            ),
+            "category": "projects/configs/classification/categories/NPS All.json",
+            "model": "projects/configs/classification/models/Qwen3-Embedding-4B.json",
         },
     ],
 }
