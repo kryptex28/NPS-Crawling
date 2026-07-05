@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 
 current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_FILE = current_dir.parent / "configurations" / "categories" / "Default.json"
+# Packaged default category from before the switch to name-based config files;
+# used as fallback while no flat Default.json category exists.
+LEGACY_DEFAULT_FILE = (
+    current_dir.parent / "configurations" / "categories" / "Default"
+    / "1661ea62d36667f0ef1f0c1ea6fd5281231de88e9e3d016b71bb1e55f8831688.json"
+)
 
 class ClassificationType(str, Enum):
     """Classification types."""
@@ -198,6 +204,8 @@ class ClassificationCategory:
                     text_column=None,
                     max_examples=effective_n,
                 )
+
+        from nps_crawling.config import Config
 
         current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
         if Config.CLASSIFICATION_CONFIG_USE_NAME_FILES:
@@ -398,12 +406,17 @@ def default_category_config_path() -> Path:
 
 def load_default_classification_category() -> ClassificationCategory:
     """Load the packaged default category JSON (reference shape for prompts / serialization)."""
-    path = default_category_config_path()
-    if not path.is_file():
-        path = DEFAULT_FILE
-    if not path.is_file():
+    candidates = [
+        default_category_config_path(),
+        DEFAULT_FILE,
+        LEGACY_DEFAULT_FILE,
+    ]
+    for path in candidates:
+        if path.is_file():
+            break
+    else:
         raise FileNotFoundError(
-            f"No default category JSON found (tried {default_category_config_path()} and {DEFAULT_FILE})"
+            f"No default category JSON found (tried {[str(p) for p in candidates]})"
         )
     with open(path, encoding="utf-8") as f:
         data = json.load(f)

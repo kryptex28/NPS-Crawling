@@ -5,12 +5,9 @@ bge-m3,BAAI/bge-m3,Embedding,0.5386,0.7575,0.1506,,,,,
 gpt-5.4,gpt-5.4,LLM,0.5225,0.7141,1.3123,,,,,
 bge-large-en-v1.5,BAAI/bge-large-en-v1.5,Embedding,0.4912,0.7343,1.0105,,,,,
 "Qwen3-Embedding-4B [SVM, optimized]",Qwen/Qwen3-Embedding-4B,Embedding,0.4623,0.6909,1.1944,0.8274,0.8338,0.0001,,
-Qwen3-Embedding-4B [Unified],Qwen/Qwen3-Embedding-4B,Embedding,0.4623,0.6909,3.5650,0.8274,0.8338,3.5650,0.5442,3.5650
 Qwen3-8B,Qwen/Qwen3-8B,LLM,0.4586,0.6357,43.6431,0.8544,0.8936,20.3327,0.7388,43.0939
-gpt-5.4-mini [c8c1da],gpt-5.4-mini,LLM,0.4409,0.6677,1.3809,,,,,
 bge-m3 [examples=handselected],BAAI/bge-m3,Embedding,0.4387,0.6711,0.1397,0.7250,0.7479,0.1326,,
-Qwen3-4B,Qwen/Qwen3-4B,LLM,0.4324,0.6165,94.3142,0.8627,0.9007,13.5210,0.7854,32.1117
-gpt-5.4-mini [197b0e],gpt-5.4-mini,LLM,0.4250,0.6086,0.9175,0.8772,0.9007,0.0003,0.8136,1.0399
+gpt-5.4-mini,gpt-5.4-mini,LLM,0.4250,0.6086,0.9175,0.8772,0.9007,0.0003,0.8136,1.0399
 bge-large-en-v1.5 [examples=handselected],BAAI/bge-large-en-v1.5,Embedding,0.4206,0.6565,0.9197,0.7210,0.7450,0.1328,,
 Qwen3-8B [enable_thinking=False],Qwen/Qwen3-8B,LLM,0.4145,0.5952,2.2034,0.7541,0.7872,1.1588,0.7141,3.4556
 all-MiniLM-L6-v2,sentence-transformers/all-MiniLM-L6-v2,Embedding,0.4032,0.6426,0.0152,0.6790,0.7020,0.0110,,

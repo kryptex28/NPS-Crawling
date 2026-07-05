@@ -1,0 +1,6 @@
+{
+    "class_name": "SVM",
+    "model_name": "Qwen/Qwen3-Embedding-0.6B",
+    "model_input": "",
+    "kwargs": {}
+}

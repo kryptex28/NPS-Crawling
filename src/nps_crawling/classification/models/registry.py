@@ -36,6 +36,11 @@ _MODEL_REGISTRY = {
     ClassificationModelName.OPENAI: OpenAIModel,
 }
 
+# Backward-compatible aliases so config JSONs written before the class renames
+# (class_name "HF_LLM" / "QWEN_Unified") remain loadable via from_dict/from_json.
+ClassificationModel._registry.setdefault("HF_LLM", LLM)
+ClassificationModel._registry.setdefault("QWEN_Unified", SVM)
+
 def get_model(model_class_name: ClassificationModelName, model_name: str, **kwargs) -> ClassificationModel:
     """Get model instance by name."""
     if model_class_name not in _MODEL_REGISTRY:
