@@ -133,7 +133,27 @@ class QueryModel():
         )
 
     def create_query(self, data: QueryData) -> None:
-        print(data)
+        
+        if data.date_range not in ("all", "custom"):
+            import datetime
+            today = datetime.date.today()
+            data.to_date = today.strftime("%Y-%m-%d")
+            try:
+                val = int(data.date_range[:-1])
+                unit = data.date_range[-1].lower()
+                if unit == "y":
+                    try:
+                        from_date_obj = today.replace(year=today.year - val)
+                    except ValueError:
+                        from_date_obj = today.replace(year=today.year - val, day=28)
+                elif unit == "d":
+                    from_date_obj = today - datetime.timedelta(days=val)
+                else:
+                    from_date_obj = today
+                data.from_date = from_date_obj.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
         parameter: SecSearchParams = self._create_config_from_query(data=data)
         parameter.query_base = "https://efts.sec.gov/LATEST/search-index?"
 

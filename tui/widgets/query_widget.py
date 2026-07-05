@@ -182,9 +182,9 @@ class QueryWidget(Container):
             filing_category = "custom"
 
 
-        if not keyword:
-            self.notify("Please fill in at least one search field.", severity="warning")
-            return
+        #   if not keyword and not entity:
+        #       self.notify("Please fill in at least one search field (keyword or entity).", severity="warning")
+        #       return
 
         rs = self.query_one("#date-range-set", RadioSet)
         date_range_map = {
