@@ -102,25 +102,6 @@ class ClassificationConfigScreen(ModalScreen):
                     yield Label("LLM Batch Size:")
                     yield Input(str(self.config_data.get("llm_batch_size", 8)), id="class-llm-batch")
 
-                # Model Type (Selection)
-                with Horizontal(classes="form-row"):
-                    yield Label("Model Type:")
-                    yield Select(
-                        options=[
-                            ("OpenAI", "OpenAI"),
-                            ("HF_LLM", "HF_LLM"),
-                            ("Qwen_concat", "Qwen_concat")
-                        ],
-                        value=display_class,
-                        id="class-model-type",
-                        allow_blank=False
-                    )
-
-                # Model Name (Input)
-                with Horizontal(classes="form-row"):
-                    yield Label("Model Name:")
-                    yield Input(self.current_model, id="class-model-name")
-
             with Horizontal(classes="modal-footer"):
                 yield Button("Save", variant="success", id="save-config-btn")
                 yield Button("Cancel", variant="error", id="cancel-config-btn")
@@ -132,32 +113,6 @@ class ClassificationConfigScreen(ModalScreen):
     @on(Button.Pressed, "#save-config-btn")
     def save(self) -> None:
         try:
-            selected_type = self.query_one("#class-model-type", Select).value
-            model_name_str = self.query_one("#class-model-name", Input).value.strip()
-
-            mapped_class = "HF_LLM"
-            if selected_type == "OpenAI":
-                mapped_class = "OpenAIModel"
-            elif selected_type == "Qwen_concat":
-                mapped_class = "QWEN_Unified"
-                
-            model_dict = {
-                "class_name": mapped_class,
-                "model_name": model_name_str,
-                "model_input": "",
-                "kwargs": {}
-            }
-
-            entries = self.config_data.get("classification_configuration", [])
-            if not entries:
-                entries = [{
-                    "category": "src/nps_crawling/classification/configurations/categories/Default.json",
-                    "model": model_dict
-                }]
-            else:
-                for entry in entries:
-                    entry["model"] = model_dict
-
             updates = {
                 "version": self.query_one("#class-version", Input).value.strip(),
                 "random_seed": int(self.query_one("#class-random-seed", Input).value),
@@ -168,7 +123,6 @@ class ClassificationConfigScreen(ModalScreen):
                 "config_use_name_files": self.query_one("#class-use-name-files", Switch).value,
                 "embedding_batch_size": int(self.query_one("#class-embedding-batch", Input).value),
                 "llm_batch_size": int(self.query_one("#class-llm-batch", Input).value),
-                "classification_configuration": entries,
             }
 
             self.model.save_config(updates)
