@@ -90,11 +90,11 @@ class CrawlerTuiApp(App):
                 yield LogWidget(id="log-panel")
         yield Footer()
 
-    @on(Button.Pressed, "#btn-config")
     @on(Button.Pressed, "#nav-settings")
     def _on_button_config(self):
         """Push the ConfigScreen when the configuration button is clicked."""
         self.push_screen(ConfigScreen())
+
 
     @on(NavigationWidget.Navigate)
     async def handle_navigation(

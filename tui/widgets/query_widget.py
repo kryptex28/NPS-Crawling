@@ -125,7 +125,7 @@ class QueryWidget(Container):
                 with Horizontal(id="form-actions"):
                     yield Button("Create Query", variant="primary", id="btn-create")
                     yield Button("Clear all", variant="default", id="btn-clear")
-                    yield Button("Configuration", variant="default", id="btn-config")
+
 
             # Right: query list
             with Vertical(id="right-panel"):
