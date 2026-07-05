@@ -23,11 +23,17 @@ class CrawlWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Crawl", classes="section-header")
+                yield Static("Crawl", classes="panel-title")
                 with Horizontal():
+                    yield Button("Configure Crawl", id="btn-configure-crawl")
                     yield Button("Start Crawl Process", id="btn-start-crawl")
                     yield Button("Stop Crawl Process", id="btn-stop-crawl")
                     yield Label("", id="crawl-timer")
+
+    @on(Button.Pressed, "#btn-configure-crawl")
+    def open_crawl_config(self) -> None:
+        from screens.crawl_config_screen import CrawlConfigScreen
+        self.app.push_screen(CrawlConfigScreen())
 
     @on(Button.Pressed, "#btn-start-crawl")
     async def start_crawl(self) -> None:

@@ -5,7 +5,7 @@ import uuid
 import json
 import os
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, isdir
 
 from nps_crawling.crawler.pre_fetch_utils.filings import CompanyTicker, FilingCategoryCollection, FilingsCategoryCollectionCoarse
 
@@ -14,10 +14,16 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
     """Create params from config file."""
     params: list[SecSearchParams] = []
 
-    with open(path, 'r') as f:
-        config: dict = json.load(f)
+    try:
+        with open(path, 'r') as f:
+            config: dict = json.load(f)
+    except Exception as e:
+        print(f"Error loading config from {path}: {e}")
+        return params
 
-    queries = config['queries']
+    queries = config.get('queries', {})
+    if not isinstance(queries, dict):
+        return params
 
     for query_id, query_data in queries.items():
         query_base: str = query_data.get('query_base', '')
@@ -34,9 +40,9 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
 
         individual_search: CompanyTicker = None
         if individual_search_title and individual_search_cik and individual_search_ticker:
-            individual_search: CompanyTicker = CompanyTicker(ticker=query_data.get('individual_search', ''),
-                                                             cik=query_data.get('individual_search_cik', ''),
-                                                             title=query_data.get('individual_search_title', ''))
+            individual_search: CompanyTicker = CompanyTicker(ticker=individual_search_ticker,
+                                                             cik=individual_search_cik,
+                                                             title=individual_search_title)
 
         filing_category: FilingsCategoryCollectionCoarse = FilingsCategoryCollectionCoarse.from_string(
             query_data.get('filing_category', ''),
@@ -65,6 +71,9 @@ def create_search_params_from_config(path: str) -> list[SecSearchParams]:
 
 def create_search_params_from_config_dir(query_dir: str) -> list[SecSearchParams]:
     """Create params from config files inside directory."""
+    if not isdir(query_dir):
+        os.makedirs(query_dir, exist_ok=True)
+        return []
     queries: list = [join(query_dir, f) for f in listdir(query_dir) if isfile(join(query_dir, f))]
     search_parameters: list[SecSearchParams] = []
 
@@ -200,7 +209,7 @@ class SecSearchParams:
             individual_search_cik = self.individual_search.cik
             individual_search_title = self.individual_search.title
 
-        return { self.id: {
+        data_dict: dict = { self.id: {
             'query_base': self.query_base,
             'keyword': self.keyword,
             'from_date': self.from_date,
@@ -212,6 +221,11 @@ class SecSearchParams:
             'filing_category': self.filing_category.to_string(),
             'filing_categories': self.filing_categories,
         }}
-    
+
+        if self.filing_limit > 0:
+            data_dict[self.id]['filing_limit'] = self.filing_limit
+        
+        return data_dict
+
     def __hash__(self) -> int:
         return hash((self.keyword, self.from_date, self.to_date, self.individual_search.ticker, self.individual_search.cik))

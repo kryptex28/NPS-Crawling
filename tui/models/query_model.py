@@ -54,15 +54,43 @@ class QueryModel():
         return queries
     
     def _create_query_data_from_config(self, params: SecSearchParams) -> QueryData:
+        import datetime
+        entity = ""
+        cik = ""
+        entity_title = ""
+        if params.individual_search:
+            if getattr(params.individual_search, "ticker", None):
+                if isinstance(params.individual_search.ticker, list) and len(params.individual_search.ticker) > 0:
+                    entity = params.individual_search.ticker[0]
+                elif isinstance(params.individual_search.ticker, str):
+                    entity = params.individual_search.ticker
+            cik = getattr(params.individual_search, "cik", "")
+            entity_title = getattr(params.individual_search, "title", "")
+
+        created_at = ""
+        file_path = join(Config.QUERY_PATH, f"{params.id}.json")
+        if os.path.exists(file_path):
+            try:
+                # Use mtime as it represents when the file was written, formatted as string
+                mtime = os.path.getmtime(file_path)
+                created_at = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            except Exception:
+                pass
+
         return QueryData(
             id=params.id,
             query_base=params.query_base,
             keyword=params.keyword,
             from_date=params.from_date,
             to_date=params.to_date,
-            entity="",
+            entity=entity,
+            cik=cik,
+            entity_title=entity_title,
             filing_category=params.filing_category.to_string(),
-            filing_types=params.filing_categories
+            filing_types=params.filing_categories,
+            date_range=params.date_range or "all",
+            limit=params.filing_limit,
+            created_at=created_at,
         )
 
     def update_queries(self) -> list[QueryData]:
@@ -101,11 +129,31 @@ class QueryModel():
             filing_categories=data.filing_types,
             filing_category=FilingsCategoryCollectionCoarse.from_string(data.filing_category),
             force_crawl=False,
-            filing_limit=-1
+            filing_limit=data.limit,
         )
 
     def create_query(self, data: QueryData) -> None:
-        print(data)
+        
+        if data.date_range not in ("all", "custom"):
+            import datetime
+            today = datetime.date.today()
+            data.to_date = today.strftime("%Y-%m-%d")
+            try:
+                val = int(data.date_range[:-1])
+                unit = data.date_range[-1].lower()
+                if unit == "y":
+                    try:
+                        from_date_obj = today.replace(year=today.year - val)
+                    except ValueError:
+                        from_date_obj = today.replace(year=today.year - val, day=28)
+                elif unit == "d":
+                    from_date_obj = today - datetime.timedelta(days=val)
+                else:
+                    from_date_obj = today
+                data.from_date = from_date_obj.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
         parameter: SecSearchParams = self._create_config_from_query(data=data)
         parameter.query_base = "https://efts.sec.gov/LATEST/search-index?"
 

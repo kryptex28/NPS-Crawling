@@ -128,7 +128,7 @@ CONFIG_TREE_PATHS: dict[str, str] = {
 def resolve_project_config_path(ref: str | Path, root_dir: Path) -> Path:
     """Resolve a project config path reference to an existing file."""
     path = Path(ref)
-    if path.is_file():
+    if path.is_absolute() and path.is_file():
         return path.resolve()
 
     for candidate in (
@@ -137,6 +137,9 @@ def resolve_project_config_path(ref: str | Path, root_dir: Path) -> Path:
     ):
         if candidate.is_file():
             return candidate.resolve()
+
+    if path.is_file():
+        return path.resolve()
 
     raise FileNotFoundError(f"Project config JSON not found: {ref}")
 
