@@ -39,6 +39,6 @@ class ResultWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Result", classes="section-header")
+                yield Static("Result", classes="panel-title")
 
                 yield Button("Show Results", id="btn-show-results")

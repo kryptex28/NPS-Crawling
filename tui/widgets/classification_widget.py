@@ -50,7 +50,7 @@ class ClassificationWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Classification", classes="section-header")
+                yield Static("Classification", classes="panel-title")
                 with Horizontal():
                     yield Button("Configure Classification", id="btn-configure-classification")
                     yield Button("Start Classification", id="btn-start-classification")

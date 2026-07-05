@@ -20,6 +20,7 @@ class ProjectWidget(Static):
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer():
+            yield Static("Active Project Setup", classes="panel-title")
             yield Static("Project Name", id="project-name-label")
             yield Input(placeholder="Enter project name", id="project-name-input")
             yield Static("Project Description", id="project-desc-label")

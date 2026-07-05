@@ -23,7 +23,7 @@ class CrawlWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Crawl", classes="section-header")
+                yield Static("Crawl", classes="panel-title")
                 with Horizontal():
                     yield Button("Configure Crawl", id="btn-configure-crawl")
                     yield Button("Start Crawl Process", id="btn-start-crawl")

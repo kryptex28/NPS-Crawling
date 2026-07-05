@@ -51,7 +51,7 @@ class PreprocessingWidget(Container):
     def compose(self) -> ComposeResult:
         with Horizontal():
             with Vertical():
-                yield Static("Preprocessing", classes="section-header")
+                yield Static("Preprocessing", classes="panel-title")
                 with Horizontal():
                     yield Button("Configure Preprocess", id="btn-configure-preprocessing")
                     yield Button("Start Preprocessing", id="btn-start-preprocessing")
