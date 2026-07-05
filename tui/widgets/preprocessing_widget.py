@@ -33,8 +33,8 @@ class PreprocessingWidget(Container):
                 with Horizontal():
                     yield Button("Configure Preprocess", id="btn-configure-preprocessing")
                     yield Button("Start Preprocessing", id="btn-start-preprocessing")
-                    yield Button("Stop Preprocessing", id="btn-stop-preprocessing")
                     yield Label("", id="preprocessing-timer")
+
 
     @on(Button.Pressed, "#btn-configure-preprocessing")
     def open_preprocess_config(self) -> None:
