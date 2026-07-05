@@ -19,10 +19,9 @@ class ClassificationPipeline():
         """Initialize the ClassificationPipeline."""
         # Create version-specific directories on demand
         name = Config.CLASSIFICATION_VERSION
-        file_dir = Config.CLASSIFIED_BASE_PATH / name / "files"
-        (file_dir).mkdir(parents=True, exist_ok=True)
+        self.file_dir = Config.CLASSIFIED_BASE_PATH / name / "files"
+        (self.file_dir).mkdir(parents=True, exist_ok=True)
 
-        self.classified_files = [path.name for path in file_dir.iterdir() if path.is_file()]
 
         self.get_data = ClassificationDataProcessing()
         self.model_pipeline = ClassificationModelPipeline(
@@ -34,7 +33,7 @@ class ClassificationPipeline():
         """Classification workflow method."""
 
         logger.info("Starting classification")
-
+        self.classified_files = [path.name for path in self.file_dir.iterdir() if path.is_file()]
         json_files = [
             file for file in self.get_data.get_all_json_files()
             if file.name not in self.classified_files
