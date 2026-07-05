@@ -48,7 +48,8 @@ class CrawlModel():
             path: str = get_search_params_from_id(str(Config.QUERY_PATH), id=id)
             parameters.append(path)
 
-        self.crawl.crawler_workflow(search_parameter_files=parameters)
+        self.crawl.crawler_workflow(search_parameter_files=parameters,
+                                    limit=Config.CRAWL_SEC_QUERY_LIMIT_COUNT)
 
         return True
 

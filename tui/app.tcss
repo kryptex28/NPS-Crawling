@@ -161,3 +161,11 @@ Button {
     margin-left: 1;
     height: 3;
 }
+
+#selected-count {
+    margin-left: 2;
+    text-style: bold;
+    color: $accent;
+    content-align: center middle;
+    height: 3;
+}

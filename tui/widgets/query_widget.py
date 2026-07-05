@@ -145,6 +145,8 @@ class QueryWidget(Container):
             # Right: query list
             with Vertical(id="right-panel"):
                 yield Static("Query Queue", id="right-panel-title")
+                yield Label("0 selected", id="selected-count")
+
                 with Horizontal(id="query-toolbar"):
                     yield Button("Select All", id="btn-select-all", variant="default")
                     yield Button("Delete", id="btn-delete", variant="error")
@@ -235,6 +237,7 @@ class QueryWidget(Container):
                     Text(date_range),
                     key=row_id
                 )
+        self._update_row_highlight(None, "")
 
     @on(DataTable.RowSelected, "#query-table")
     def on_row_selected(self, event: DataTable.RowSelected) -> None:
@@ -244,9 +247,11 @@ class QueryWidget(Container):
 
         if row_id in self._selected_ids:
             self.model.remove_selected(row_id)
+            self._selected_ids.remove(row_id)
             style = ""
         else:
             self.model.add_selected(row_id)
+            self._selected_ids.add(row_id)
             style = "bold green"
         
         table = self.query_one("#query-table", DataTable)
@@ -283,9 +288,11 @@ class QueryWidget(Container):
             custom_dates.remove_class("visible")
 
     def _update_row_highlight(self, row_key, row_id: str) -> None:
-        table = self.query_one("#query-table", DataTable)
-        #selected_label = self.query_one("#selected-count", Static)
-        #selected_label.update(f"{len(self._selected_ids)} selected")
+        try:
+            selected_label = self.query_one("#selected-count", Label)
+            selected_label.update(f"{len(self._selected_ids)} selected")
+        except Exception:
+            pass
 
     @on(Button.Pressed, "#btn-select-all")
     def select_all(self) -> None:
@@ -311,6 +318,7 @@ class QueryWidget(Container):
                 current = table.get_cell(row_key, col.key)
                 plain = current.plain if hasattr(current, "plain") else str(current)
                 table.update_cell(row_key, col.key, Text(plain, style=style))
+        self._update_row_highlight(None, "")
 
     @on(Button.Pressed, "#btn-delete")
     def delete_selected(self) -> None:
@@ -320,12 +328,15 @@ class QueryWidget(Container):
         self.model.selected_queries.clear()
         self._selected_ids.clear()
         self._refresh_table()
+        self._update_row_highlight(None, "")
 
         self.notify(title="Queries deleted", message="All selected queries were deleted successfully")
 
     def on_mount(self) -> None:
         table = self.query_one("#query-table", DataTable)
         table.add_columns("ID", "Query", "Date range")
+        self._selected_ids = set(self.model.selected_queries)
+        self._refresh_table()
 
     def _get_date_range(self) -> str:
         """Return the selected date range key from the radio buttons.
