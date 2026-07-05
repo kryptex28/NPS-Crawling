@@ -66,9 +66,6 @@ class CrawlerTuiApp(App):
     BINDINGS = [
         Binding("ctrl+c", "quit", "Quit"),
         Binding("ctrl+q", "quit", "Quit"),
-        Binding("f1", "open_config", "Configuration"),
-        Binding("f2", "open_filing_types", "Filing Types"),
-        Binding("ctrl+r", "reset_form", "Reset form"),
     ]
 
     CSS_PATH = "app.tcss"
