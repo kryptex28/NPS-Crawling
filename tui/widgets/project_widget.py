@@ -2,7 +2,7 @@
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.containers import Horizontal, ScrollableContainer
 from textual.widgets import (
     Input,
     Static,
@@ -10,15 +10,16 @@ from textual.widgets import (
 )
 from models.project_model import ProjectModel
 from data_package.project_data import ProjectData
-from nps_crawling.config import Config
 
 class ProjectWidget(Static):
     def __init__(self) -> None:
+        """Initialize the ProjectWidget."""
         super().__init__()
 
         self.model = ProjectModel()
 
     def compose(self) -> ComposeResult:
+        """Compose the project configuration form layout."""
         with ScrollableContainer():
             yield Static("Active Project Setup", classes="panel-title")
             yield Static("Project Name", id="project-name-label")
@@ -51,6 +52,7 @@ class ProjectWidget(Static):
 
     @on(Button.Pressed, "#add-crawl-config-btn")
     def create_crawl_config(self) -> None:
+        """Create a new default crawl configuration file."""
         inp = self.query_one("#project-crawl-input", Input)
         try:
             created_path = self.model.create_config_file(inp.value, "crawl")
@@ -63,6 +65,7 @@ class ProjectWidget(Static):
 
     @on(Button.Pressed, "#add-preprocess-config-btn")
     def create_preprocess_config(self) -> None:
+        """Create a new default preprocess configuration file."""
         inp = self.query_one("#project-preprocess-input", Input)
         try:
             created_path = self.model.create_config_file(inp.value, "preprocess")
@@ -75,6 +78,7 @@ class ProjectWidget(Static):
 
     @on(Button.Pressed, "#add-classification-config-btn")
     def create_classification_config(self) -> None:
+        """Create a new default classification configuration file."""
         inp = self.query_one("#project-classification-input", Input)
         try:
             created_path = self.model.create_config_file(inp.value, "classification")
@@ -86,9 +90,11 @@ class ProjectWidget(Static):
             self.app.notify(f"Error: {e}", severity="error")
 
     def on_mount(self) -> None:
+        """Show active project details on mount."""
         self._show_active_project()
 
     def _show_active_project(self) -> None:
+        """Populate the project form inputs with the active project data."""
         active = self.model.get_active_project()
         label = self.query_one("#project-active-label", Static)
         if active:
@@ -103,6 +109,7 @@ class ProjectWidget(Static):
 
     @on(Button.Pressed, "#save-project-btn")
     def save_project(self):
+        """Validate inputs, save the project configuration, and display notification."""
         project_name: str = self.query_one("#project-name-input", Input).value.strip()
         project_description: str = self.query_one("#project-desc-input", Input).value.strip()
         crawl_config: str = self.query_one("#project-crawl-input", Input).value.strip()
@@ -128,6 +135,7 @@ class ProjectWidget(Static):
 
     @on(Button.Pressed, "#load-project-btn")
     def load_project(self):
+        """Load the selected project's details into the form."""
         project_name: str = self.query_one("#project-name-input", Input).value.strip()
         if not project_name:
             self.app.notify("Enter a project name.", severity="warning")
@@ -145,6 +153,7 @@ class ProjectWidget(Static):
 
     @on(Button.Pressed, "#clear-form-btn")
     def clear_form(self):
+        """Reset all input fields in the project form."""
         self.query_one("#project-name-input", Input).value = ""
         self.query_one("#project-desc-input", Input).value = ""
         self.query_one("#project-crawl-input", Input).value = ""
@@ -152,4 +161,5 @@ class ProjectWidget(Static):
         self.query_one("#project-classification-input", Input).value = ""
 
     def on_show(self) -> None:
+        """Refresh project details when the widget becomes visible."""
         self._show_active_project()

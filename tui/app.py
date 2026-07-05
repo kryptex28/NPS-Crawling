@@ -1,39 +1,21 @@
 from __future__ import annotations
 
 import logging
-import json
-import uuid
 import subprocess
-from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
 
 from textual.reactive import reactive
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
-from textual.screen import ModalScreen
-from textual.validation import Number
+from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import (
     Button,
-    Checkbox,
-    DataTable,
     Footer,
     Header,
-    Input,
     Label,
-    RadioButton,
-    RadioSet,
     Select,
-    Static,
-    Switch,
-    TabbedContent,
-    TabPane,
     RichLog
 )
-from textual.widgets import SelectionList
-from textual.widgets.selection_list import Selection
 
 from widgets.project_widget import ProjectWidget
 from widgets.nagivation_widget import NavigationWidget
@@ -54,7 +36,6 @@ from screens.splash_screen import SplashScreen
 from screens.project_screen import ProjectScreen
 
 from nps_crawling.config import Config
-from nps_crawling.db.db_adapter import DbAdapter
 from models.project_model import ProjectModel
 from models.query_model import QueryModel
 
@@ -75,6 +56,7 @@ class CrawlerTuiApp(App):
     current_page: reactive[str] = reactive("nav-project", init=False)
 
     def __init__(self) -> None:
+        """Initialize the CrawlerTuiApp instance and set up the widget map."""
         super().__init__()
 
         WIDGET_CLASSES: dict = {
@@ -94,6 +76,7 @@ class CrawlerTuiApp(App):
         }
 
     def compose(self) -> ComposeResult:
+        """Compose the UI layout of the application, rendering the header, navigation, main pages, log panel, and footer."""
         yield Header(show_clock=True)
         with Vertical(id="outer-layout"):
             with Container(id="nav-container"):
@@ -110,6 +93,7 @@ class CrawlerTuiApp(App):
     @on(Button.Pressed, "#btn-config")
     @on(Button.Pressed, "#nav-settings")
     def _on_button_config(self):
+        """Push the ConfigScreen when the configuration button is clicked."""
         self.push_screen(ConfigScreen())
 
     @on(NavigationWidget.Navigate)
@@ -117,6 +101,7 @@ class CrawlerTuiApp(App):
         self,
         event: NavigationWidget.Navigate,
     ) -> None:
+        """Handle navigation requests, switching the displayed page widget and updating visibility."""
         for v in self.widget_map.values():
             v.display = False
         self.widget_map[event.page].display = True
@@ -124,12 +109,14 @@ class CrawlerTuiApp(App):
         
     @on(Button.Pressed, "#btn-filing-types")
     def action_open_filing_types(self) -> None:
+        """Push the FilingTypesScreen to select the filing categories."""
         self.push_screen(
             FilingTypesScreen(),
             self._on_filing_types_confirmed,
         )
 
     def _on_filing_types_confirmed(self, results: list[str] | None) -> None:
+        """Callback for when the filing types are confirmed. Adds categories to the query model and updates the UI label."""
         if results is None:
             return
         
@@ -146,6 +133,7 @@ class CrawlerTuiApp(App):
                 pass
 
     def on_mount(self) -> None:
+        """Load configuration, set up logging, and push the splash screen upon app mount."""
         Config.reload_config()
         show_log = self.current_page not in self.PAGES_WITHOUT_LOG
         self.query_one("#log-panel", LogWidget).display = show_log
@@ -154,6 +142,7 @@ class CrawlerTuiApp(App):
         self.push_screen(SplashScreen(), callback=self._on_splash_dismissed)
         
     def _on_splash_dismissed(self, result: bool | None = None) -> None:
+        """Callback triggered when the splash screen is dismissed. Loads active project or opens project screen if none active."""
         if not ProjectModel().is_project_active():
             self.push_screen(ProjectScreen(), callback=self._on_project_selected)
         else:
@@ -167,6 +156,7 @@ class CrawlerTuiApp(App):
             )
             
     def _setup_logging(self):
+        """Initialize the TextualLogHandler to redirect nps_crawling package logs to the UI's log panel."""
         rich_log = self.query_one("#log-output", RichLog)
         handler = TextualLogHandler(rich_log)
         handler.setLevel(logging.INFO)
@@ -181,9 +171,11 @@ class CrawlerTuiApp(App):
 
     @on(Button.Pressed, "#show-projects-btn")
     def show_projects_view(self):
+        """Push the ProjectScreen to display available projects."""
         self.push_screen(ProjectScreen(), callback=self._on_project_selected)
 
     def _on_project_selected(self, result: bool | None = None) -> None:
+        """Callback triggered when a project is selected to refresh the active project display."""
         if result:
             try:
                 project_widget = self.query_one(ProjectWidget)
@@ -192,6 +184,7 @@ class CrawlerTuiApp(App):
                 pass
 
     def watch_current_page(self, page: str) -> None:
+        """Reactive watcher that toggles widget display and log panel visibility based on the selected page."""
         for key, widget in self.widget_map.items():
             widget.display = key == page
         
@@ -201,6 +194,7 @@ class CrawlerTuiApp(App):
 
     @on(NavigationWidget.Navigate)
     def handle_navigation(self, event: NavigationWidget.Navigate) -> None:
+        """Handle navigation requests, switching the displayed page widget and updating visibility."""
         self.current_page = event.page
 
 

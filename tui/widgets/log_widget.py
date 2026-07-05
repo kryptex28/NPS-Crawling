@@ -16,10 +16,12 @@ LEVEL_COLORS = {
 
 class TextualLogHandler(logging.Handler):
     def __init__(self, widget: RichLog) -> None:
+        """Initialize the TextualLogHandler with the target RichLog widget."""
         super().__init__()
         self._widget = widget
 
     def emit(self, record: logging.LogRecord) -> None:
+        """Format and write a log record to the RichLog widget."""
         try:
             msg = self.format(record)
             color = LEVEL_COLORS.get(record.levelno, "white")
@@ -50,5 +52,6 @@ class LogWidget(Vertical):
     """
 
     def compose(self) -> ComposeResult:
+        """Compose the log panel UI containing a RichLog widget."""
         yield Static("Logs")
         yield RichLog(highlight=True, markup=True, wrap=True, id="log-output")

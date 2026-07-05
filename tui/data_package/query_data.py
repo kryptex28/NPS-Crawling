@@ -21,6 +21,7 @@ class QueryData:
     created_at: str = ""
 
     def summary(self) -> str:
+        """Generate a short string summarizing the query details."""
         parts = []
         if self.keyword:
             parts.append(f'q="{self.keyword}"')

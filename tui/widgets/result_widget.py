@@ -11,11 +11,13 @@ from models.result_model import ResultModel
 class ResultWidget(Container):
 
     def __init__(self, *args, **kwargs) -> None:
+        """Initialize the ResultWidget."""
         super().__init__(*args, **kwargs)
         self.model = ResultModel()
         self._last_export_path: str | None = None
 
     def compose(self) -> ComposeResult:
+        """Compose the results overview layout and actions."""
         with Horizontal():
             with Vertical():
                 yield Static("Result", classes="panel-title")
@@ -26,6 +28,7 @@ class ResultWidget(Container):
 
     @on(Button.Pressed, "#btn-export-results")
     def export_results(self) -> None:
+        """Export the classified results from the database."""
         try:
             only_relevant = self.query_one("#cb-only-relevant", Checkbox).value
             filepath = self.model.export(only_relevant=only_relevant)
@@ -36,6 +39,7 @@ class ResultWidget(Container):
 
     @on(Button.Pressed, "#btn-open-export")
     def open_export(self) -> None:
+        """Open the exported results file."""
         try:
             path_to_open = self._last_export_path
             if not path_to_open:

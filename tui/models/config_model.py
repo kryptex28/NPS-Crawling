@@ -13,15 +13,18 @@ class ConfigModel:
     instance = None
 
     def __new__(cls) -> Self:
+        """Create or return the singleton instance of ConfigModel."""
         if cls.instance is None:
             cls.instance = super().__new__(cls)
         return cls.instance
 
     def __init__(self) -> None:
+        """Initialize the ConfigModel instance."""
         self.prompts: list[PromptData] = []
         self.columns: list[TableData] = []
 
     def get_config(self) -> ConfigData:
+        """Retrieve the application config details, including prompts and tables."""
         Config.reload_config()
         scope = Config.THRESHOLD_KEYWORD_SCOPE or []
         try:
@@ -45,6 +48,7 @@ class ConfigModel:
         )
 
     def update_config(self, config_data: ConfigData) -> None:
+        """Save config updates and reload the configuration."""
         if not Config.ACTIVE_PROJECT:
             raise RuntimeError("Load a project before saving configuration.")
 
@@ -78,15 +82,19 @@ class ConfigModel:
         reset_pipeline_models()
 
     def add_prompt(self, data: PromptData) -> None:
+        """Add a classification prompt configuration."""
         self.prompts.append(data)
 
     def add_column(self, data: TableData) -> None:
+        """Add a table column configuration."""
         self.columns.append(data)
 
     def load_prompts(self) -> None:
+        """Reload classification prompts from configuration."""
         pass
 
     def load_columns(self) -> None:
+        """Reload table columns from configuration."""
         self.columns = [
             TableData(column_name=cat["name"], datatype=cat["type"])
             for cat in Config.PROJECT_CATEGORIES

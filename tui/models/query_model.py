@@ -1,12 +1,10 @@
 import os
 from os.path import (
-    isdir, 
     join,
 )
 
 from nps_crawling.crawler.pre_fetch_utils.sec_params import (
     SecSearchParams,
-    create_config_from_dict,
     create_search_params_from_config_dir,
     store_config,
 )
@@ -26,11 +24,13 @@ class QueryModel():
     instance = None
 
     def __new__(cls):
+        """Create or return the singleton instance of QueryModel."""
         if cls.instance is None:
             cls.instance = super().__new__(cls)
         return cls.instance
 
     def __init__(self) -> None:
+        """Initialize the QueryModel instance."""
         if not hasattr(self, '_initialized'):  
             self.query_ids: list[str] = []
             self._initialized = True
@@ -39,13 +39,16 @@ class QueryModel():
 
 
     def get_query_ids(self) -> list[str]:
+        """Retrieve the list of active query IDs."""
         return self.query_ids
 
     def accept_queries(self):
         # Technically nothing to do here lol
+        """Accept and commit query changes."""
         pass
 
     def get_queries(self) -> list[QueryData]:
+        """Load and return all queries from the query configuration files."""
         params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.QUERY_PATH))
 
         queries: list[QueryData] = []
@@ -54,6 +57,7 @@ class QueryModel():
         return queries
     
     def _create_query_data_from_config(self, params: SecSearchParams) -> QueryData:
+        """Create a QueryData object from a SecSearchParams instance."""
         import datetime
         entity = ""
         cik = ""
@@ -94,6 +98,7 @@ class QueryModel():
         )
 
     def update_queries(self) -> list[QueryData]:
+        """Scan the query directory and update the list of available queries."""
         if not os.path.isdir(Config.QUERY_PATH):
             return []
         params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.QUERY_PATH))
@@ -106,6 +111,7 @@ class QueryModel():
         return queries
 
     def _create_config_from_query(self, data: QueryData) -> SecSearchParams:
+        """Convert a QueryData object into a SecSearchParams configuration object."""
         data.id = str(uuid4())
 
         ticker_map: SecTickerMap = SecTickerMap()
@@ -134,6 +140,7 @@ class QueryModel():
 
     def create_query(self, data: QueryData) -> None:
         
+        """Create and save a new query configuration file."""
         if data.date_range not in ("all", "custom"):
             import datetime
             today = datetime.date.today()
@@ -165,17 +172,21 @@ class QueryModel():
         print(parameter.id)
 
     def add_selected(self, id: str) -> None:
+        """Add a query ID to the selected set."""
         self.selected_queries.add(id)
     
     def remove_selected(self, id: str) -> None:
+        """Remove a query ID from the selected set."""
         self.selected_queries.remove(id)
 
     def delete_query(self, id: str) -> None:
         # TODO: Maybe extract into param class
+        """Delete a query configuration file by ID."""
         if os.path.isdir(Config.QUERY_PATH):
             os.remove(join(Config.QUERY_PATH, f"{id}.json"))
 
     def fuzzy_search(self, text: str):
+        """Perform a fuzzy search against company names and tickers using rapidfuzz."""
         data: list[tuple[str, str, str]] = SecTickerMap().get_fuzzy_data()
         limit: int = 5
         choices = {i: row[2] for i, row in enumerate(data)}
@@ -195,7 +206,9 @@ class QueryModel():
         return entity_data
 
     def add_filing_categories(self, categories: list[str]):
+        """Update the local copy of the filing categories."""
         self.categories = categories.copy()
 
     def get_filing_categories(self) -> list[str]:
+        """Retrieve the local list of filing categories."""
         return self.categories

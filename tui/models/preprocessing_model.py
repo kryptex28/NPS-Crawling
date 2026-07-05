@@ -7,30 +7,34 @@ from typing_extensions import Self
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.project_manager import get_git_root
-from nps_crawling.project_config import active_project_file, resolve_project_config_path
+from nps_crawling.project_config import active_project_file
 
 
 class PreprocessingModel():
     instance = None
 
     def __new__(cls) -> Self:
+        """Create or return the singleton instance of PreprocessingModel."""
         if cls.instance is None:
             cls.instance = super().__new__(cls)
         return cls.instance
 
     def __init__(self) -> None:
+        """Initialize the PreprocessingModel instance."""
         if not hasattr(self, "_initialized"):
             self._initialized = True
             self._preprocessing = None
 
     @property
     def preprocessing(self) -> Any:
+        """Lazy load and return the PreprocessingPipeline instance."""
         if self._preprocessing is None:
             from nps_crawling.preprocessing.utils import PreProcessingPipeline
             self._preprocessing = PreProcessingPipeline()
         return self._preprocessing
 
     def run_preprocessing(self) -> None:
+        """Run the preprocessing pipeline workflow."""
         DbAdapter().ensure_table_exists()
 
         Config.reload_config()
@@ -38,6 +42,7 @@ class PreprocessingModel():
         self.preprocessing.pre_processing_workflow()
 
     def get_config_path(self) -> Path:
+        """Retrieve the path to the preprocessing configuration file."""
         root = get_git_root()
         try:
             proj_file = active_project_file(root)
@@ -53,6 +58,7 @@ class PreprocessingModel():
         return root / CONFIG_TREE_PATHS["preprocess"]
 
     def get_config(self) -> dict[str, Any]:
+        """Load and return the preprocessing configuration dictionary."""
         path = self.get_config_path()
         if path.is_file():
             try:
@@ -63,6 +69,7 @@ class PreprocessingModel():
         return {}
 
     def save_config(self, updates: dict[str, Any]) -> None:
+        """Save updates to the preprocessing configuration file."""
         root = get_git_root()
         from nps_crawling.project_config import save_project_section
         try:

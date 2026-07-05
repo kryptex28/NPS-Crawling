@@ -1,43 +1,26 @@
 from __future__ import annotations
 
-import json
-import uuid
-from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
 
 from textual import on
-from textual.app import App, ComposeResult
-from textual.binding import Binding
+from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
-from textual.screen import ModalScreen
 from textual.validation import Number
 from textual.widgets import (
     Button,
-    Checkbox,
     DataTable,
-    Footer,
-    Header,
     Input,
     Label,
     RadioButton,
     RadioSet,
     Select,
     Static,
-    Switch,
-    TabbedContent,
-    TabPane,
     OptionList
 )
 from rich.text import Text
-from textual.widgets import SelectionList
-from textual.widgets.selection_list import Selection
 
 from constants import FILING_CATEGORIES
-from constants import US_STATES
 
 from models.query_model import QueryModel
-from screens.filing_types_screen import FilingTypesScreen
 from screens.query_config_screen import QueryConfigScreen
 from data_package.query_data import QueryData
 from data_package.entity_data import EntityData
@@ -60,12 +43,14 @@ class QueryWidget(Container):
     """
 
     def __init__(self):
+        """Initialize the QueryWidget."""
         super().__init__()
         self.model = QueryModel()
         self._selected_ids: set[str] = set()
         self._fuzzy_results: dict[str, EntityData] = {}
 
     def compose(self) -> ComposeResult:
+        """Compose the query interface layout, including form inputs, table, and actions."""
         with Horizontal(id="crawl-layout"):
             with ScrollableContainer(id="left-panel"):
                 yield Static("Search Parameters", classes="panel-title")
@@ -157,15 +142,18 @@ class QueryWidget(Container):
 
     @on(Button.Pressed, "#btn-refresh")
     async def query_refresh(self):
+        """Refresh the queries list in the widget."""
         self._refresh_table()
 
     @on(Button.Pressed, "#accept-queries-btn")
     async def accept_queries(self):
+        """Acknowledge queries setup."""
         self.model.accept_queries()
         self.notify(title="Query", message="Queries accepted for Crawling")
 
     @on(Button.Pressed, "#btn-create")
     async def query_create(self):
+        """Read input fields and create a new search query."""
         query_base: str = self.query_one("#inp-query-base", Input).value.strip()
         keyword: str = self.query_one("#inp-keyword", Input).value.strip()
         from_date: str = self.query_one("#inp-from-date", Input).value.strip()
@@ -213,6 +201,7 @@ class QueryWidget(Container):
         self._refresh_table()
 
     def _refresh_table(self) -> None:
+        """Populate the data table with updated queries and selection states."""
         table = self.query_one("#query-table", DataTable)
         table.clear(columns=False)
         for q in self.model.get_queries():
@@ -244,6 +233,7 @@ class QueryWidget(Container):
 
     @on(DataTable.RowSelected, "#query-table")
     def on_row_selected(self, event: DataTable.RowSelected) -> None:
+        """Toggle selection when a table row is double-clicked or selected."""
         table = self.query_one("#query-table", DataTable)
 
         row_id = str(table.get_cell(event.row_key, table.ordered_columns[0].key))
@@ -269,6 +259,7 @@ class QueryWidget(Container):
 
     @on(Button.Pressed, "#btn-view")
     def view_selected(self) -> None:
+        """Open the configuration details screen for the selected query."""
         table = self.query_one("#query-table", DataTable)
         if table.cursor_row is not None:
             row = table.get_row_at(table.cursor_row)
@@ -284,6 +275,7 @@ class QueryWidget(Container):
 
     @on(RadioSet.Changed, "#date-range-set")
     def on_date_range_changed(self, event: RadioSet.Changed) -> None:
+        """Show or hide custom date inputs based on the selected date range option."""
         custom_dates = self.query_one("#custom-dates", Horizontal)
         if event.pressed.id == "dr-custom":
             custom_dates.add_class("visible")
@@ -291,6 +283,7 @@ class QueryWidget(Container):
             custom_dates.remove_class("visible")
 
     def _update_row_highlight(self, row_key, row_id: str) -> None:
+        """Update visual highlight of selected rows in the data table."""
         try:
             selected_label = self.query_one("#selected-count", Label)
             selected_label.update(f"{len(self._selected_ids)} selected")
@@ -299,6 +292,7 @@ class QueryWidget(Container):
 
     @on(Button.Pressed, "#btn-select-all")
     def select_all(self) -> None:
+        """Select all queries in the table."""
         table = self.query_one("#query-table", DataTable)
         col_key = table.ordered_columns[0].key
         all_ids = {
@@ -325,6 +319,7 @@ class QueryWidget(Container):
 
     @on(Button.Pressed, "#btn-delete")
     def delete_selected(self) -> None:
+        """Delete all selected query configurations."""
         for query_id in self.model.selected_queries:
             self.model.delete_query(query_id)  
 
@@ -336,6 +331,7 @@ class QueryWidget(Container):
         self.notify(title="Queries deleted", message="All selected queries were deleted successfully")
 
     def on_mount(self) -> None:
+        """Set up autocomplete and initial table population on widget mount."""
         table = self.query_one("#query-table", DataTable)
         table.add_columns("ID", "Query", "Date range", "Created At")
         self._selected_ids = set(self.model.selected_queries)
@@ -373,6 +369,7 @@ class QueryWidget(Container):
 
     @on(Button.Pressed, "#inp-entity-fuzzy")
     def _fuzzy_search(self):
+        """Perform fuzzy search on the entity input to display autocomplete options."""
         entity_text: str = self.query_one("#inp-entity", Input).value.strip()
 
         if not entity_text:
@@ -399,6 +396,7 @@ class QueryWidget(Container):
 
     @on(OptionList.OptionSelected, "#entity-fuzzy-results")
     def _on_entity_selected(self, event: OptionList.OptionSelected) -> None:
+        """Update entity title and CIK fields when an entity is selected from autocomplete."""
         label = str(event.option.prompt)
         entity = self._fuzzy_results.get(label)
 

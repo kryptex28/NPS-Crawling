@@ -1,48 +1,27 @@
 from __future__ import annotations
 
-import json
-import uuid
-from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
 
 from textual import on
-from textual.app import App, ComposeResult
-from textual.binding import Binding
-from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
-from textual.screen import ModalScreen
-from textual.validation import Number
+from textual.app import ComposeResult
+from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import (
     Button,
-    Checkbox,
     DataTable,
-    Footer,
-    Header,
-    Input,
-    Label,
-    RadioButton,
-    RadioSet,
-    Select,
     Static,
-    Switch,
-    TabbedContent,
-    TabPane,
 )
-from textual.widgets import SelectionList
-from textual.widgets.selection_list import Selection
 
-from constants import FILING_CATEGORIES
-from constants import US_STATES
 
 from models.database_model import DatabaseModel
 
 class DatabaseWidget(Container):
 
     def __init__(self):
+        """Initialize the DatabaseWidget."""
         super().__init__()
         self.model = DatabaseModel()
 
     def compose(self) -> ComposeResult:
+        """Compose the database viewer layout with a data table."""
         with Horizontal():
             with Vertical():
                 yield Static("Database", classes="panel-title")
@@ -53,6 +32,7 @@ class DatabaseWidget(Container):
 
     @on(Button.Pressed, "#btn-show-database")
     async def load(self) -> None:
+        """Fetch filings from the database and populate the data table."""
         table = self.query_one("#db-table", DataTable)
 
         # create a Thread to fetch all database entries to avoid TUI freeze
@@ -75,5 +55,6 @@ class DatabaseWidget(Container):
 
     @on(Button.Pressed, "#btn-clear-database")
     def on_database_clear(self):
+        """Clear all rows in the database data table."""
         database = self.query_one("#db-table", DataTable)
         database.clear()

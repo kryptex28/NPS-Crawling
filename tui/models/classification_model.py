@@ -7,7 +7,7 @@ from typing_extensions import Self
 from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
 from nps_crawling.utils.project_manager import get_git_root
-from nps_crawling.project_config import active_project_file, resolve_project_config_path
+from nps_crawling.project_config import active_project_file
 
 
 class ClassificationModel():
@@ -15,17 +15,20 @@ class ClassificationModel():
     instance = None
 
     def __new__(cls) -> Self:
+        """Create or return the singleton instance of ClassificationModel."""
         if cls.instance is None:
             cls.instance = super().__new__(cls)
         return cls.instance
 
     def __init__(self) -> None:
+        """Initialize the ClassificationModel instance."""
         if not hasattr(self, "_initialized"):
             self._initialized = True
             self._classification = None
 
     @property
     def classification(self) -> Any:
+        """Lazy load and return the ClassificationPipeline instance."""
         if self._classification is None:
             from nps_crawling.classification.classification_pipeline import ClassificationPipeline
             self._classification = ClassificationPipeline()
@@ -33,6 +36,7 @@ class ClassificationModel():
         return self._classification
 
     def start_classification(self) -> bool:
+        """Start the classification pipeline workflow."""
         Config.reload_config()
         DbAdapter().ensure_table_exists()
         self._classification = None
@@ -41,6 +45,7 @@ class ClassificationModel():
         return True
 
     def get_config_path(self) -> Path:
+        """Retrieve the path to the classification configuration file."""
         root = get_git_root()
         try:
             proj_file = active_project_file(root)
@@ -56,6 +61,7 @@ class ClassificationModel():
         return root / CONFIG_TREE_PATHS["classification"]
 
     def get_config(self) -> dict[str, Any]:
+        """Load and return the classification configuration dictionary."""
         path = self.get_config_path()
         if path.is_file():
             try:
@@ -66,6 +72,7 @@ class ClassificationModel():
         return {}
 
     def save_config(self, updates: dict[str, Any]) -> None:
+        """Save updates to the classification configuration file."""
         root = get_git_root()
         from nps_crawling.project_config import save_project_section
         try:

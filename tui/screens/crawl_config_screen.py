@@ -12,12 +12,14 @@ class CrawlConfigScreen(ModalScreen):
     CSS_PATH = "crawl_config_screen.tcss"
 
     def __init__(self) -> None:
+        """Initialize the CrawlConfigScreen."""
         super().__init__()
         self.model = CrawlModel()
         self.config_path = self.model.get_config_path()
         self.config_data = self.model.get_config()
 
     def compose(self) -> ComposeResult:
+        """Compose the crawl configuration editor form."""
         with Container():
             yield Static(f"Configure Crawl ({self.config_path.name})", classes="modal-title")
             
@@ -43,10 +45,12 @@ class CrawlConfigScreen(ModalScreen):
 
     @on(Button.Pressed, "#cancel-config-btn")
     def cancel(self) -> None:
+        """Discard changes and close the crawl config screen."""
         self.dismiss()
 
     @on(Button.Pressed, "#save-config-btn")
     def save(self) -> None:
+        """Read form inputs, save the crawl configuration, and close the screen."""
         try:
             updates = {
                 "query_path": self.query_one("#crawl-query-path", Input).value.strip(),
