@@ -18,7 +18,12 @@ from nps_crawling.classification.categories.category import (
 import json
 import os
 import logging
-from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.classification.common import (
+    load_json_file,
+    make_hashable,
+    resolve_config_path,
+    stable_serialize,
+)
 from nps_crawling.config import Config
 
 logger = logging.getLogger(__name__)
@@ -286,11 +291,30 @@ class ClassificationModel:
         kwargs = dict(data.get("kwargs", {}))
         model_input = data.get("model_input", "")
         return subclass(data["model_name"], model_input, **kwargs)
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "ClassificationModel":
+        """Load a model from a JSON file."""
+        return cls.from_dict(load_json_file(resolve_config_path(path)))
     
     def classify(self, text: str, category: ClassificationCategory) -> list[DataEntry]:
         """Classify given text according to the specified category."""
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
+    def classify_batch(
+        self,
+        texts: list[str],
+        category: ClassificationCategory,
+    ) -> list[list[DataEntry]]:
+        """Classify many texts at once; subclasses override with true batched inference."""
+        results = []
+        for i, text in enumerate(texts, start=1):
+            results.append(self.classify(text, category))
+            if i % 25 == 0 or i == len(texts):
+                logger.info(f"{self.model_name}: classified {i}/{len(texts)}")
+        return results
+
+
     def evaluate(
         self,
         category: ClassificationCategory,
@@ -306,15 +330,10 @@ class ClassificationModel:
         df = pd.read_csv(resolved_category_csv_path(category.csv_path))
         _, test_df = ground_truth_train_test_split(df, test_size=test_size)
         texts = test_df[text_column].tolist()
-        all_data_entries = []
         all_evaluation_results = {}
-        time_per_snippet = 0
 
         current_time = datetime.now()
-        for i, text in enumerate(texts):
-            logger.info(f"Classifying text {i+1}/{len(texts)}")
-            data_entries = self.classify(text, category)
-            all_data_entries.append(data_entries)
+        all_data_entries = self.classify_batch(texts, category)
 
         time_per_snippet = (datetime.now() - current_time).total_seconds() / len(texts)
 
@@ -324,11 +343,13 @@ class ClassificationModel:
             for i, data_entries in enumerate(all_data_entries):
                 for entry in data_entries:
                     if entry.column_name == classification_property.name:
+                        true_label_raw = test_df.iloc[i][classification_property.name]
+                        true_label = classification_property.cast_value(true_label_raw)
                         logger.debug(
-                            f"True label: {test_df.iloc[i][classification_property.name]}\n"
+                            f"True label: {true_label}\n"
                             f"Prediction: {entry.value}\n"
                         )
-                        true_labels.append(test_df.iloc[i][classification_property.name])
+                        true_labels.append(true_label)
                         predictions.append(entry.value)
                         break
 

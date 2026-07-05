@@ -46,7 +46,7 @@ class QueryModel():
         pass
 
     def get_queries(self) -> list[QueryData]:
-        params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.GUI_QUERY_PATH))
+        params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.QUERY_PATH))
 
         queries: list[QueryData] = []
         for param in params:
@@ -66,9 +66,9 @@ class QueryModel():
         )
 
     def update_queries(self) -> list[QueryData]:
-        if not os.path.isdir(Config.GUI_QUERY_PATH):
+        if not os.path.isdir(Config.QUERY_PATH):
             return []
-        params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.GUI_QUERY_PATH))
+        params: list[SecSearchParams] = create_search_params_from_config_dir(str(Config.QUERY_PATH))
 
         queries: list[QueryData] = []
 
@@ -109,7 +109,7 @@ class QueryModel():
         parameter: SecSearchParams = self._create_config_from_query(data=data)
         parameter.query_base = "https://efts.sec.gov/LATEST/search-index?"
 
-        store_config(path=Config.GUI_QUERY_PATH, 
+        store_config(path=str(Config.QUERY_PATH), 
                      parameter=parameter)
         
         # TODO Remove in Future lol
@@ -124,8 +124,8 @@ class QueryModel():
 
     def delete_query(self, id: str) -> None:
         # TODO: Maybe extract into param class
-        if os.path.isdir(Config.GUI_QUERY_PATH):
-            os.remove(join(Config.GUI_QUERY_PATH, f"{id}.json"))
+        if os.path.isdir(Config.QUERY_PATH):
+            os.remove(join(Config.QUERY_PATH, f"{id}.json"))
 
     def fuzzy_search(self, text: str):
         data: list[tuple[str, str, str]] = SecTickerMap().get_fuzzy_data()

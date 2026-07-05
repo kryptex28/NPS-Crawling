@@ -1,20 +1,23 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
 
 @dataclass
-class ConfigData():
+class ConfigData:
+    """Editable pipeline settings surfaced in the TUI configuration screen."""
 
-    crawler_limit: int = -1
+    crawl_sec_query_limit_count: int = 10_000
+    crawl_download_delay: float = 0.2
+    crawl_query_path: str = "query"
     crawler_dry_run: bool = False
-    crawler_delay: float = 0.1
-    crawler_stats_dump: bool = False
-    
-    #db_table_name: str = "nps_filings_table"
-    #db_connection: str = "crawler:crawler@localhost:5432/crawler"
-    #db_local_mode: bool = False
-#
-    #pp_keyword_list: list[str] = []
-    #pp_keyword_exclude: list[str] = []
-    #pp_threshold_value: float = 0.5
-#
-    #model_model_selection: str = "svm"
-    #model_persona_prompt: str = ""
+
+    preprocessing_version: str = "version_2"
+    classification_version: str = "version_1"
+    similarity_threshold: float = 0.8
+    keyword_list: list[str] = field(default_factory=list)
+    keyword_exclude: list[str] = field(default_factory=list)
+    threshold_keyword_scope: list[str] = field(default_factory=list)
+
+    active_project: str | None = None
+    database_table_name: str = "default"
+    local_db_connection: str = ""
+    local_mode: bool = False

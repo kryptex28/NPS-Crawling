@@ -27,7 +27,7 @@ class ClassificationPipeline():
         self.get_data = ClassificationDataProcessing()
         self.model_pipeline = ClassificationModelPipeline(
             name=Config.CLASSIFICATION_VERSION,
-            classification_configuration=Config.CLASSIFICATION_CONFIG
+            classification_configuration=Config.get_classification_configuration_mapping(),
         )
 
     def classification_workflow(self):
@@ -78,7 +78,7 @@ class ClassificationPipeline():
             },
         }
 
-        summary_path = Config.CLASSIFIED_BASE_PATH / f"classification_{self.CLASSIFICATION_VERSION}.json"
+        summary_path = Config.CLASSIFIED_BASE_PATH / f"classification_{Config.CLASSIFICATION_VERSION}.json"
         with open(summary_path, "a", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
 

@@ -52,6 +52,7 @@ from screens.config_screen import ConfigScreen
 from screens.splash_screen import SplashScreen
 from screens.project_screen import ProjectScreen
 
+from nps_crawling.config import Config
 from nps_crawling.db.db_adapter import DbAdapter
 from models.project_model import ProjectModel
 from models.query_model import QueryModel
@@ -141,6 +142,7 @@ class CrawlerTuiApp(App):
         )
 
     def on_mount(self) -> None:
+        Config.reload_config()
         show_log = self.current_page not in self.PAGES_WITHOUT_LOG
         self.query_one("#log-panel", LogWidget).display = show_log
         self.query_one(".log-container", Container).display = show_log
@@ -151,9 +153,14 @@ class CrawlerTuiApp(App):
         if not ProjectModel().is_project_active():
             self.push_screen(ProjectScreen())
         else:
-            self.notify("Project loaded", 
-                        title="Project",
-                        timeout=5)
+            Config.reload_config()
+            active = ProjectModel().get_active_project()
+            title = active.name if active else "Project"
+            self.notify(
+                f"Loaded project '{title}'",
+                title="Project",
+                timeout=5,
+            )
             
     def _setup_logging(self):
         rich_log = self.query_one("#log-output", RichLog)

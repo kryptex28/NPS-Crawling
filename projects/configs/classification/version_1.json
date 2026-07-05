@@ -1,0 +1,17 @@
+{
+  "version": "version_1",
+  "random_seed": 42,
+  "ground_truth_test_size": 0.5,
+  "few_shot_num_examples": 8,
+  "few_shot_text_column": "snippet_text_short",
+  "few_shot_sample_seed": 43,
+  "config_use_name_files": false,
+  "embedding_batch_size": 32,
+  "llm_batch_size": 8,
+  "classification_configuration": [
+    {
+      "category": "src/nps_crawling/classification/configurations/categories/NPS All/971f154bd74fd43de50c238df15f9721f97ad9114a51cac2f5d5a3f5767a68cd.json",
+      "model": "src/nps_crawling/classification/configurations/Qwen3-Embedding-4B/44abd42a0a74efdcbcd621781854ce95e0f4e041a446ef6f4ea97b549923f533.json"
+    }
+  ]
+}

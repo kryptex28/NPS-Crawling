@@ -79,7 +79,7 @@ class PreProcessingPipeline(Config):
     # Number of files per processing chunk.  Controls peak memory: all
     # cleaned/filtered records for one chunk are held in RAM while their
     # context windows are batch-embedded on the GPU.
-    FILES_PER_CHUNK = 1000
+    FILES_PER_CHUNK = Config.PREPROCESS_FILES_PER_CHUNK
 
     def __init__(self):
         """Initialize the PreProcessingPipeline."""

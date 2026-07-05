@@ -1,5 +1,6 @@
 from typing_extensions import Self
 
+from nps_crawling.config import Config
 from nps_crawling.classification.classification_pipeline import ClassificationPipeline
 
 class ClassificationModel():
@@ -22,6 +23,8 @@ class ClassificationModel():
         return self._classification
 
     def start_classification(self) -> bool:
+        Config.reload_config()
+        self._classification = None
         self.classification.classification_workflow()
 
         return True

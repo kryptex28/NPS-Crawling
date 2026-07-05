@@ -3,12 +3,16 @@
 import json
 import hashlib
 from pathlib import Path
-from typing import List
 
 from nps_crawling.db.db_adapter import DbAdapter
-from nps_crawling.classification.models.registry import get_model_from_config, ClassificationModel
+from nps_crawling.classification.models.registry import ClassificationModel
 from nps_crawling.classification.categories.category import ClassificationCategory
-from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.classification.common import (
+    config_path_ref,
+    load_json_file,
+    resolve_config_entry,
+    resolve_config_path,
+)
 from nps_crawling.config import Config
 import logging
 
@@ -23,6 +27,22 @@ class ClassificationModelPipeline(Config):
         if isinstance(classification_configuration, dict):
             return classification_configuration.items()
         return classification_configuration
+
+    @staticmethod
+    def _resolve_category(value):
+        return resolve_config_entry(
+            value,
+            from_dict=ClassificationCategory.from_dict,
+            from_json=ClassificationCategory.from_json,
+        )
+
+    @staticmethod
+    def _resolve_model(value):
+        return resolve_config_entry(
+            value,
+            from_dict=ClassificationModel.from_dict,
+            from_json=ClassificationModel.from_json,
+        )
 
     def __init__(
             self,
@@ -39,14 +59,7 @@ class ClassificationModelPipeline(Config):
         self.classification_properties = {}
         parsed_configs = []
         for key, value in self._iter_configuration_items(classification_configuration):
-            if isinstance(key, str) or isinstance(key, Path):
-                with open(key, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                category = ClassificationCategory.from_dict(data)
-            elif isinstance(key, dict):
-                category = ClassificationCategory.from_dict(key)
-            else:
-                category = key
+            category = self._resolve_category(key)
 
             for prop in category.properties:
                 self.classification_properties[prop.name] = prop.type.value
@@ -64,14 +77,7 @@ class ClassificationModelPipeline(Config):
 
         # 3. Instantiate models and train if necessary
         for category, value in parsed_configs:
-            if isinstance(value, str) or isinstance(value, Path):
-                with open(value, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                model = ClassificationModel.from_dict(data)
-            elif isinstance(value, dict):
-                model = ClassificationModel.from_dict(value)
-            else:
-                model = value
+            model = self._resolve_model(value)
 
             self.category_model[category] = model
             if not model.is_trained(category):
@@ -80,49 +86,35 @@ class ClassificationModelPipeline(Config):
 
         self.out_path = Config.CLASSIFIED_BASE_PATH / self.name
 
-        with open(Config.CLASSIFICATION_CONFIG_DIR / f"{name}.json", "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
-
     def to_dict(self):
         return {
             "name": self.name,
             "classification_configuration": [
                 {
-                    "category": stable_serialize(category),
-                    "model": stable_serialize(model),
+                    "category": config_path_ref(category.config_path),
+                    "model": config_path_ref(model.config_path),
                 }
                 for category, model in self.category_model.items()
             ],
         }
     
-    @property
-    def stable_id(self):
-        data = {
-            "class": self.__class__.__name__,
-            "model_name": self.model_name,
-            "model_input": stable_serialize(self.model_input),
-            "kwargs": stable_serialize(self.kwargs),
-        }
-
-        payload = json.dumps(data, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(payload.encode()).hexdigest()
-    
     @classmethod
     def from_dict(cls, data):
-
-        classification_configuration = data.get("classification_configuration", {})
-        if isinstance(classification_configuration, list):
-            for entry in classification_configuration:
-                data = entry["category"]
-                classification_configuration = {
-                    ClassificationCategory.from_dict(entry["category"]): ClassificationModel.from_dict(entry["model"])
-                    for entry in classification_configuration
-                }
+        classification_configuration = {}
+        for entry in data.get("classification_configuration", []):
+            category = cls._resolve_category(entry["category"])
+            model = cls._resolve_model(entry["model"])
+            classification_configuration[category] = model
 
         return cls(
             name=data["name"],
             classification_configuration=classification_configuration,
         )
+
+    @classmethod
+    def from_json(cls, path: str | Path) -> "ClassificationModelPipeline":
+        """Load a pipeline from a JSON file."""
+        return cls.from_dict(load_json_file(resolve_config_path(path)))
 
 
     def _write_to_db(self, id, results):
@@ -145,11 +137,27 @@ class ClassificationModelPipeline(Config):
         )
 
     def model_workflow(self, records, source_filename):
-        """Classify all context windows in the given records and save as JSON."""
-        total_windows = sum(len(record.get("context", [])) for record in records)
-        done = 0
+        """Classify all context windows in the given records and save as JSON.
+
+        All windows of the file are classified per category in one batched call,
+        so models can use GPU batching instead of per-window inference.
+        """
+        windows = [window for record in records for window in record.get("context", [])]
+        total_windows = len(windows)
 
         logger.info(f"Starting file: {source_filename} ({total_windows} windows)")
+
+        if windows:
+            texts = [window["context"] for window in windows]
+            for category, model in self.category_model.items():
+                logger.info(
+                    f"{source_filename}: classifying {total_windows} windows "
+                    f"for category '{category.name}'"
+                )
+                batch_results = model.classify_batch(texts, category)
+                for window, results in zip(windows, batch_results):
+                    for result in results:
+                        window[result.column_name] = result.value
 
         default_results = {}
         for category in self.category_model:
@@ -159,15 +167,11 @@ class ClassificationModelPipeline(Config):
         for record in records:
             record_results = default_results.copy()
             for window in record.get("context", []):
-                for category, model in self.category_model.items():
-                    results = model.classify(window["context"], category)
-                    for result in results:
-                        window[result.column_name] = result.value
-                        if result.value != category.get_property(result.column_name).default_value:
-                            record_results[result.column_name] = result.value
-
-                done += 1
-                logger.info(f"{source_filename}: {done}/{total_windows}")
+                for category in self.category_model:
+                    for prop in category.properties:
+                        value = window.get(prop.name, prop.default_value)
+                        if value != prop.default_value:
+                            record_results[prop.name] = value
             self._write_to_db(record["metadata"]["filing"]["id"], record_results)
 
         file_path = self.out_path / "files" / f"{source_filename}.json"
