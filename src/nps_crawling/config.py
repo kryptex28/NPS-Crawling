@@ -41,7 +41,7 @@ class Config:
     # ---------------------------------------------------------------------------
     # Local Mode (env-only; not part of project JSON)
     # ---------------------------------------------------------------------------
-    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "0") == "0"
+    LOCAL_MODE: bool = os.getenv("LOCAL_MODE", "1") == "0"
     LOCAL_DB_CONNECTION: str = "crawler:crawler@localhost:5432/crawler"
 
     # ---------------------------------------------------------------------------
