@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from typing import List, Optional
 
-from nps_crawling.classification.common import make_hashable, stable_serialize
+from nps_crawling.classification.common import classification_config_basename, make_hashable, stable_serialize
 
 import logging
 logger = logging.getLogger(__name__)
@@ -195,7 +195,10 @@ class ClassificationCategory:
                 )
 
         current_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-        self.config_path = current_dir.parent / "configurations" / "categories" / name / f"{self.stable_id}.json"
+        if Config.CLASSIFICATION_CONFIG_USE_NAME_FILES:
+            self.config_path = Config.CLASSIFICATION_CONFIG_DIR / f"{self.name}.json"
+        else:
+            self.config_path = current_dir.parent / "configurations" / "categories" / name / f"{self.stable_id}.json"
         if not os.path.exists(self.config_path):
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             with open(self.config_path, "w") as f:
