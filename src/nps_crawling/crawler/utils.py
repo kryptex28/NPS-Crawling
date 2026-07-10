@@ -20,7 +20,7 @@ from nps_crawling.crawler.pattern_strategy.pre_fetch.search_strategy import Sear
 logger = logging.getLogger(__name__)
 crochet.setup()
 
-@crochet.wait_for(timeout=3600)
+@crochet.wait_for(timeout=86400)
 @defer.inlineCallbacks
 def _run_crawl_sequentially(runner: CrawlerRunner,
                             search_parameter_files: list[str],
