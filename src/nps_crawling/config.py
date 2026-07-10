@@ -63,13 +63,13 @@ class Config:
     CRAWL_DOWNLOAD_DELAY: float = 0.2
 
     # Preprocess
-    PREPROCESSING_VERSION: str = "version_2"
+    PREPROCESSING_VERSION: str = "version_1"
     PREPROCESS_FILES_PER_CHUNK: int = 1000
     SINGLE_KEYWORD_FILTER: str | list[str] | None = None
     SINGLE_KEYWORD_FILTER_STRICT: bool = True
     THRESHOLD_KEYWORD_SCOPE: list[str] | None = ["nps"]
     THRESHOLD_KEYWORD_SCOPE_STRICT: bool = True
-    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.8
+    SIMILARITY_THRESHOLD_CONTEXT_WINDOW: float = 0.34
     LIST_OF_PHRASES_TO_FILTER_FILINGS_FOR: list = []
     LIST_OF_PHRASES_TO_EXCLUDE: list = []
     SIMILARITY_REFERENCE_TEXT: str = ""
