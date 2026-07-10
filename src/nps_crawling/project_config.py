@@ -32,12 +32,12 @@ DEFAULT_CRAWL_CONFIG: dict[str, Any] = {
 }
 
 DEFAULT_PREPROCESS_CONFIG: dict[str, Any] = {
-    "version": "version_2",
+    "version": "version_1",
     "single_keyword_filter": None,
     "single_keyword_filter_strict": True,
     "threshold_keyword_scope": ["nps"],
     "threshold_keyword_scope_strict": True,
-    "similarity_threshold_context_window": 0.8,
+    "similarity_threshold_context_window": 0.34,
     "list_of_phrases_to_filter_filings_for": [
         "NPS",
         "net promoter score",
@@ -120,7 +120,7 @@ DEFAULT_PROJECT_CONFIG: dict[str, Any] = {
 
 CONFIG_TREE_PATHS: dict[str, str] = {
     "crawl": "projects/configs/crawl/default.json",
-    "preprocess": "projects/configs/preprocess/version_2.json",
+    "preprocess": "projects/configs/preprocess/version_1.json",
     "classification": "projects/configs/classification/version_1.json",
 }
 

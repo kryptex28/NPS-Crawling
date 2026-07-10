@@ -1,10 +1,10 @@
 {
-  "version": "version_2",
+  "version": "version_1",
   "single_keyword_filter": null,
   "single_keyword_filter_strict": true,
   "threshold_keyword_scope": ["nps"],
   "threshold_keyword_scope_strict": true,
-  "similarity_threshold_context_window": 0.8,
+  "similarity_threshold_context_window": 0.34,
   "list_of_phrases_to_filter_filings_for": [
     "NPS",
     "net promoter score",
