@@ -1,0 +1,17 @@
+model,approach,config_hash,nps_category_mean_pos_f1,nps_category_mean_macro_f1,has_numeric_pos_f1,has_numeric_accuracy,value_mean_correct_f1,value_eval_stale,cat_split_canonical,value_split_canonical,time_per_snippet_s
+gpt-5.4 (hand-sel. examples),API LLM,c0e8d13d6aec,0.5324,0.7160,0.8895,0.8883,0.8369,False,True,True,1.4360
+gpt-5.4-mini,API LLM,c8c1da99cfe9,0.3950,0.6397,0.9054,0.9054,0.8347,False,True,True,1.3787
+Qwen3-Emb-4B + SVM (production),Embedding + SVM,ceedaa3aba19,0.4623,0.6909,0.8274,0.8338,0.5442,False,True,True,2.8836
+"bge-m3 + BGE_SVM (native, unified)",Embedding + SVM,4df73844dd50,0.4391,0.6715,0.7250,0.7479,0.3318,False,True,True,0.0399
+bge-m3 + SVM (per-property instr.),Embedding + SVM,d8fc9e678652,0.4267,0.6654,0.6474,0.6848,,False,True,,0.0245
+bge-large-en-v1.5 + SVM (per-property instr.),Embedding + SVM,1c5568c057ce,0.4206,0.6565,0.7210,0.7450,,False,True,,0.9197
+Qwen3-Emb-4B + SVM (per-property instr.),Embedding + SVM,c7d19631b6ae,0.4190,0.6561,0.8588,0.8625,,False,True,,2.0228
+all-MiniLM-L6-v2 + SVM (hand-sel. examples),Embedding + SVM,c7d25c717416,0.4032,0.6426,0.6790,0.7020,,False,True,,0.0152
+Qwen3-Emb-0.6B + SVM (shared instr.),Embedding + SVM,8f28022083ef,0.3959,0.6442,0.7720,0.7851,,False,True,,0.0102
+par.-mult.-mpnet-base-v2 + SVM (hand-sel. examples),Embedding + SVM,71e39d0ca339,0.3888,0.6321,0.6463,0.6676,,False,True,,0.0524
+par.-mult.-MiniLM-L12-v2 + SVM (hand-sel. examples),Embedding + SVM,600438fa61a5,0.3884,0.6316,0.6066,0.6246,,False,True,,0.0281
+bge-m3 + SVM (Qwen-style pipeline),Embedding + SVM,7a55b4c0d614,0.3850,0.6384,0.7108,0.7249,0.3727,False,True,True,0.0427
+Qwen3-Emb-0.6B + SVM (candidate),Embedding + SVM,40f7d149d777,,,,,0.3739,False,,True,0.0794
+Qwen3-8B (thinking),Local LLM,fc71e4662a1d,0.4586,0.6357,0.8544,0.8936,,True,False,False,43.6431
+Qwen3-8B (no thinking),Local LLM,6bc7884b7d10,0.4095,0.6374,0.8768,0.8768,0.8279,False,True,True,30.0137
+Mistral-7B-Instruct-v0.2,Local LLM,e941f85a393e,0.3523,0.5135,0.6364,0.6028,,True,False,False,3.5138

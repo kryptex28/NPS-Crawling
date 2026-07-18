@@ -71,6 +71,7 @@ TASK_NPS_ALL = "NPS All"
 EMBEDDING_CLASSES = {
     "BGE_Base",
     "BGE_Advanced",
+    "BGE_SVM",
     "QWEN_Advanced",
     "QWEN_Candidate",
     "QWEN_Unified",  # pre-rename alias of SVM, still present in archived configs
@@ -82,6 +83,7 @@ EMBEDDING_CLASSES = {
 CLASS_SHORT = {
     "BGE_Base": "SVM",
     "BGE_Advanced": "SVM",
+    "BGE_SVM": "SVM native",
     "QWEN_Advanced": "SVM",
     "QWEN_Candidate": "Candidate",
     "QWEN_Unified": "Unified",

@@ -4,6 +4,7 @@ from nps_crawling.classification.models.llm import LLM
 from nps_crawling.classification.models.ollama_llm import Ollama_LLM
 from nps_crawling.classification.models.bge_base import BGE_Base
 from nps_crawling.classification.models.bge_advanced import BGE_Advanced
+from nps_crawling.classification.models.bge_svm import BGE_SVM
 from nps_crawling.classification.models.deberta_base import DeBERTa_Base
 from nps_crawling.classification.models.qwen_advanced import QWEN_Advanced
 from nps_crawling.classification.models.qwen_candidate import QWEN_Candidate
@@ -16,6 +17,7 @@ class ClassificationModelName(str, Enum):
     Ollama_LLM = "Ollama LLM"
     BGE_BASE = "BGE Base"
     BGE_ADVANCED = "BGE Advanced"
+    BGE_SVM = "BGE SVM"
     DEBERTA_BASE = "DeBERTa Base"
     QWEN_ADVANCED = "QWEN Advanced"
     QWEN_CANDIDATE = "QWEN Candidate"
@@ -29,6 +31,7 @@ _MODEL_REGISTRY = {
     ClassificationModelName.Ollama_LLM: Ollama_LLM,
     ClassificationModelName.BGE_BASE: BGE_Base,
     ClassificationModelName.BGE_ADVANCED: BGE_Advanced,
+    ClassificationModelName.BGE_SVM: BGE_SVM,
     ClassificationModelName.DEBERTA_BASE: DeBERTa_Base,
     ClassificationModelName.QWEN_ADVANCED: QWEN_Advanced,
     ClassificationModelName.QWEN_CANDIDATE: QWEN_Candidate,
