@@ -26,7 +26,6 @@ class ProjectScreen(ModalScreen):
             yield Static("Recent Projects", id="project-recent")
             yield DataTable(id="project-table", zebra_stripes=True, show_header=True, show_cursor=True)
             yield Button("Open Project", id="open-project-btn")
-            yield Button("Delete Project", id="delete-project-btn")
             yield Button("Refresh", id="refresh-project-btn")
             yield Button("Close", id="close-project-btn")
 
