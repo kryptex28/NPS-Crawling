@@ -1,0 +1,8 @@
+{
+    "class_name": "QWEN_Advanced",
+    "model_name": "Qwen/Qwen3-Embedding-4B",
+    "model_input": "",
+    "kwargs": {
+        "optimized": "true"
+    }
+}

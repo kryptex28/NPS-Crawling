@@ -1,7 +1,7 @@
 model,approach,config_hash,nps_category_mean_pos_f1,nps_category_mean_macro_f1,has_numeric_pos_f1,has_numeric_accuracy,value_mean_correct_f1,value_eval_stale,cat_split_canonical,value_split_canonical,time_per_snippet_s
 gpt-5.4 (hand-sel. examples),API LLM,c0e8d13d6aec,0.5324,0.7160,0.8895,0.8883,0.8369,False,True,True,1.4360
 gpt-5.4-mini,API LLM,c8c1da99cfe9,0.3950,0.6397,0.9054,0.9054,0.8347,False,True,True,1.3787
-Qwen3-Emb-4B + SVM (production),Embedding + SVM,ceedaa3aba19,0.4623,0.6909,0.8274,0.8338,0.5442,False,True,True,2.8836
+Qwen3-Emb-4B + SVM (production),Embedding + SVM,ceedaa3aba19,0.4623,0.6909,0.8274,0.8338,0.5442,False,True,True,0.3973
 "bge-m3 + BGE_SVM (native, unified)",Embedding + SVM,4df73844dd50,0.4391,0.6715,0.7250,0.7479,0.3318,False,True,True,0.0399
 bge-m3 + SVM (per-property instr.),Embedding + SVM,d8fc9e678652,0.4267,0.6654,0.6474,0.6848,,False,True,,0.0245
 bge-large-en-v1.5 + SVM (per-property instr.),Embedding + SVM,1c5568c057ce,0.4206,0.6565,0.7210,0.7450,,False,True,,0.9197

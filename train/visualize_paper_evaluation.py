@@ -244,7 +244,7 @@ HEADLINE_ORDER = ["c7d19631", "ceedaa3a", "4df73844", "6bc7884b", "c0e8d13d", "c
 # The two-model production comparison (fig 8).
 PROD_PAIR = ["ceedaa3a", "4df73844"]
 
-# Canonical test split (ground_truth_final_without_examples.csv, seed 42,
+# Canonical evaluation split (ground_truth_final_without_examples.csv, seed 42,
 # test n = 349), identified by two invariant positive supports. Several older
 # evals were run against earlier dataset versions and are flagged with ``‡``.
 CANONICAL_CAT_SUPPORT = 159.0    # KPI_CURRENT_VALUE positives
@@ -298,7 +298,7 @@ def by_role(selected: dict[str, dict], role: str) -> list[str]:
 # Support extraction
 # --------------------------------------------------------------------------- #
 def test_supports(selected: dict[str, dict]) -> dict[str, float]:
-    """Positive-class support per boolean label in the (shared) test split."""
+    """Positive-class support per boolean label in the (shared) evaluation split."""
     supports: dict[str, float] = {}
     rec = selected.get("ceedaa3a") or next(iter(selected.values()))
     task = rec["results"].get(TASK_NPS_CATEGORY, {})
@@ -354,9 +354,9 @@ def fig_dataset_composition(out_dir: Path) -> pd.DataFrame:
         te = np.array([count(test_df, c) for c in totals.index])
         y = np.arange(len(totals))
         ax.barh(y, tr, height=0.62, color=C1_BLUE, edgecolor="white", linewidth=0.8,
-                label=f"train fold (n = {len(train_df)})")
+                label=f"training split (n = {len(train_df)})")
         ax.barh(y, te, left=tr, height=0.62, color=C2_AQUA, edgecolor="white", linewidth=0.8,
-                label=f"test fold (n = {len(test_df)})")
+                label=f"evaluation split (n = {len(test_df)})")
         ax.set_yticks(y)
         ax.set_yticklabels(totals.index, fontsize=8)
         for yi, total, a, b in zip(y, totals.values, tr, te):
@@ -372,7 +372,7 @@ def fig_dataset_composition(out_dir: Path) -> pd.DataFrame:
     ax1.legend(loc="lower right", fontsize=7.5)
     fig.suptitle(
         f"Ground-truth dataset composition ({n} annotated snippets; "
-        "annotations: total (share) · train/test)",
+        "annotations: total (share) · train/eval)",
         fontsize=11, x=0.02, ha="left",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
@@ -429,7 +429,7 @@ def fig_headline_per_label(selected, supports, out_dir: Path) -> pd.DataFrame:
     fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02).set_label("positive-class F1", fontsize=8)
     ax.set_title(
         "Per-label positive-class F1 by approach\n"
-        "columns sorted by positive support in the test split (n = 349)",
+        "columns sorted by positive support in the evaluation split (n = 349)",
         fontsize=10.5, loc="left",
     )
     fig.tight_layout()
@@ -476,7 +476,7 @@ def fig_support_vs_f1(selected, supports, out_dir: Path) -> None:
         ax.axvline(supports[lbl], color=GRID, lw=0.8, zorder=1)
 
     ax.set_xscale("log")
-    ax.set_xlabel("positive support in test split (log scale)")
+    ax.set_xlabel("positive support in evaluation split (log scale)")
     ax.set_ylabel("positive-class F1")
     ax.set_ylim(-0.04, 1.04)
     ax.grid(axis="y", lw=0.8, color=GRID)
@@ -529,7 +529,7 @@ def fig_embedding_backbones(selected, out_dir: Path) -> None:
     title = ("Embedding backbones for the SVM approach (NPS Category)\n"
              "★ = boolean path of the production model (unified SVM class)")
     if has_marked:
-        title += "\n‡ = evaluated on an outdated test split; not directly comparable"
+        title += "\n‡ = evaluated on an outdated evaluation split; not directly comparable"
     ax.set_title(title, fontsize=10.5, loc="left", pad=26)
     fig.tight_layout()
     _save(fig, out_dir, "fig4_embedding_backbones")
@@ -588,7 +588,7 @@ def fig_llm_comparison(selected, out_dir: Path) -> None:
     ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, fontsize=7.5)
     title = "LLM classifiers: local vs. API"
     if any(SPLIT_MARK in name for name in df.index):
-        title += "\n‡ = evaluated on an outdated test split; not directly comparable"
+        title += "\n‡ = evaluated on an outdated evaluation split; not directly comparable"
     ax.set_title(title, fontsize=10.5, loc="left", pad=24)
     fig.tight_layout()
     _save(fig, out_dir, "fig5_llm_comparison")
@@ -626,7 +626,7 @@ def fig_value_extraction(selected, out_dir: Path) -> pd.DataFrame | None:
     fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02).set_label("F1 of 'correct value'", fontsize=8)
     ax.set_title(
         "Numeric NPS value extraction per field\n"
-        "post-fix evaluations only; n = rows with a ground-truth value (test split)",
+        "post-fix evaluations only; n = rows with a ground-truth value (evaluation split)",
         fontsize=10.5, loc="left",
     )
     fig.tight_layout()
@@ -642,7 +642,7 @@ def fig_quality_vs_speed(selected, out_dir: Path) -> None:
     for prefix in by_role(selected, "scatter"):
         rec = selected[prefix]
         if rec.get("cat_canonical") is False:
-            continue  # older test split; not comparable on this axis
+            continue  # older evaluation split; not comparable on this axis
         cat = rec["results"].get(TASK_NPS_CATEGORY, {})
         t = cat.get("time_per_snippet", np.nan)
         q = np.nanmean([positive_f1(cat.get(l, {})) for l in NPS_CATEGORY_LABELS])
@@ -805,7 +805,7 @@ def write_summary(selected, out_dir: Path) -> pd.DataFrame:
 # One row per *model* (config description only where a model appears with two
 # configs), canonical-split evals only. The headline quality metric is the
 # support-weighted mean F1: every property contributes proportionally to its
-# positive/value support in the test split, so near-empty classes (n = 1..2)
+# positive/value support in the evaluation split, so near-empty classes (n = 1..2)
 # cannot dominate the average the way they do in an unweighted mean.
 # --------------------------------------------------------------------------- #
 REPO_ROOT = SCRIPT_DIR.parent
@@ -941,7 +941,7 @@ def final_heatmap(final, supports, v_supports, variant: str, out_dir: Path) -> N
     ax.set_title(
         f"{titles[variant]}\n"
         "weighted mean = support-weighted over the shown properties; "
-        "columns sorted by test-split support (n)",
+        "columns sorted by evaluation-split support (n)",
         fontsize=10.5, loc="left",
     )
     fig.tight_layout()
@@ -1012,7 +1012,7 @@ def final_support_vs_f1(final, supports, v_supports, out_dir: Path) -> None:
                        edgecolor="white", linewidth=0.5, alpha=0.95, zorder=3, label=label)
 
     ax.set_xscale("log")
-    ax.set_xlabel("support in test split (log scale)")
+    ax.set_xlabel("support in evaluation split (log scale)")
     ax.set_ylabel("F1 (positive class / correct value)")
     ax.set_ylim(-0.04, 1.04)
     ax.grid(axis="y", lw=0.8, color=GRID)
