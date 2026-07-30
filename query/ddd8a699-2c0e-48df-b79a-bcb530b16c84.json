@@ -1,0 +1,18 @@
+{
+  "queries": {
+    "ddd8a699-2c0e-48df-b79a-bcb530b16c84": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"net promoter\"",
+      "from_date": "2020-01-01",
+      "to_date": "2025-12-31",
+      "date_range": "custom",
+      "individual_search_ticker": [
+        ""
+      ],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "ALL",
+      "filing_categories": []
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "queries": {
+    "cd593a6d-4d33-4b59-8ad4-d96acc22f5cf": {
+      "query_base": "https://efts.sec.gov/LATEST/search-index?",
+      "keyword": "\"net promotor\"",
+      "from_date": "2015-01-01",
+      "to_date": "2019-12-31",
+      "date_range": "custom",
+      "individual_search_ticker": [
+        ""
+      ],
+      "individual_search_cik": "",
+      "individual_search_title": "",
+      "filing_category": "ALL",
+      "filing_categories": []
+    }
+  }
+}
