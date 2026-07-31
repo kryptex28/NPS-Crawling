@@ -112,16 +112,17 @@ class SecQuery:
                 logger.error(f"Unable to fetch filings after {retries} retries!")
                 exit(-1)
 
-            response: dict = self.query_request(page=page)
-            # Set total results of the query on first query
-            if self.results == -1:
-                self.results = get_total_filings_count(response)
-                total = self.results
-                print(f'Total Results: {total}')
-
+            response: dict = {}
             # Catch any bad response from server and retry again for 10 times until it either works.
             # If after 10 tries it does not work, maybe your internet is the issue.
             try:
+                response = self.query_request(page=page)
+                # Set total results of the query on first query
+                if self.results == -1:
+                    self.results = get_total_filings_count(response)
+                    total = self.results
+                    print(f'Total Results: {total}')
+
                 hits: list[str] = response['hits']['hits']
             except Exception as e:
                 logger.error(e)
