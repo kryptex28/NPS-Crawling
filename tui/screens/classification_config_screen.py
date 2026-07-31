@@ -105,25 +105,6 @@ class ClassificationConfigScreen(ModalScreen):
                     yield Label("LLM Batch Size:")
                     yield Input(str(self.config_data.get("llm_batch_size", 8)), id="class-llm-batch")
 
-                # Model Type (Selection)
-                with Horizontal(classes="form-row"):
-                    yield Label("Model Type:")
-                    yield Select(
-                        options=[
-                            ("OpenAI", "OpenAI"),
-                            ("HF_LLM", "HF_LLM"),
-                            ("Qwen_concat", "Qwen_concat")
-                        ],
-                        value=display_class,
-                        id="class-model-type",
-                        allow_blank=False
-                    )
-
-                # Model Name (Input)
-                with Horizontal(classes="form-row"):
-                    yield Label("Model Name:")
-                    yield Input(self.current_model, id="class-model-name")
-
             with Horizontal(classes="modal-footer"):
                 yield Button("Save", variant="success", id="save-config-btn")
                 yield Button("Cancel", variant="error", id="cancel-config-btn")
