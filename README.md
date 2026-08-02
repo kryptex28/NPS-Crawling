@@ -1,18 +1,19 @@
 # NPS-Crawling
 
-An end-to-end framework for crawling, parsing, preprocessing, classifying, and analyzing corporate financial filings (such as SEC Edgar filings) for Net Promoter Score (NPS), ESG metrics, and corporate disclosures.
+An end-to-end framework for crawling, parsing, preprocessing, classifying, and analyzing corporate financial filings (such as SEC Edgar filings) for Net Promoter Score (NPS), ESG metrics, corporate disclosures, and custom domain-specific keywords.
 
 ---
 
 ## Key Features
 
 - **SEC Edgar Crawling Engine**: Built on Scrapy for automated discovery, query pre-fetching, and bulk downloading of corporate filings (10-K, 10-Q, 8-K, 20-F, DEF 14A, etc.).
+- **Multi-Project Framework Architecture**: Domain-agnostic architecture supporting independent project specifications (`projects/<name>.json`), custom keyword sets, isolated storage directories, and dedicated database tables.
 - **Semantic Preprocessing**: Cleans HTML/XML content, applies keyword scope filtering, sentence-boundary extraction, and embedding similarity ranking via SentenceTransformers (`all-MiniLM-L6-v2`).
-- **ML / LLM Classification**: Supports zero-shot and few-shot text classification through HuggingFace Transformers (PyTorch) or external Ollama HTTP servers.
+- **ML / LLM Classification & Dynamic Schemas**: Supports zero-shot and few-shot text classification through HuggingFace Transformers (PyTorch) or external Ollama HTTP servers, featuring dynamic database column generation based on category JSON properties.
 - **Dual User Interfaces**:
   - **Command-Line Interface (CLI)**: For batch operations, script execution, and headless automation.
   - **Interactive Terminal UI (TUI)**: Rich Textual dashboard for project selection, live crawling control, real-time log streaming, and database inspection.
-- **Decoupled Data Architecture**: Automated PostgreSQL setup via Docker Compose alongside structured dataset storage (`json_raw/`, `json_processed/`, `json_classified/`).
+- **Decoupled Data Architecture**: Automated PostgreSQL container orchestration via Docker Compose alongside structured dataset storage (`json_raw/`, `json_processed/`, `json_classified/`).
 
 ---
 
@@ -31,7 +32,7 @@ cd NPS-Crawling
 
 # Recommended: create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Linux/macOS
+source .venv/bin/activate  # On Linux/macOS or .venv\Scripts\activate on Windows
 
 # Install package in editable mode
 pip install -e .
@@ -46,10 +47,10 @@ pip install -e .
 The package installs a unified CLI entrypoint: `nps-crawling`.
 
 #### 1. Load a Project Configuration
-Before executing pipelines, activate a project specification defined in the `projects/` directory (e.g., `projects/default.json`):
+Before executing pipeline stages, activate a project specification defined in the `projects/` directory (e.g., `projects/nps_project.json`):
 
 ```bash
-nps-crawling load default
+nps-crawling load nps_project
 ```
 
 #### 2. Crawl Filings
@@ -104,8 +105,6 @@ The TUI provides workspace views for:
 - **Pipeline Execution**: Trigger Crawl, Preprocess, and Classification stages with real-time log output.
 - **Database Inspector**: Monitor PostgreSQL database connection health, row counts, and table schemas.
 
----
-
 ## Repository Structure
 
 ```
@@ -113,20 +112,21 @@ NPS-Crawling/
 ├── src/nps_crawling/         # Core Python package
 │   ├── __main__.py           # CLI entrypoint & Docker orchestrator
 │   ├── config.py             # Global runtime configuration state
-│   ├── project_config.py     # Project JSON specification loader
+│   ├── project_config.py     # Project JSON specification loader & deep merger
 │   ├── crawler/              # Scrapy spiders, pattern strategies & storage pipeline
 │   ├── preprocessing/        # Text cleaning, filtering & vector similarity
 │   ├── classification/       # Dataset splitting, LLM prompting & model pipelines
 │   ├── db/                   # SQLAlchemy / SQLModel DB adapter & PostgreSQL models
 │   ├── llm/                  # HuggingFace & Ollama LLM provider interfaces
 │   ├── results/              # Results processing & summary aggregators
-│   └── utils/                # EventBus pub/sub stream & project management helpers
+│   └── utils/                # EventBus pub/sub stream & project manager helpers
 ├── tui/                      # Textual User Interface application
 │   ├── app.py                # Main TUI app controller
 │   ├── widgets/              # Page view & shell widgets
 │   ├── screens/              # Modal configuration dialogs
 │   └── models/               # Singleton domain models
-├── projects/                 # Project JSON specification files
+├── docs/                     # Comprehensive architecture and database documentation
+├── projects/                 # Project JSON specifications and configuration trees
 ├── docker/                   # Docker Compose setup for local PostgreSQL
 └── data/                     # Output datasets (json_raw, json_processed, json_classified)
 ```
